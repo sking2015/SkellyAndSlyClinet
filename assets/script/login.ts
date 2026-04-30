@@ -1,4 +1,6 @@
 import { _decorator, Component, Node, Screen, UITransform, Sprite, Widget, view, ProgressBar, director, Button } from 'cc';
+import { gameStateMgr } from './GameStateMgr';
+import { LoginResult } from './GameConfig';
 const { ccclass, property } = _decorator;
 
 @ccclass('login')
@@ -20,13 +22,13 @@ export class login extends Component {
             this.progressBar.node.active = false;
         }
 
-        // // 绑定按钮点击事件
-        // if (this.nodeStart) {
-        //     const btn = this.nodeStart.getComponent(Button);
-        //     if (btn) {
-        //         btn.node.on(Button.EventType.CLICK, this.onClickLogin, this);
-        //     }
-        // }
+        // 绑定按钮点击事件
+        if (this.nodeStart) {
+            const btn = this.nodeStart.getComponent(Button);
+            if (btn) {
+                btn.node.on(Button.EventType.CLICK, this.onClickLogin, this);
+            }
+        }
     }
 
     fitScreen() {
@@ -97,8 +99,32 @@ export class login extends Component {
             this.progressBar.progress = 0;
         }
 
-        // 3. 预加载 Main 场景
-        this.loadMainScene();
+        // 3. 调用 GameStateMgr 进行登录
+        gameStateMgr.login((result: LoginResult, data?: any) => {
+            if (result === LoginResult.SUCCESS) {
+                console.log('Login successful, switching to Main scene...');
+                // 登录成功，跳转 Main 场景
+                this.loadMainScene();
+            } else {
+                console.log('Login failed with result:', result);
+                // 开发期间，失败只打印日志
+                if (result === LoginResult.FAIL) {
+                    console.log('登录失败，请稍后重试');
+                } else if (result === LoginResult.NETWORK_ERROR) {
+                    console.log('网络错误，请检查网络连接');
+                } else if (result === LoginResult.SERVER_ERROR) {
+                    console.log('服务器错误，请稍后重试');
+                }
+
+                // 恢复登录按钮显示
+                if (this.nodeStart) {
+                    this.nodeStart.active = true;
+                }
+                if (this.progressBar) {
+                    this.progressBar.node.active = false;
+                }
+            }
+        });
     }
 
     loadMainScene() {
