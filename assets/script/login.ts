@@ -1,18 +1,24 @@
-import { _decorator, Component, Node, Screen, UITransform, Sprite, Widget, view, ProgressBar, director, Button } from 'cc';
+//import { _decorator, Component, Node, Screen, UITransform, Sprite, Widget, view, ProgressBar, director, assetManager, AssetBundle, Prefab } from 'cc';
+
+import * as cc from 'cc'
 import { gameStateMgr } from './GameStateMgr';
 import { LoginResult } from './GameConfig';
-const { ccclass, property } = _decorator;
+import { Prefab } from 'cc';
+const { ccclass, property } = cc._decorator;
 
 @ccclass('login')
-export class login extends Component {
-    @property(Node)
-    ssBg: Node = null;
+export class login extends cc.Component {
+    @property(cc.Node)
+    ssBg: cc.Node = null;
 
-    @property(Node)
-    nodeStart: Node = null;
+    @property(cc.Node)
+    nodeStart: cc.Node = null;
 
-    @property(ProgressBar)
-    progressBar: ProgressBar = null;
+    @property(cc.Node)
+    nodeLoadingText: cc.Node = null;
+
+    @property(cc.ProgressBar)
+    progressBar: cc.ProgressBar = null;
 
     start() {
         this.fitScreen();
@@ -22,14 +28,21 @@ export class login extends Component {
             this.progressBar.node.active = false;
         }
 
-        // 绑定按钮点击事件
-        if (this.nodeStart) {
-            const btn = this.nodeStart.getComponent(Button);
-            if (btn) {
-                btn.node.on(Button.EventType.CLICK, this.onClickLogin, this);
-            }
+        if (this.nodeLoadingText) {
+            this.nodeLoadingText.active = false;
         }
+
+        // // 绑定按钮点击事件，这个在外面绑定了，这里就不绑定了
+        // if (this.nodeStart) {
+        //     const btn = this.nodeStart.getComponent(Button);
+        //     if (btn) {
+        //         btn.node.on(Button.EventType.CLICK, this.onClickLogin, this);
+        //     }
+        // }
+
     }
+
+
 
     fitScreen() {
         if (!this.ssBg) {
@@ -41,21 +54,21 @@ export class login extends Component {
             return;
         }
 
-        const screenSize = view.getVisibleSize();
-        const canvasSize = view.getDesignResolutionSize();
+        const screenSize = cc.view.getVisibleSize();
+        const canvasSize = cc.view.getDesignResolutionSize();
 
-        let transform = this.ssBg.getComponent(UITransform);
-        let sprite = this.ssBg.getComponent(Sprite);
-        let widget = this.ssBg.getComponent(Widget);
+        let transform = this.ssBg.getComponent(cc.UITransform);
+        let sprite = this.ssBg.getComponent(cc.Sprite);
+        let widget = this.ssBg.getComponent(cc.Widget);
 
         if (!transform) {
-            transform = this.ssBg.addComponent(UITransform);
+            transform = this.ssBg.addComponent(cc.UITransform);
         }
         if (!sprite) {
-            sprite = this.ssBg.addComponent(Sprite);
+            sprite = this.ssBg.addComponent(cc.Sprite);
         }
         if (!widget) {
-            widget = this.ssBg.addComponent(Widget);
+            widget = this.ssBg.addComponent(cc.Widget);
         }
 
         // 背景图原始尺寸
@@ -73,14 +86,14 @@ export class login extends Component {
         const finalHeight = screenWidth / bgRatio;
 
         transform.setContentSize(finalWidth, finalHeight);
-        sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+        sprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
 
         widget.enabled = true;
         widget.isAlignHorizontalCenter = true;
         widget.isAlignVerticalCenter = true;
         widget.horizontalCenter = 0;
         widget.verticalCenter = 0;
-        widget.alignMode = Widget.AlignMode.ALWAYS;
+        widget.alignMode = cc.Widget.AlignMode.ALWAYS;
 
         console.log(`Screen: ${screenWidth}x${screenHeight}, BG: ${finalWidth}x${finalHeight}`);
     }
@@ -99,7 +112,14 @@ export class login extends Component {
             this.progressBar.progress = 0;
         }
 
-        // 3. 调用 GameStateMgr 进行登录
+        if (this.nodeLoadingText) {
+            this.nodeLoadingText.active = true;
+        }
+
+        // 3. 随机更换背景图
+        this.loadRandomBgImage();
+
+        // 4. 调用 GameStateMgr 进行登录
         gameStateMgr.login((result: LoginResult, data?: any) => {
             if (result === LoginResult.SUCCESS) {
                 console.log('Login successful, switching to Main scene...');
@@ -123,37 +143,73 @@ export class login extends Component {
                 if (this.progressBar) {
                     this.progressBar.node.active = false;
                 }
+                if (this.nodeLoadingText) {
+                    this.nodeLoadingText.active = false;
+                }
             }
         });
     }
 
     loadMainScene() {
-        director.preloadScene('Main', (completed: number, total: number) => {
-            const progress = (completed / total) * 100;
+        // 模拟加载进度：2秒内平滑走完进度条
+        const totalTime = 2.0; // 2秒
+        let elapsedTime = 0;
+
+        // 使用 update 回调来模拟进度条动画
+        const progressCallback = (dt: number) => {
+            elapsedTime += dt;
+            const progress = Math.min(elapsedTime / totalTime, 1.0);
+
             if (this.progressBar) {
                 this.progressBar.progress = progress;
             }
-        }, (error: Error | null) => {
-            if (error) {
-                console.error('Failed to preload Main scene:', error);
+
+            if (elapsedTime >= totalTime) {
+                // 移除 update 回调
+                this.unschedule(progressCallback);
+                // 加载 Main 场景
+                this.doLoadMainScene();
+            }
+        };
+
+        this.schedule(progressCallback);
+    }
+
+    loadRandomBgImage() {
+        cc.log('Loading random background image...');
+        const bgImages = ['loadingbg1/spriteFrame', 'loadingbg2/spriteFrame'];
+        const randomIndex = Math.floor(Math.random() * bgImages.length);
+        const randomImage = bgImages[randomIndex];
+
+        cc.assetManager.loadBundle('loadings', (err: Error | null, bundle: cc.AssetManager.Bundle) => {
+            if (err) {
+                console.error('Failed to load loadings bundle:', err);
                 return;
             }
 
-            console.log('Main scene preloaded successfully');
+            cc.log('Bundle loaded:', bundle);
 
-            // 进度条走到 100%
-            if (this.progressBar) {
-                this.progressBar.progress = 100;
-            }
+            bundle.load(randomImage, cc.SpriteFrame, (err: Error | null, spriteFrame: cc.SpriteFrame) => {
+                if (err) {
+                    console.error('Failed to load background image:', err);
+                    return;
+                }
 
-            // 延迟一下让用户看到 100%，然后切换场景
-            this.scheduleOnce(() => {
-                director.loadScene('Main', (error: Error | null) => {
-                    if (error) {
-                        console.error('Failed to load Main scene:', error);
+                if (this.ssBg) {
+                    const sprite = this.ssBg.getComponent(cc.Sprite);
+                    if (sprite) {
+                        sprite.spriteFrame = spriteFrame;
                     }
-                });
-            }, 0.3);
+                }
+            });
+        });
+    }
+
+    doLoadMainScene() {
+        cc.director.loadScene('Main', (error: Error | null) => {
+            if (error) {
+                console.error('Failed to load Main scene:', error);
+            }
         });
     }
 

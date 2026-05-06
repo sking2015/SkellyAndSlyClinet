@@ -1,0 +1,8 @@
+{
+  "name": "loadings",
+  "bundleName": "loadings",
+  "compressionType": "merge_all",
+  "isBundle": true,
+  "optimizeHotUpdate": false,
+  "nativeUrl": ""
+}
