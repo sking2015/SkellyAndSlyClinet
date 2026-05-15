@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>frames</key>
+        <dict>
+            <key>run1 0.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{0,0},{239,267}}</string>
+                <key>offset</key>
+                <string>{0,0}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{301,436},{239,267}}</string>
+                <key>sourceSize</key>
+                <string>{1000,1000}</string>
+            </dict>
+            <key>run1 1.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{239,0},{239,267}}</string>
+                <key>offset</key>
+                <string>{0,0}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{301,436},{239,267}}</string>
+                <key>sourceSize</key>
+                <string>{1000,1000}</string>
+            </dict>
+            <key>run1 2.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{478,0},{239,267}}</string>
+                <key>offset</key>
+                <string>{0,0}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{301,436},{239,267}}</string>
+                <key>sourceSize</key>
+                <string>{1000,1000}</string>
+            </dict>
+            <key>run1 3.png</key>
+            <dict>
+                <key>frame</key>
+                <string>{{717,0},{239,267}}</string>
+                <key>offset</key>
+                <string>{0,0}</string>
+                <key>rotated</key>
+                <false/>
+                <key>sourceColorRect</key>
+                <string>{{301,436},{239,267}}</string>
+                <key>sourceSize</key>
+                <string>{1000,1000}</string>
+            </dict>
+        </dict>
+        <key>metadata</key>
+        <dict>
+            <key>format</key>
+            <integer>2</integer>
+            <key>realTextureFileName</key>
+            <string>run1.png</string>
+            <key>size</key>
+            <string>{956,267}</string>
+            <key>smartupdate</key>
+            <string></string>
+            <key>textureFileName</key>
+            <string>run1.png</string>
+        </dict>
+    </dict>
+</plist>
