@@ -268,7 +268,7 @@
     "fileId": "dcMyKcFupAJZTfQ+tC8rMe"
   },
   {
-    "__type__": "3d651vZWI1FiptDrXoGlPFj",
+    "__type__": "30f1dnvnUVMTaX4ClH49CyM",
     "_name": "",
     "_objFlags": 0,
     "__editorExtras__": {},
@@ -291,13 +291,13 @@
       }
     ],
     "runSpeed": 100,
-    "limitLeft": -300,
-    "limitRight": 300,
+    "limitLeft": -250,
+    "limitRight": 250,
     "_id": ""
   },
   {
     "__type__": "cc.CompPrefabInfo",
-    "fileId": "77Ou+Q3tFAHKEXCuOZnnSN"
+    "fileId": "8awpD4cqlGK5BZ9jV9yITA"
   },
   {
     "__type__": "CkeyValuePair",

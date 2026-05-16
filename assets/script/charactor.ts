@@ -1,8 +1,8 @@
 import { CkeyValuePair } from './KeyValuePair';
-import { _decorator, Component, Node, Animation, error, warn, math, tween } from 'cc';
+import { _decorator, Component, Node, Animation, error, warn, math } from 'cc';
 const { ccclass, property } = _decorator;
 
-const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
+export const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
 
 @ccclass('CCharactor')
 export class CCharactor extends Component {
@@ -10,7 +10,7 @@ export class CCharactor extends Component {
     actionList: CkeyValuePair[] = [];
 
     private _animation: Animation | null = null;
-    private _currentActionKey: string = '';
+    protected _currentActionKey: string = '';
     private _currentTimer: number = 0;       // 当前动作已持续时间
     private _targetDuration: number = 0;    // 当前动作目标持续时间（含波动）
     private _moveDirection: number = 1;     // 1 为右，-1 为左
@@ -29,6 +29,9 @@ export class CCharactor extends Component {
     private _isReturningToRange: boolean = false; // 是否正在回归范围内
     private _returnTargetX: number = 0;           // 回归的目标X坐标
 
+    // ====== 新增：动态权重管理映射 ======
+    protected _currentWeights: Map<string, number> = new Map();
+
     protected onLoad(): void {
         console.log("CCharactor onLoad", this.node.name);
 
@@ -37,7 +40,6 @@ export class CCharactor extends Component {
             console.error("can't find node char for charactor", this.node.name);
         }
 
-        // 查找动画组件放在onLoad
         this._animation = this.nodeChar.getComponent(Animation);
         if (!this._animation) {
             error(`[CCharactor] 节点 ${this.node.name} 上未找到 Animation 组件！`);
@@ -51,20 +53,16 @@ export class CCharactor extends Component {
         // 校验 actionList
         this.actionList.forEach(item => {
             const key = item.key;
-
-            // 优化校验：如果是移动动作，只要 run 和 walk 有一个存在即可
             if (key === 'run' || key === 'walk') {
                 if (!this._animation!.getState('run') && !this._animation!.getState('walk')) {
-                    error(`[CCharactor] 动作列表中包含移动行为 "${key}"，但在 Animation 中既找不到 "run" 也找不到 "walk"！`);
+                    error(`[CCharactor] 动作列表中包含移动行为 "${key}"，但在 Animation 中找不到 "run" 或 "walk"！`);
                 }
             } else {
-                // 普通非移动动作，必须严格存在
                 if (!this._animation!.getState(key)) {
                     error(`[CCharactor] 动作列表中定义的 "${key}" 在 Animation 组件中找不到！`);
                 }
             }
 
-            // 检查持续时间
             let baseDuration = parseFloat(item.value);
             if (isNaN(baseDuration) || baseDuration < 2) {
                 warn(`[CCharactor] "${key}" 的持续时间低于2秒或无效，已重置为2秒。`);
@@ -72,20 +70,69 @@ export class CCharactor extends Component {
             }
         });
 
+        // 初始化权重环境
+        this.resetWeightsToRoute();
+
         // 检查初始位置是否在活动范围外
         this.checkInitialPosition();
     }
 
-    /** * [核心优化] 播放移动动画的统一调度方法
-     * @param preferRun 是否优先播放“跑”动画。
-     * - true: 优先播放 run，无 run 则降级播放 walk。
-     * - false: 优先播放 walk，无 walk 则降级播放 run。
-     * @returns 返回实际成功播放的动画 key ('run' 或 'walk')，失败返回空字符串。
-     */
+    /** 依照规则初始化/重置各动作的意愿权重 */
+    private resetWeightsToRoute() {
+        this.actionList.forEach(item => {
+            const key = item.key;
+            if (key === 'work') {
+                this._currentWeights.set(key, 10);
+            } else if (key === 'idle' || key === 'stand') {
+                this._currentWeights.set(key, 3);
+            } else {
+                // run, walk, tried 等休闲动作初始权重全为 0
+                this._currentWeights.set(key, 0);
+            }
+        });
+    }
+
+    //重置某一动作权重为零
+    private resetWeights(key: string) {
+        if (this._currentWeights.has(key)) {
+            this._currentWeights.set(key, 0);
+        }
+    }
+
+    /** 基于当前动态权重池，加权随机抽取下一个动作 */
+    private getRandomActionByWeight(): string {
+        let totalWeight = 0;
+        const validList: { key: string; weight: number }[] = [];
+
+        this.actionList.forEach(item => {
+            const key = item.key;
+            const w = this._currentWeights.get(key) || 0;
+            if (w > 0) {
+                totalWeight += w;
+                validList.push({ key, weight: w });
+            }
+        });
+
+        // 极端兜底：如果全部权重都沦为0，返回列表中第一个可用的动作
+        if (totalWeight <= 0) {
+            return this.actionList[0]?.key || 'stand';
+        }
+
+        // 加权随机滚轮算法
+        let randomNum = Math.random() * totalWeight;
+        for (const action of validList) {
+            randomNum -= action.weight;
+            if (randomNum <= 0) {
+                return action.key;
+            }
+        }
+        return validList[validList.length - 1].key;
+    }
+
+    /** 播放移动动画的统一调度方法 */
     private playMoveAnimation(preferRun: boolean): string {
         if (!this._animation) return '';
 
-        // 根据优先级决定第一选择和第二选择
         const firstChoice = preferRun ? 'run' : 'walk';
         const secondChoice = preferRun ? 'walk' : 'run';
 
@@ -106,7 +153,6 @@ export class CCharactor extends Component {
     private checkInitialPosition() {
         const currentX = this.node.position.x;
 
-        // 判断是否在设定的界限以外
         if (currentX < this.limitLeft || currentX > this.limitRight) {
             this._isReturningToRange = true;
 
@@ -114,30 +160,24 @@ export class CCharactor extends Component {
             let minX = this.limitLeft + padding;
             let maxX = this.limitRight - padding;
 
-            // 判断正负号，锁定随机目标点在同侧半区，防止长途横穿
             if (currentX > 0) {
                 minX = 0;
             } else {
                 maxX = 0;
             }
 
-            // 在限定的半区安全范围内随机取一个目标点
             this._returnTargetX = minX + Math.random() * (maxX - minX);
 
-            // [此处已微调] 从场景外刷新，迫切回场：优先使用“跑(run)”动画
+            // 外部刷新迫切回场：优先使用“跑(run)”
             const moveAction = this.playMoveAnimation(true);
             if (!moveAction) {
-                // 如果完全没有移动动画，关闭回归状态，防止状态卡死
                 this._isReturningToRange = false;
                 return;
             }
 
-            // 根据目标点计算初始移动方向
             this._moveDirection = this._returnTargetX > currentX ? 1 : -1;
-
-            console.log(`[CCharactor] 外部刷新(${currentX.toFixed(1)})开启回归。优先跑(preferRun: true)，实际播放: ${moveAction}`);
+            console.log(`[CCharactor] 外部刷新开启回归。目标点: ${this._returnTargetX.toFixed(1)}`);
         } else {
-            // 如果本来就在范围内，直接执行原有的随机行为
             this.switchRandomAction();
         }
     }
@@ -151,22 +191,18 @@ export class CCharactor extends Component {
     }
 
     playLand() {
-        console.log("playLand~~!!", this._animation);
+        console.warn("playLand~！！！");
         if (this._animation) {
-            console.log("playLand~~111111!!");
             const ani = "land";
             this._currentActionKey = ani;
             const landState = this._animation.getState(ani);
 
             if (landState) {
-                landState.on(Animation.EventType.FINISHED, () => {
+                landState.once(Animation.EventType.FINISHED, () => {
                     console.log('精准监听：落地动画播放完毕！');
-                    console.log("当前节点位置", this.node.position);
                     this._currentActionKey = "";
                 }, this);
             }
-
-            console.log("playLand~~2222222222!!");
             this._currentTimer = 0;
             this._animation.play(ani);
         }
@@ -181,85 +217,84 @@ export class CCharactor extends Component {
         this.limitRight = limitRight;
     }
 
+    ActionByWeightAI() {
+        console.error("请在派生类实现这个函数")
+    }
+
     /** AI 逻辑切换核心 */
     AITick() {
-        // 如果处于回归状态，原有的随机行为计时和切换不执行
         if (this._isReturningToRange) return;
 
         this._currentTimer += AI_INTERVAL;
 
-        // 如果达到目标时间，切换下一个随机动作
+        this.ActionByWeightAI();
+
+        // 如果达到目标时间，切换下一个动作
         if (this._currentTimer >= this._targetDuration) {
             this.switchRandomAction();
         }
     }
 
-    /** 随机选择下一个动作 */
+    /** 结合动态权重，挑选并初始化下一个行为 */
     private switchRandomAction() {
         if (this.actionList.length === 0) return;
-
-        // 下落中不切换
         if (this._currentActionKey == 'land') return;
 
-        // 随机抽取一个动作定义
-        const randomIndex = Math.floor(Math.random() * this.actionList.length);
-        const nextAction = this.actionList[randomIndex];
+        // 【新规则拦截】如果刚才结束的动作是休息或者闲逛（不是work），表现完后它们的意愿值落地归零，重置整体环境
+        if (this._currentActionKey && this._currentActionKey !== 'work') {
+            this.resetWeights(this._currentActionKey);
+        }
 
-        // 计算带波动的时间 (正负30%)
-        const baseTime = parseFloat(nextAction.value);
+        // 1. 运用动态随机滚轮抽签
+        const nextActionKey = this.getRandomActionByWeight();
+
+        // 2. 获取并计算带正负30%波动的持续时间
+        const config = this.actionList.find(item => item.key === nextActionKey) || this.actionList[0];
+        const baseTime = parseFloat(config.value);
         const randomFactor = 0.7 + Math.random() * 0.6; // 0.7 ~ 1.3
         this._targetDuration = baseTime * randomFactor;
         this._currentTimer = 0;
 
-        const key = nextAction.key;
-
-        // [此处已微调] 日常状态切换
-        if (key === 'run' || key === 'walk') {
-            // 日常表现属于休闲状态：优先使用“走(walk)”动画
+        // 3. 执行对应的动画分支
+        if (nextActionKey === 'run' || nextActionKey === 'walk') {
+            // 日常闲逛状态：优先使用“走(walk)”动画
             const moveAction = this.playMoveAnimation(false);
             if (moveAction) {
-                // 成功播放了移动动画后，随机决定一个初始方向
                 this._moveDirection = Math.random() > 0.5 ? 1 : -1;
             }
         } else {
-            // 非移动动画（如 stand, work），按原样直接播放
-            this.play(key);
+            this.play(nextActionKey);
         }
+
+        console.log(`[AI 决策] 抽中动作: ${nextActionKey}，计划持续: ${this._targetDuration.toFixed(1)}s。当前权重快照 ->`, Object.fromEntries(this._currentWeights));
     }
 
     aiBoostTime = 0;
     update(deltaTime: number) {
-        // AI 驱动计时
         this.aiBoostTime += deltaTime;
         if (this.aiBoostTime > AI_INTERVAL) {
             this.AITick();
             this.aiBoostTime = 0;
         }
 
-        // 根据状态分流位移控制
         if (this._isReturningToRange) {
-            // 回归状态下的特殊位移
             this.handleReturnMovement(deltaTime);
         } else if (this._currentActionKey === 'run' || this._currentActionKey == 'walk') {
-            // 原本的正常范围内随机跑动/行走位移
             this.handleRunningMovement(deltaTime);
         }
     }
 
-    /** 处理回归安全区间的位移，到达目标点后解除状态并恢复日常AI */
+    /** 处理回归安全区间的位移 */
     private handleReturnMovement(dt: number) {
         let pos = this.node.position.clone();
         let speed = this.runSpeed;
 
-        // 自动适配速度：如果最终降级走，速度减半；若是跑，全速前进
         if (this._currentActionKey == 'walk') {
             speed *= 0.5;
         }
 
-        // 向目标点移动
         pos.x += speed * this._moveDirection * dt;
 
-        // 检查是否到达或超过了目标点 X
         let isArrived = false;
         if (this._moveDirection === 1 && pos.x >= this._returnTargetX) {
             isArrived = true;
@@ -268,27 +303,22 @@ export class CCharactor extends Component {
         }
 
         if (isArrived) {
-            // 精准对齐目标点
             pos.x = this._returnTargetX;
             this.node.setPosition(pos);
-
-            // 解除回归状态
             this._isReturningToRange = false;
-            console.log("[CCharactor] 角色已跑回安全区，开始日常休闲行为模式。");
+            console.log("[CCharactor] 角色已顺利入场，重置意愿池并激活日常工作循环。");
 
-            // 立刻开始原本正常的随机行为逻辑
+            // 入场后，强制刷新行为
             this.switchRandomAction();
         } else {
             this.node.setPosition(pos);
-
-            // 处理镜像翻转
             let scale = this.node.scale.clone();
             scale.x = Math.abs(scale.x) * this._moveDirection;
             this.node.setScale(scale);
         }
     }
 
-    /** 处理跑动位移与碰撞边界翻转 */
+    /** 处理日常跑动位移与碰撞边界翻转 */
     private handleRunningMovement(dt: number) {
         let pos = this.node.position.clone();
         let speed = this.runSpeed;
@@ -297,10 +327,8 @@ export class CCharactor extends Component {
             speed *= 0.5;
         }
 
-        // 计算新位置
         pos.x += speed * this._moveDirection * dt;
 
-        // 边界检查：如果超过范围，反转方向
         if (pos.x >= this.limitRight) {
             pos.x = this.limitRight;
             this._moveDirection = -1;
@@ -311,7 +339,6 @@ export class CCharactor extends Component {
 
         this.node.setPosition(pos);
 
-        // 处理翻转 (假设默认面向右)
         let scale = this.node.scale.clone();
         scale.x = Math.abs(scale.x) * this._moveDirection;
         this.node.setScale(scale);
