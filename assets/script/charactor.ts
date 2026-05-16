@@ -1,5 +1,5 @@
 import { CkeyValuePair } from './KeyValuePair';
-import { _decorator, Component, Node, Animation, error, warn, math } from 'cc';
+import { _decorator, Component, Node, Animation, error, warn, math, tween } from 'cc';
 const { ccclass, property } = _decorator;
 
 const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
@@ -19,19 +19,34 @@ export class CCharactor extends Component {
     runSpeed: number = 100;
 
     @property
-    limitLeft: number = -300;
+    limitLeft: number = -250;
     @property
-    limitRight: number = 300;
+    limitRight: number = 250;
 
-    start() {
-        // 1. 查找动画组件
-        this._animation = this.getComponent(Animation);
+    nodeChar: Node = null;
+
+    protected onLoad(): void {
+        console.log("CCharactor onLoad", this.node.name);
+
+        this.nodeChar = this.node.getChildByName('char');
+        if (!this.nodeChar) {
+            console.error("can't find node char for charactor", this.node.name);
+        }
+
+        // 查找动画组件放在onLoad
+        this._animation = this.nodeChar.getComponent(Animation);
         if (!this._animation) {
             error(`[CCharactor] 节点 ${this.node.name} 上未找到 Animation 组件！`);
             return;
         }
+    }
 
-        // 2. 校验 actionList
+    start() {
+        console.log("CCharactor start", this.node.name);
+
+
+
+        // 校验 actionList
         this.actionList.forEach(item => {
             // 检查动画是否存在
             if (!this._animation!.getState(item.key)) {
@@ -53,6 +68,34 @@ export class CCharactor extends Component {
             this._currentActionKey = ani;
         }
     }
+
+    playLand() {
+        console.log("playLand~~!!", this._animation);
+        if (this._animation) {
+
+            console.log("playLand~~111111!!");
+            const ani = "land";
+
+            this._currentActionKey = ani;
+
+            const landState = this._animation.getState(ani);
+
+            if (landState) {
+                // 2. 仅在该动画状态上绑定结束事件
+                landState.on(Animation.EventType.FINISHED, () => {
+                    console.log('精准监听：落地动画播放完毕！');
+                    // 这里编写攻击完后的逻辑，比如进入冷却 CD
+                    console.log("当前节点位置", this.node.position);
+                    this._currentActionKey = "";
+                }, this);
+            }
+
+            console.log("playLand~~2222222222!!");
+            this._currentTimer = 0;
+            this._animation.play(ani);
+        }
+    }
+
 
     setRunSpeed(speed: number) {
         this.runSpeed = speed;
@@ -76,6 +119,9 @@ export class CCharactor extends Component {
     /** 随机选择下一个动作 */
     private switchRandomAction() {
         if (this.actionList.length === 0) return;
+
+        //下落中不切换
+        if (this._currentActionKey == 'land') return;
 
         // 随机抽取一个动作定义
         const randomIndex = Math.floor(Math.random() * this.actionList.length);

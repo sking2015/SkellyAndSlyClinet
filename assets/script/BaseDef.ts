@@ -9,11 +9,25 @@ export enum eRoomType {
 
 //矿场增益类型
 export enum eMineBuffType {
-    mbtNone = 0, // 无
-    mbtAcceleration = 1, // 生产加速
-    mbtExpansion = 2, // 扩容
-    mbtSupervisor = 3 // 监管
+    embtNone = 0, // 无
+    embtAcceleration = 1, // 生产加速
+    embtExpansion = 2, // 扩容
+    embtSupervisor = 3 // 监管
 }
+
+//监工类型
+export enum eOverseerType {
+    eotNoe = 0,
+    eotEyetyarnt = 1,               //独眼巨人
+}
+
+//监工类型
+export enum eWorkerType {
+    ewtNoe = 0,
+    ewtMiner = 1,               //矿工
+    ewtWood = 2,                //木匠
+}
+
 
 
 
