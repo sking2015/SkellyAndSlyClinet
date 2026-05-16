@@ -91,6 +91,8 @@ export class Room extends Component {
 
         const bornX = Math.random() > 0.5 ? 350 : -350;
 
+        console.log("bornX", bornX);
+
         nodeWorker.setPosition(math.v3(bornX, -85));
         charWorker.setActionRange(-250, 250);
 
