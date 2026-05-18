@@ -1,5 +1,6 @@
-import { _decorator, Component, instantiate, Node, Prefab, math } from 'cc';
+import { _decorator, Component, instantiate, Node, Prefab, math, UITransform } from 'cc';
 import { eRoomType, eMineBuffType, eOverseerType, eWorkerType } from './BaseDef';
+import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CCharactor } from './charactor';
 
 
@@ -28,11 +29,42 @@ export class Room extends Component {
     @property({ type: Node, tooltip: "工人放这一层" })
     nodeWokerLayer: Node = null;
 
+    @property({ type: Node, tooltip: "扩展面板" })
+    nodeExpandPanel: Node = null;
+
+
+
 
     //监工的角色对像
     charOverseer: CCharactor = null;
 
     roomType: eRoomType = eRoomType.ertNone; // 房间类型
+
+
+    private _index: number = 0;
+
+    set index(idx: number) {
+        this._index = idx;
+        this.offset = this._index * this.oriHeight;
+        console.log("room index", this._index, "offset", this.offset);
+    }
+
+    get index() {
+        return this._index;
+    }
+
+    //房间原始高度
+    oriHeight: number = 0;
+    //房间离roomview顶部距离
+    offset: number = 0;
+
+    protected onLoad(): void {
+        this.nodeExpandPanel.active = false;
+
+        const uiTransform = this.node.getComponent(UITransform);
+        this.oriHeight = uiTransform.height;
+    }
+
     start() {
 
     }
@@ -95,7 +127,22 @@ export class Room extends Component {
 
         nodeWorker.setPosition(math.v3(bornX, -85));
         charWorker.setActionRange(-250, 250);
+    }
 
+
+    onOpenExpand() {
+        this.nodeExpandPanel.active = true;
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_expand, true, { index: this.index, offset: this.offset }))
+    }
+
+    onCloseExpand() {
+        this.CloseExpand();
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_restore, true, { index: this.index }))
+    }
+
+
+    CloseExpand() {
+        this.nodeExpandPanel.active = false;
     }
 
 
@@ -103,8 +150,10 @@ export class Room extends Component {
     onClickSetting() {
         console.log("click setting");
 
-        console.log("先用来测试一下设置监工");
-        this.setOverseer(eOverseerType.eotEyetyarnt);
+        this.onOpenExpand();
+
+        // console.log("先用来测试一下设置监工");
+        // this.setOverseer(eOverseerType.eotEyetyarnt);
     }
 
     onClickResIcon() {
