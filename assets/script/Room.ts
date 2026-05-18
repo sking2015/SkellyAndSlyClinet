@@ -1,7 +1,8 @@
-import { _decorator, Component, instantiate, Node, Prefab, math, UITransform } from 'cc';
+import { _decorator, Component, instantiate, Node, Prefab, math, UITransform, Sprite, SpriteFrame } from 'cc';
 import { eRoomType, eMineBuffType, eOverseerType, eWorkerType } from './BaseDef';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CCharactor } from './charactor';
+import { CkeyValuePair4Spriteframe } from './KeyValuePair';
 
 
 const { ccclass, property } = _decorator;
@@ -31,6 +32,17 @@ export class Room extends Component {
 
     @property({ type: Node, tooltip: "扩展面板" })
     nodeExpandPanel: Node = null;
+
+    @property({ type: CkeyValuePair4Spriteframe, tooltip: "所有监工头像" })
+    sfOSList: CkeyValuePair4Spriteframe[] = []
+
+
+    @property({ type: Sprite, tooltip: "显示监工头像" })
+    sprOSAvart: Sprite = null;
+
+
+
+
 
 
 
@@ -63,6 +75,9 @@ export class Room extends Component {
 
         const uiTransform = this.node.getComponent(UITransform);
         this.oriHeight = uiTransform.height;
+
+        //显示的监工先值空
+        this.sprOSAvart.spriteFrame = null;
     }
 
     start() {
@@ -159,6 +174,25 @@ export class Room extends Component {
     onClickResIcon() {
         console.log("click resIcon");
         this.addWorker(eWorkerType.ewtMiner);
+    }
+
+    getOverseerIcon(oType: eOverseerType): SpriteFrame {
+        for (let i = 0; i < this.sfOSList.length; ++i) {
+            const kvSF: CkeyValuePair4Spriteframe = this.sfOSList[i];
+            if (Number(oType) == Number(kvSF.key)) {
+                return kvSF.value;
+            }
+        }
+
+        return null;
+    }
+
+    onClickChangeOverseer() {
+        //TODO:目前只有一种监工，以后在这里弹监工选择列表返回监工类型或ID
+        const otype = eOverseerType.eotEyetyarnt;
+        let icon: SpriteFrame = this.getOverseerIcon(otype);
+        this.sprOSAvart.spriteFrame = icon;
+        this.setOverseer(otype);
     }
 
     update(deltaTime: number) {
