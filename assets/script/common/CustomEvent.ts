@@ -11,5 +11,8 @@ export class CustomEvent extends Event {
 
 export enum UniEvent {
     on_room_expand = "onRoomExpand",
-    on_room_restore = "onRoomRestore"
+    on_room_restore = "onRoomRestore",
+    on_open_ospanel = "onOpenOverseerPanel",
+    on_click_overseer = "onClickOverseer",
+    on_change_overseer = "onChangeOverseer"
 }

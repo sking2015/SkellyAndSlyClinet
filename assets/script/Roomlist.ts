@@ -2,6 +2,7 @@ import { _decorator, Component, instantiate, Node, Prefab } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 
 import { Room } from './Room';
+import { eOverseerType } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 @ccclass('Roomlist')
@@ -47,6 +48,13 @@ export class Roomlist extends Component {
                     room.CloseExpand();
                 }
             }
+        }
+    }
+
+    onChangeOverseer(roomIndex: number, eOSType: eOverseerType) {
+        const room = this.rooms[roomIndex];
+        if (room) {
+            room.onSelectOverseer(eOSType);
         }
     }
 

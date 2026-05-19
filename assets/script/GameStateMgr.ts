@@ -69,6 +69,14 @@ class GameStateMgr {
         this.doLogin(callback);
     }
 
+    /**
+     *  更换监工
+     */
+    public changeOverseer(callback: LoginCallback): void {
+        this.doLogin(callback);
+    }
+
+
     private async doLogin(callback: LoginCallback): Promise<void> {
         console.log('[GameStateMgr] Starting login...');
 

@@ -2,7 +2,8 @@ import { _decorator, Component, instantiate, Node, Prefab, math, UITransform, Sp
 import { eRoomType, eMineBuffType, eOverseerType, eWorkerType } from './BaseDef';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CCharactor } from './charactor';
-import { CkeyValuePair4Spriteframe } from './KeyValuePair';
+import { CResManager } from './ResManager';
+
 
 
 const { ccclass, property } = _decorator;
@@ -18,9 +19,6 @@ export class Room extends Component {
     @property(Prefab)
     prefabLumberjack: Prefab = null;
 
-    @property({ type: Prefab, tooltip: "监工独眼巨人prefab" })
-    prefabEyeTyrant: Prefab = null;
-
     @property({ type: Node, tooltip: "监工出生点" })
     nodeOSBorn: Node = null
 
@@ -33,18 +31,9 @@ export class Room extends Component {
     @property({ type: Node, tooltip: "扩展面板" })
     nodeExpandPanel: Node = null;
 
-    @property({ type: CkeyValuePair4Spriteframe, tooltip: "所有监工头像" })
-    sfOSList: CkeyValuePair4Spriteframe[] = []
-
 
     @property({ type: Sprite, tooltip: "显示监工头像" })
     sprOSAvart: Sprite = null;
-
-
-
-
-
-
 
 
     //监工的角色对像
@@ -93,14 +82,8 @@ export class Room extends Component {
     }
 
     setOverseer(eOverseer: eOverseerType) {
-        let prefabOS: Prefab = null;
-        switch (eOverseer) {
-            case eOverseerType.eotEyetyarnt:
-                prefabOS = this.prefabEyeTyrant;
-                break;
-            default:
-                console.log("error eOverseer type");
-        }
+        let prefabOS: Prefab = CResManager.instance.getOSPrefab(eOverseer);
+
         const nodeOs = instantiate(prefabOS);
         nodeOs.position = this.nodeOSBorn.position;
         console.log("check position", nodeOs.position);
@@ -176,23 +159,15 @@ export class Room extends Component {
         this.addWorker(eWorkerType.ewtMiner);
     }
 
-    getOverseerIcon(oType: eOverseerType): SpriteFrame {
-        for (let i = 0; i < this.sfOSList.length; ++i) {
-            const kvSF: CkeyValuePair4Spriteframe = this.sfOSList[i];
-            if (Number(oType) == Number(kvSF.key)) {
-                return kvSF.value;
-            }
-        }
-
-        return null;
+    onSelectOverseer(eType: eOverseerType) {
+        let icon: SpriteFrame = CResManager.instance.getOSHead(eType);
+        this.sprOSAvart.spriteFrame = icon;
+        this.setOverseer(eType);
     }
 
     onClickChangeOverseer() {
-        //TODO:目前只有一种监工，以后在这里弹监工选择列表返回监工类型或ID
-        const otype = eOverseerType.eotEyetyarnt;
-        let icon: SpriteFrame = this.getOverseerIcon(otype);
-        this.sprOSAvart.spriteFrame = icon;
-        this.setOverseer(otype);
+        console.log("click onClickChangeOverseer");
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_ospanel, true, { roomIdx: this.index }));
     }
 
     update(deltaTime: number) {
