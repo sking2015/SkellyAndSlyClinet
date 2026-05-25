@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Prefab, SpriteFrame } from 'cc';
-import { COverseerCfg } from './KeyValuePair';
-import { eOverseerType } from './BaseDef';
+import { COverseerCfg, CRoomType2Data } from './KeyValuePair';
+import { eOverseerType, eRoomType } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 @ccclass('CResManager')
@@ -10,7 +10,13 @@ export class CResManager extends Component {
     overseerCfg: COverseerCfg[] = [];
 
 
-    private mapOverseer: Map<eOverseerType, COverseerCfg> = new Map()
+    @property({ type: CRoomType2Data, tooltip: "所有房间数据定义" })
+    roomdata: CRoomType2Data[] = [];
+
+
+    private mapOverseer: Map<eOverseerType, COverseerCfg> = new Map();
+
+    private mapRoomImgData: Map<eRoomType, CRoomType2Data> = new Map();
 
     // 静态实例变量
     private static _instance: CResManager = null!;
@@ -33,11 +39,20 @@ export class CResManager extends Component {
             return;
         }
 
+        //初始化监工数据
         this.mapOverseer.clear();
         for (const cfg of this.overseerCfg) {
             if (!cfg) continue;
 
             this.mapOverseer.set(cfg.eType, cfg);
+        }
+
+        //初始化房间类型map
+        this.mapRoomImgData.clear();
+        for (const data of this.roomdata) {
+            if (!data) continue;
+
+            this.mapRoomImgData.set(data.eRt, data);
         }
     }
 
@@ -72,6 +87,37 @@ export class CResManager extends Component {
         }
 
         return null;
+    }
+
+    getRoomBg(eType: eRoomType, level: number): SpriteFrame {
+        const roomdata: CRoomType2Data = this.mapRoomImgData.get(eType);
+        if (level >= 1) {
+            for (const data of roomdata.lvdata) {
+                if (data.level == level) {
+                    return data.Bg;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    getRoomFg(eType: eRoomType, level: number): SpriteFrame {
+        const roomdata: CRoomType2Data = this.mapRoomImgData.get(eType);
+        if (level >= 1) {
+            for (const data of roomdata.lvdata) {
+                if (data.level == level) {
+                    return data.Fg;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    getRoomWorker(eType: eRoomType): Prefab {
+        const roomdata: CRoomType2Data = this.mapRoomImgData.get(eType);
+        return roomdata.prefabWorker;
     }
 
     start() {

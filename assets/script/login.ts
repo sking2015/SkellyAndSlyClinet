@@ -2,7 +2,7 @@
 
 import * as cc from 'cc'
 import { gameStateMgr } from './GameStateMgr';
-import { LoginResult } from './GameConfig';
+import { SessionResult } from './GameConfig';
 import { Prefab } from 'cc';
 const { ccclass, property } = cc._decorator;
 
@@ -120,19 +120,19 @@ export class login extends cc.Component {
         this.loadRandomBgImage();
 
         // 4. 调用 GameStateMgr 进行登录
-        gameStateMgr.login((result: LoginResult, data?: any) => {
-            if (result === LoginResult.SUCCESS) {
+        gameStateMgr.login((result: SessionResult, data?: any) => {
+            if (result === SessionResult.SUCCESS) {
                 console.log('Login successful, switching to Main scene...');
                 // 登录成功，跳转 Main 场景
                 this.loadMainScene();
             } else {
                 console.log('Login failed with result:', result);
                 // 开发期间，失败只打印日志
-                if (result === LoginResult.FAIL) {
+                if (result === SessionResult.FAIL) {
                     console.log('登录失败，请稍后重试');
-                } else if (result === LoginResult.NETWORK_ERROR) {
+                } else if (result === SessionResult.NETWORK_ERROR) {
                     console.log('网络错误，请检查网络连接');
-                } else if (result === LoginResult.SERVER_ERROR) {
+                } else if (result === SessionResult.SERVER_ERROR) {
                     console.log('服务器错误，请稍后重试');
                 }
 

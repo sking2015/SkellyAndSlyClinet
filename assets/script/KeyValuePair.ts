@@ -1,5 +1,5 @@
 import { _decorator, Prefab, SpriteFrame, Enum } from 'cc';
-import { eOverseerType } from './BaseDef';
+import { eRoomType, eOverseerType } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 //用于序列化展示的键值对
@@ -38,6 +38,35 @@ export class COverseerCfg {
 
     @property({ type: Prefab, tooltip: '监工对应的角色动画prefab' })
     prefabRole: Prefab = null;
+}
+
+
+@ccclass('CRoomLv2Spriteframe')
+export class CRoomLv2Spriteframe {
+    @property({ tooltip: '房间等级' })
+    level: Number = 0;
+
+    @property({ type: SpriteFrame, tooltip: '对应的背景spriteframe' })
+    Bg: SpriteFrame = null;
+
+    @property({ type: SpriteFrame, tooltip: '对应的前景spriteframe' })
+    Fg: SpriteFrame = null;
+}
+
+
+Enum(eRoomType);
+
+@ccclass('CRoomType2Data')
+export class CRoomType2Data {
+    @property({ type: Enum(eRoomType), tooltip: '房间类型' })
+    eRt: eRoomType = eRoomType.ertNone;
+
+    @property({ type: CRoomLv2Spriteframe, tooltip: '对应的类型的房间等级数据' })
+    lvdata: CRoomLv2Spriteframe[] = [];
+
+    @property({ type: Prefab, tooltip: '房间对应的工人prefab' })
+    prefabWorker: Prefab = null;
+
 }
 
 

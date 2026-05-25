@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "1c16c498-d86f-4303-a84b-47d2258e9be8",
+  "uuid": "0ec2d118-5fca-42ef-9a48-09a0e13ff371",
   "files": [
     ".json",
     ".png"
@@ -10,14 +10,14 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "1c16c498-d86f-4303-a84b-47d2258e9be8@6c48a",
-      "displayName": "Lv1 Foreground Layer",
+      "uuid": "0ec2d118-5fca-42ef-9a48-09a0e13ff371@6c48a",
+      "displayName": "Gem up Arrow",
       "id": "6c48a",
       "name": "texture",
       "userData": {
         "wrapModeS": "clamp-to-edge",
         "wrapModeT": "clamp-to-edge",
-        "imageUuidOrDatabaseUri": "1c16c498-d86f-4303-a84b-47d2258e9be8",
+        "imageUuidOrDatabaseUri": "0ec2d118-5fca-42ef-9a48-09a0e13ff371",
         "isUuid": true,
         "visible": false,
         "minfilter": "linear",
@@ -34,8 +34,8 @@
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "1c16c498-d86f-4303-a84b-47d2258e9be8@f9941",
-      "displayName": "Lv1 Foreground Layer",
+      "uuid": "0ec2d118-5fca-42ef-9a48-09a0e13ff371@f9941",
+      "displayName": "Gem up Arrow",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
@@ -45,10 +45,10 @@
         "offsetY": 0,
         "trimX": 0,
         "trimY": 0,
-        "width": 572,
-        "height": 81,
-        "rawWidth": 572,
-        "rawHeight": 81,
+        "width": 35,
+        "height": 36,
+        "rawWidth": 35,
+        "rawHeight": 36,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +60,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -286,
-            -40.5,
+            -17.5,
+            -18,
             0,
-            286,
-            -40.5,
+            17.5,
+            -18,
             0,
-            -286,
-            40.5,
+            -17.5,
+            18,
             0,
-            286,
-            40.5,
+            17.5,
+            18,
             0
           ],
           "indexes": [
@@ -83,12 +83,12 @@
           ],
           "uv": [
             0,
-            81,
-            572,
-            81,
+            36,
+            35,
+            36,
             0,
             0,
-            572,
+            35,
             0
           ],
           "nuv": [
@@ -102,18 +102,18 @@
             1
           ],
           "minPos": [
-            -286,
-            -40.5,
+            -17.5,
+            -18,
             0
           ],
           "maxPos": [
-            286,
-            40.5,
+            17.5,
+            18,
             0
           ]
         },
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "1c16c498-d86f-4303-a84b-47d2258e9be8@6c48a",
+        "imageUuidOrDatabaseUri": "0ec2d118-5fca-42ef-9a48-09a0e13ff371@6c48a",
         "atlasUuid": "",
         "trimType": "auto"
       },
@@ -129,6 +129,6 @@
     "type": "sprite-frame",
     "hasAlpha": true,
     "fixAlphaTransparencyArtifacts": false,
-    "redirect": "1c16c498-d86f-4303-a84b-47d2258e9be8@6c48a"
+    "redirect": "0ec2d118-5fca-42ef-9a48-09a0e13ff371@6c48a"
   }
 }

@@ -16,6 +16,12 @@ export class Room extends Component {
     @property(Prefab)
     prefabMiner: Prefab = null;
 
+    @property(Sprite)
+    sprBg: Sprite = null;
+
+    @property(Sprite)
+    sprFg: Sprite = null;
+
     @property(Prefab)
     prefabLumberjack: Prefab = null;
 
@@ -40,6 +46,7 @@ export class Room extends Component {
     charOverseer: CCharactor = null;
 
     roomType: eRoomType = eRoomType.ertNone; // 房间类型
+    roomLevel: number = 0;
 
 
     private _index: number = 0;
@@ -81,6 +88,35 @@ export class Room extends Component {
         this.roomType = type;
     }
 
+    setRoomLevel(level: number) {
+        this.roomLevel = level;
+    }
+
+    refreshRoomShow() {
+        this.sprBg.spriteFrame = CResManager.instance.getRoomBg(this.roomType, this.roomLevel);
+        this.sprFg.spriteFrame = CResManager.instance.getRoomFg(this.roomType, this.roomLevel);
+    }
+
+    genWorker() {
+        let workerNum = 0;
+        let prefab = CResManager.instance.getRoomWorker(this.roomType);
+        switch (this.roomType) {
+            case eRoomType.ertGemMine:
+                workerNum = 2;
+                break;
+            case eRoomType.ertLumberMill:
+                workerNum = 3;
+                break;
+            case eRoomType.ertMetalWorkshop:
+                workerNum = 1;
+                break;
+        }
+
+        for (let i = 0; i < workerNum; ++i) {
+            this.addWorker(prefab);
+        }
+    }
+
     setOverseer(eOverseer: eOverseerType) {
         let prefabOS: Prefab = CResManager.instance.getOSPrefab(eOverseer);
 
@@ -101,30 +137,20 @@ export class Room extends Component {
 
     }
 
-    addWorker(eWorker: eWorkerType) {
-        let prefabWorker: Prefab = null;
-        switch (eWorker) {
-            case eWorkerType.ewtMiner:
-                prefabWorker = this.prefabMiner;
-                break;
-            case eWorkerType.ewtWood:
-                prefabWorker = this.prefabLumberjack;
-                break;
-            default:
-                console.log("error eOverseer type");
-        }
-
-        const nodeWorker = instantiate(prefabWorker);
+    addWorker(prefabWorder: Prefab) {
+        const nodeWorker = instantiate(prefabWorder);
         nodeWorker.parent = this.nodeWokerLayer;
 
         const charWorker = nodeWorker.getComponent(CCharactor);
 
-        const bornX = Math.random() > 0.5 ? 350 : -350;
-
-        console.log("bornX", bornX);
-
-        nodeWorker.setPosition(math.v3(bornX, -85));
-        charWorker.setActionRange(-250, 250);
+        if (this.roomType == eRoomType.ertMetalWorkshop) {
+            nodeWorker.setPosition(math.v3(8, -80));
+        } else {
+            const bornX = Math.random() > 0.5 ? 350 : -350;
+            console.log("bornX", bornX);
+            nodeWorker.setPosition(math.v3(bornX, -85));
+            charWorker.setActionRange(-250, 250);
+        }
     }
 
 
@@ -156,7 +182,6 @@ export class Room extends Component {
 
     onClickResIcon() {
         console.log("click resIcon");
-        this.addWorker(eWorkerType.ewtMiner);
     }
 
     onSelectOverseer(eType: eOverseerType) {
@@ -165,9 +190,25 @@ export class Room extends Component {
         this.setOverseer(eType);
     }
 
+    onUpgrade() {
+        console.log("room upgrade~!!!");
+        if (this.roomLevel < 3) {
+            ++this.roomLevel;
+            this.refreshRoomShow();
+        }
+
+    }
+
     onClickChangeOverseer() {
         console.log("click onClickChangeOverseer");
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_ospanel, true, { roomIdx: this.index }));
+    }
+
+    onClickRoomUpgrade() {
+        console.log("click onClickOpenRoomUpgrade");
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_room_upgrade, true, { roomIdx: this.index }));
+
+        this.CloseExpand();
     }
 
     update(deltaTime: number) {

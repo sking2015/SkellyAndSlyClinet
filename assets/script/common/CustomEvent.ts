@@ -14,5 +14,7 @@ export enum UniEvent {
     on_room_restore = "onRoomRestore",
     on_open_ospanel = "onOpenOverseerPanel",
     on_click_overseer = "onClickOverseer",
-    on_change_overseer = "onChangeOverseer"
+    on_change_overseer = "onChangeOverseer",
+    on_open_room_upgrade = "onOpenRoomUpgrade",
+    on_click_room_upgrade = "onClickRoomUpgrade"
 }

@@ -3,6 +3,7 @@ import { CustomEvent, UniEvent } from './common/CustomEvent';
 
 import { Room } from './Room';
 import { eOverseerType } from './BaseDef';
+import { CRoomData, CGlobalData } from './GlobalData';
 const { ccclass, property } = _decorator;
 
 @ccclass('Roomlist')
@@ -55,6 +56,17 @@ export class Roomlist extends Component {
         const room = this.rooms[roomIndex];
         if (room) {
             room.onSelectOverseer(eOSType);
+        } else {
+            console.error("change overseer error,can't room by room index", roomIndex);
+        }
+    }
+
+    onRoomUpgrade(roomIndex: number) {
+        const room = this.rooms[roomIndex];
+        if (room) {
+            room.onUpgrade();
+        } else {
+            console.error("change overseer error,can't room by room index", roomIndex);
         }
     }
 
@@ -64,15 +76,32 @@ export class Roomlist extends Component {
     }
 
     initAllRoom() {
-        for (let i = 0; i < 8; ++i) {
+        let index: number = 0;
+        CGlobalData.instance.foreachRooms((data: CRoomData) => {
+            console.log("room data", data);
             const nodeRoom = instantiate(this.prefabRoom);
             nodeRoom.parent = this.node;
 
             const ComRoom: Room = nodeRoom.getComponent(Room);
-            ComRoom.index = i;
+            ComRoom.index = index;
+            ComRoom.setRoomType(data.eType);
+            ComRoom.setRoomLevel(data.level);
+            ComRoom.refreshRoomShow();
+            ComRoom.genWorker();
 
-            this.rooms[i] = ComRoom;
-        }
+            this.rooms[index] = ComRoom;
+            ++index;
+
+        })
+        // for (let i = 0; i < 8; ++i) {
+        //     const nodeRoom = instantiate(this.prefabRoom);
+        //     nodeRoom.parent = this.node;
+
+        //     const ComRoom: Room = nodeRoom.getComponent(Room);
+        //     ComRoom.index = i;
+
+        //     this.rooms[i] = ComRoom;
+        // }
     }
 
     update(deltaTime: number) {

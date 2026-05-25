@@ -1,10 +1,11 @@
 import { director } from 'cc';
-import { GameConfig, LoginResult, GameState } from './GameConfig';
+import { WebSession } from './WebSession';
+import { GameConfig, SessionResult, GameState } from './GameConfig';
 
 /**
  * 登录回调类型
  */
-export type LoginCallback = (result: LoginResult, data?: any) => void;
+export type LoginCallback = (result: SessionResult, data?: any) => void;
 
 /**
  * 全局游戏状态管理器
@@ -83,9 +84,9 @@ class GameStateMgr {
         this._playerId = this.getOrCreatePlayerId();
         console.log('[GameStateMgr] Player ID:', this._playerId);
 
-        const [result, data] = await this.requestLogin(this._playerId);
+        const [result, data] = await WebSession.instance.requestLogin(this._playerId);
 
-        if (result === LoginResult.SUCCESS) {
+        if (result === SessionResult.SUCCESS) {
             if (data?.token) {
                 this._playerToken = data.token;
                 try {
@@ -101,39 +102,6 @@ class GameStateMgr {
         }
 
         callback?.(result, data);
-    }
-
-    private async requestLogin(playerId: string): Promise<[LoginResult, any]> {
-        const url = GameConfig.LOGIN_URL;
-        console.log('[GameStateMgr] Request URL:', url);
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    playerId: playerId,
-                    timestamp: Date.now(),
-                }),
-            });
-
-            if (!response.ok) {
-                console.error('[GameStateMgr] Network error:', response.status);
-                return [LoginResult.NETWORK_ERROR, null];
-            }
-
-            const data = await response.json();
-            console.log('[GameStateMgr] Login response:', data);
-
-            if (data?.code === 0) {
-                return [LoginResult.SUCCESS, data.data];
-            } else {
-                return [LoginResult.FAIL, data];
-            }
-        } catch (error) {
-            console.error('[GameStateMgr] Login request failed:', error);
-            return [LoginResult.NETWORK_ERROR, null];
-        }
     }
 
     public changeScene(sceneName: string): void {
