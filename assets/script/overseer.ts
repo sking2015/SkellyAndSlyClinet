@@ -27,6 +27,9 @@ export class overseer extends CCharactor {
                     case 'run':
                         w += runIncrease;
                         break;
+                    case 'walk':
+                        w += runIncrease;
+                        break;
                     case 'stand':
                         w += standIncrease;
                         break;

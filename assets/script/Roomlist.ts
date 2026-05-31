@@ -109,7 +109,6 @@ export class Roomlist extends Component {
             ComRoom.setRoomType(data.eType);
             ComRoom.setRoomLevel(data.level);
             ComRoom.refreshRoomShow();
-            ComRoom.genWorker();
 
             this.rooms[index] = ComRoom;
             ++index;

@@ -30,6 +30,9 @@ export class Room extends Component {
     @property({ type: Node, tooltip: "监工出生点" })
     nodeOSBorn: Node = null
 
+    @property({ type: Node, tooltip: "铁匠放这一层" })
+    nodeSimthLayer: Node = null;
+
     @property({ type: Node, tooltip: "监工放这一层" })
     nodeOSLayer: Node = null;
 
@@ -56,6 +59,8 @@ export class Room extends Component {
 
     roomType: eRoomType = eRoomType.ertNone; // 房间类型
     roomLevel: number = 0;
+
+    nWorkerNum: number = 0;
 
 
     private _index: number = 0;
@@ -102,6 +107,18 @@ export class Room extends Component {
 
     setRoomType(type: eRoomType) {
         this.roomType = type;
+
+        switch (this.roomType) {
+            case eRoomType.ertLumberMill:
+                this.nodeOSBorn.y = -80;
+                break;
+            case eRoomType.ertGemMine:
+                this.nodeOSBorn.y = -80;
+                break;
+            case eRoomType.ertMetalWorkshop:
+                this.nodeOSBorn.y = -90;
+                break;
+        }
     }
 
     setRoomLevel(level: number) {
@@ -137,6 +154,8 @@ export class Room extends Component {
             fadeInOut(this.nodeLocked, 0.5, false, () => {
                 this.nodeLocked.active = false;
             });
+
+            this.genWorker();
         });
 
         CGlobalData.instance.unlockRoom();
@@ -152,11 +171,10 @@ export class Room extends Component {
         let prefab = CResManager.instance.getRoomWorker(this.roomType);
         switch (this.roomType) {
             case eRoomType.ertGemMine:
+            case eRoomType.ertLumberMill:
                 workerNum = 2;
                 break;
-            case eRoomType.ertLumberMill:
-                workerNum = 3;
-                break;
+
             case eRoomType.ertMetalWorkshop:
                 workerNum = 1;
                 break;
@@ -174,6 +192,7 @@ export class Room extends Component {
         nodeOs.position = this.nodeOSBorn.position;
         console.log("check position", nodeOs.position);
         nodeOs.parent = this.nodeOSLayer;
+        // nodeOs.scale = math.v3(0.8, 0.8, 0.8);
 
         //监工只能有一个，设置新的就要把老的释放掉
         if (this.charOverseer && this.charOverseer.node) {
@@ -189,18 +208,29 @@ export class Room extends Component {
 
     addWorker(prefabWorder: Prefab) {
         const nodeWorker = instantiate(prefabWorder);
-        nodeWorker.parent = this.nodeWokerLayer;
+
+        if (this.roomType == eRoomType.ertMetalWorkshop) {
+            nodeWorker.parent = this.nodeSimthLayer;
+        } else {
+            nodeWorker.parent = this.nodeWokerLayer;
+        }
 
         const charWorker = nodeWorker.getComponent(CCharactor);
 
         if (this.roomType == eRoomType.ertMetalWorkshop) {
             nodeWorker.setPosition(math.v3(8, -80));
         } else {
-            const bornX = Math.random() > 0.5 ? 350 : -350;
+            let bornX = -350;
+            if (this.nWorkerNum % 2 == 1) {
+                bornX = 350;
+            }
+
             console.log("bornX", bornX);
             nodeWorker.setPosition(math.v3(bornX, -85));
             charWorker.setActionRange(-250, 250);
         }
+
+        this.nWorkerNum++;
     }
 
 

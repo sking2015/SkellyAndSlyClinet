@@ -52,7 +52,7 @@ export class CGlobalData {
     initOverseerData() {
         for (let eType = eOverseerType.eotEyetyarnt; eType != eOverseerType.eotMax; ++eType) {
             let lv: number = 1;
-            if (eType > eOverseerType.eotWizard) {
+            if (eType > eOverseerType.eotOrc) {
                 lv = 0;
             }
 
