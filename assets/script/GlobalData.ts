@@ -29,6 +29,8 @@ export class CRoomData {
 export class CGlobalData {
     private mapOverseer: Map<eOverseerType, COverseerData> = new Map();
     private listRooms: CRoomData[] = [];
+
+    private nUnlockRoomNum: number = 0; // 已经解锁的房间数量
     constructor() {
         console.log("全局数据类开始构造");
         this.initOverseerData();
@@ -67,17 +69,25 @@ export class CGlobalData {
 
     initRoomsData() {
         //先每种房间来两个吧
-        this.listRooms[0] = new CRoomData(eRoomType.ertLumberMill, 1);
-        this.listRooms[1] = new CRoomData(eRoomType.ertLumberMill, 1);
-        this.listRooms[2] = new CRoomData(eRoomType.ertMetalWorkshop, 1);
-        this.listRooms[3] = new CRoomData(eRoomType.ertMetalWorkshop, 1);
-        this.listRooms[4] = new CRoomData(eRoomType.ertGemMine, 1);
-        this.listRooms[5] = new CRoomData(eRoomType.ertGemMine, 1);
+        this.listRooms[0] = new CRoomData(eRoomType.ertLumberMill, 0);
+        this.listRooms[1] = new CRoomData(eRoomType.ertLumberMill, 0);
+        this.listRooms[2] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
+        this.listRooms[3] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
+        this.listRooms[4] = new CRoomData(eRoomType.ertGemMine, 0);
+        this.listRooms[5] = new CRoomData(eRoomType.ertGemMine, 0);
     }
 
     foreachRooms(callback: Function) {
         for (let i = 0; i < this.listRooms.length; ++i) {
             callback(this.listRooms[i]);
         }
+    }
+
+    getUnlockRoomNum() {
+        return this.nUnlockRoomNum;
+    }
+
+    unlockRoom() {
+        this.nUnlockRoomNum++;
     }
 }

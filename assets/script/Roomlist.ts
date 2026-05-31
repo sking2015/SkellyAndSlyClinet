@@ -17,15 +17,18 @@ export class Roomlist extends Component {
 
     rooms: Room[] = [];
 
+
     startListnerEvent() {
         // 监听子节点冒泡上来的事件
         this.node.on(UniEvent.on_room_expand, this.onRoomStatueChange, this);
         this.node.on(UniEvent.on_room_restore, this.onRoomStatueChange, this);
+        this.node.on(UniEvent.on_room_unlock, this.onRoomUnLock, this);
     }
 
     stopListnerEvent() {
         this.node.off(UniEvent.on_room_expand, this.onRoomStatueChange, this);
         this.node.off(UniEvent.on_room_restore, this.onRoomStatueChange, this);
+        this.node.off(UniEvent.on_room_unlock, this.onRoomUnLock, this);
     }
 
     // protected onLoad(): void {
@@ -38,6 +41,23 @@ export class Roomlist extends Component {
 
     onDisable() {
         this.stopListnerEvent();
+    }
+
+    onRoomUnLock(event: CustomEvent) {
+        const roomIndex = event.detail.roomIdx;
+        console.log("room unlock", roomIndex);
+        if (roomIndex < 0 || roomIndex >= this.rooms.length) {
+            console.error("unlock room error,invalid room index", roomIndex);
+            return;
+        }
+
+        if (roomIndex + 1 < this.rooms.length) {
+            const room = this.rooms[roomIndex + 1];
+            console.log("room unlock 22222", room);
+            if (room) {
+                room.refreshRoomLockShow();
+            }
+        }
     }
 
     onRoomStatueChange(event: CustomEvent) {
@@ -72,6 +92,8 @@ export class Roomlist extends Component {
 
     start() {
         this.initAllRoom();
+
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_rooms_init_finish, true));
 
     }
 

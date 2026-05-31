@@ -19,11 +19,13 @@ export class RoomScrollView extends Component {
         // 监听子节点冒泡上来的事件
         this.node.on(UniEvent.on_room_expand, this.onRoomStatueChange, this);
         this.node.on(UniEvent.on_room_restore, this.onRoomStatueChange, this);
+        this.node.on(UniEvent.on_rooms_init_finish, this.onRoomsInitFinish, this);
     }
 
     stopListnerEvent() {
         this.node.off(UniEvent.on_room_expand, this.onRoomStatueChange, this);
         this.node.off(UniEvent.on_room_restore, this.onRoomStatueChange, this);
+        this.node.off(UniEvent.on_rooms_init_finish, this.onRoomsInitFinish, this);
     }
 
     // protected onLoad(): void {
@@ -36,6 +38,10 @@ export class RoomScrollView extends Component {
 
     onDisable() {
         this.stopListnerEvent();
+    }
+
+    private onRoomsInitFinish(event: CustomEvent) {
+        this.scrollView.scrollToOffset(new Vec2(0, 0), 0);
     }
 
     // protected onDestroy(): void {
