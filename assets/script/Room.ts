@@ -1,4 +1,4 @@
-import { _decorator, Component, instantiate, Node, Prefab, math, UITransform, Sprite, SpriteFrame, Animation, animation } from 'cc';
+import { _decorator, Component, instantiate, Node, Prefab, math, UITransform, Sprite, SpriteFrame, Animation, Label, ProgressBar, tween } from 'cc';
 import { eRoomType, eMineBuffType, eOverseerType, eWorkerType } from './BaseDef';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CCharactor } from './charactor';
@@ -6,7 +6,12 @@ import { CResManager } from './ResManager';
 import { CGlobalData } from './GlobalData';
 import { fadeInOut } from './common/common';
 
+import { ICrystalMine, CrystalMineData } from './config/CrystalMine';
+import { IMetalWorkshop, MetalWorkshopData } from './config/MetalWorkshop';
+import { ILumberMill, LumberMillData } from './config/LumberMill';
 
+
+const INTERVAL_OUTPUT_PER_TIME = 5; // 生产一个单位资源需要的时间
 
 const { ccclass, property } = _decorator;
 
@@ -42,6 +47,24 @@ export class Room extends Component {
     @property({ type: Node, tooltip: "扩展面板" })
     nodeExpandPanel: Node = null;
 
+    @property({ type: Label, tooltip: "显示的房间等级" })
+    labelRoomLevel: Label = null;
+
+    @property({ type: Label, tooltip: "显示的房间名" })
+    labelRoomName: Label = null;
+
+    @property({ type: Label, tooltip: "单位时间产量显示" })
+    labelOutputPerTime: Label = null;
+
+    @property({ type: Animation, tooltip: "单位时间产量动画" })
+    animOutputPerTime: Animation = null;
+
+    @property({ type: Label, tooltip: "当前储量显示" })
+    labelCurrentStock: Label = null;
+
+    @property({ type: ProgressBar, tooltip: "当前储量进度条" })
+    progressBarCurrentStock: ProgressBar = null;
+
 
     @property({ type: Sprite, tooltip: "显示监工头像" })
     sprOSAvart: Sprite = null;
@@ -54,6 +77,10 @@ export class Room extends Component {
     nodeLocked: Node = null;
 
 
+    @property({ type: Sprite, tooltip: "显示资源图标" })
+    sprResourceIcon: Sprite = null;
+
+
     //监工的角色对像
     charOverseer: CCharactor = null;
 
@@ -61,6 +88,11 @@ export class Room extends Component {
     roomLevel: number = 0;
 
     nWorkerNum: number = 0;
+
+    nOutputPerTime: number = 5;// 每单位时间产量
+
+    nCurrentStock: number = 0; // 当前储量
+    nCapacity: number = 999; // 房间容量，决定储量上限
 
 
     private _index: number = 0;
@@ -94,6 +126,16 @@ export class Room extends Component {
         this.sprOSAvart.spriteFrame = null;
 
         this.nodeUpgradeEffect.active = false;
+
+        this.labelOutputPerTime.string = "";
+        this.labelRoomLevel.string = "";
+        this.labelRoomName.string = "";
+        this.refreshCurrentStock();
+    }
+
+    refreshCurrentStock() {
+        this.labelCurrentStock.string = `${this.nCurrentStock}/${this.nCapacity}`;
+        this.progressBarCurrentStock.progress = this.nCurrentStock / this.nCapacity;
     }
 
     start() {
@@ -108,21 +150,39 @@ export class Room extends Component {
     setRoomType(type: eRoomType) {
         this.roomType = type;
 
+        let level = this.roomLevel > 0 ? this.roomLevel : 1;
+        let name = "Mine"
+
         switch (this.roomType) {
             case eRoomType.ertLumberMill:
                 this.nodeOSBorn.y = -80;
+                name = LumberMillData[level].Name;
                 break;
             case eRoomType.ertGemMine:
                 this.nodeOSBorn.y = -80;
+                name = CrystalMineData[level].Name;
                 break;
             case eRoomType.ertMetalWorkshop:
                 this.nodeOSBorn.y = -90;
+                name = MetalWorkshopData[level].Name;
                 break;
         }
+
+        this.labelRoomName.string = name;
+
+        this.sprResourceIcon.spriteFrame = CResManager.instance.getRoomResIcon(this.roomType);
     }
+
 
     setRoomLevel(level: number) {
         this.roomLevel = level;
+        this.refreshRoomLevel();
+    }
+
+    refreshRoomLevel() {
+        if (this.roomLevel > 0) {
+            this.labelRoomLevel.string = `Lv.${this.roomLevel}`;
+        }
     }
 
     refreshRoomShow() {
@@ -147,7 +207,8 @@ export class Room extends Component {
             return;
         }
 
-        this.roomLevel = 1;
+        this.setRoomLevel(1);
+
         let comUnlock = this.nodeLocked.getComponent(Animation);
         comUnlock.play(comUnlock.clips[0].name);
         comUnlock.once(Animation.EventType.FINISHED, () => {
@@ -260,8 +321,45 @@ export class Room extends Component {
         // this.setOverseer(eOverseerType.eotEyetyarnt);
     }
 
+    bGatering: boolean = false;
+    startGatherRes() {
+        this.bGatering = true;
+    }
+
+    onceGather() {
+        switch (this.roomType) {
+            case eRoomType.ertLumberMill:
+                CGlobalData.instance.nWood += this.nOutputPerTime;
+                break;
+            case eRoomType.ertMetalWorkshop:
+                CGlobalData.instance.nMetal += this.nOutputPerTime;
+                break;
+            case eRoomType.ertGemMine:
+                CGlobalData.instance.nGem += this.nOutputPerTime;
+                break;
+        }
+
+        this.nCurrentStock -= this.nOutputPerTime;
+
+        //收集完毕
+        if (this.nCurrentStock <= 0) {
+            this.nCurrentStock = 0;
+            this.bGatering = false;
+        }
+
+        this.refreshCurrentStock();
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_gather_res, true, { roomType: this.roomType, amount: this.nOutputPerTime, srcNode: this.sprResourceIcon.node }));
+    }
+
+
     onClickResIcon() {
-        console.log("click resIcon");
+        console.log("click resIcon,收集资源");
+        this.startGatherRes();
+
+        // this.genRes4FlyShow();
+
+        //this.node.dispatchEvent(new CustomEvent(UniEvent.on_resource_change, true));
+
     }
 
     onSelectOverseer(eType: eOverseerType) {
@@ -288,6 +386,7 @@ export class Room extends Component {
         console.log("room upgrade~!!!")
         if (this.roomLevel < 3) {
             ++this.roomLevel;
+            this.refreshRoomLevel();
             this.refreshRoomShow();
             this.playUpgradeEffect();
         }
@@ -305,7 +404,56 @@ export class Room extends Component {
         this.CloseExpand();
     }
 
+
+    onOutputRes() {
+        if (this.nCurrentStock < this.nCapacity) {
+            this.nCurrentStock += this.nOutputPerTime;
+            if (this.nCurrentStock > this.nCapacity) {
+                this.nCurrentStock = this.nCapacity;
+            }
+            this.refreshCurrentStock();
+        }
+    }
+
+    playOutputAnim() {
+        this.labelOutputPerTime.string = `+${this.nOutputPerTime}`;
+        if (this.animOutputPerTime) {
+            this.animOutputPerTime.play(this.animOutputPerTime.clips[0].name);
+            this.animOutputPerTime.once(Animation.EventType.FINISHED, () => {
+                this.labelOutputPerTime.string = "";
+            });
+        }
+    }
+
+
+
+    nOutputInterval: number = 0; // 生产一个单位资源需要的时间
+    nGatherInterval: number = 0; // 收集一个单位资源需要的时间
+
+    updateGather(deltaTime: number) {
+        //这里可以加一些收集资源的特效，比如飞出一些资源图标之类的
+        this.nGatherInterval += deltaTime;
+        if (this.nGatherInterval >= 0.1) {
+            this.nGatherInterval = 0;
+            this.onceGather();
+        }
+    }
+
     update(deltaTime: number) {
+        if (this.roomLevel <= 0) {
+            return;
+        }
+
+        this.nOutputInterval += deltaTime;
+        if (this.nOutputInterval >= INTERVAL_OUTPUT_PER_TIME) {
+            this.nOutputInterval = 0;
+            this.onOutputRes();
+            this.playOutputAnim();
+        }
+
+        if (this.bGatering) {
+            this.updateGather(deltaTime);
+        }
 
     }
 }

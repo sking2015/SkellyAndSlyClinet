@@ -19,4 +19,6 @@ export enum UniEvent {
     on_click_room_upgrade = "onClickRoomUpgrade",
     on_room_unlock = "onRoomUnlock",
     on_rooms_init_finish = "onRoomsInitFinish",
+    on_resource_change = "onResourceChange",
+    on_click_gather_res = "onClickGatherRes",
 }

@@ -120,6 +120,11 @@ export class CResManager extends Component {
         return roomdata.prefabWorker;
     }
 
+    getRoomResIcon(eType: eRoomType): SpriteFrame {
+        const roomdata: CRoomType2Data = this.mapRoomImgData.get(eType);
+        return roomdata.sfResourceIcon;
+    }
+
     start() {
 
     }

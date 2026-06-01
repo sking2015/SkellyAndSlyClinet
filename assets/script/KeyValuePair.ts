@@ -67,6 +67,8 @@ export class CRoomType2Data {
     @property({ type: Prefab, tooltip: '房间对应的工人prefab' })
     prefabWorker: Prefab = null;
 
+    @property({ type: SpriteFrame, tooltip: '房间对应的资源spriteframe' })
+    sfResourceIcon: SpriteFrame = null;
 }
 
 

@@ -31,6 +31,14 @@ export class CGlobalData {
     private listRooms: CRoomData[] = [];
 
     private nUnlockRoomNum: number = 0; // 已经解锁的房间数量
+
+    nWood: number = 200;
+    nMetal: number = 200;
+    nGem: number = 200;
+    nCoin: number = 1000;
+    nFood: number = 200;
+    nSoul: number = 200;
+
     constructor() {
         console.log("全局数据类开始构造");
         this.initOverseerData();
