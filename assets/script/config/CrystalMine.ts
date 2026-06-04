@@ -13,7 +13,7 @@ export interface ICrystalMine {
 }
 
 export const CrystalMineData: Record<string | number, ICrystalMine> = {
-    "1": {
+    1: {
         "Level": 1,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
@@ -24,7 +24,7 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Cost_Gold": 2000,
         "Cost_Metal": 0
     },
-    "2": {
+    2: {
         "Level": 2,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
@@ -35,7 +35,7 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Cost_Gold": 9200,
         "Cost_Metal": 2600
     },
-    "3": {
+    3: {
         "Level": 3,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
@@ -46,7 +46,7 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Cost_Gold": 17000,
         "Cost_Metal": 4500
     },
-    "4": {
+    4: {
         "Level": 4,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
@@ -57,7 +57,7 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Cost_Gold": 31500,
         "Cost_Metal": 8000
     },
-    "5": {
+    5: {
         "Level": 5,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
@@ -68,7 +68,7 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Cost_Gold": 58500,
         "Cost_Metal": 14000
     },
-    "6": {
+    6: {
         "Level": 6,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
@@ -79,7 +79,7 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Cost_Gold": 108500,
         "Cost_Metal": 24500
     },
-    "7": {
+    7: {
         "Level": 7,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
@@ -90,7 +90,7 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Cost_Gold": 201000,
         "Cost_Metal": 43000
     },
-    "8": {
+    8: {
         "Level": 8,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
@@ -101,7 +101,7 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Cost_Gold": 371500,
         "Cost_Metal": 75500
     },
-    "9": {
+    9: {
         "Level": 9,
         "Name": "Crystal Mine",
         "ResType": "Crystal",

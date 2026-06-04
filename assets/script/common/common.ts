@@ -21,3 +21,11 @@ export function fadeInOut(node: Node, duration: number, bIn: boolean, cb?: Funct
         }
     }).start();
 }
+
+//原始字符串行如 "你缺少资源 {0}, 还需要 {1} 个才能升级";
+export function formatString(template: string, ...args: string[]): string {
+    return template.replace(/{(\d+)}/g, (match, index) => {
+        const argIndex = parseInt(index, 10);
+        return typeof args[argIndex] !== 'undefined' ? args[argIndex] : match;
+    });
+}

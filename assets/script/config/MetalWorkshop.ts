@@ -13,7 +13,7 @@ export interface IMetalWorkshop {
 }
 
 export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
-    "1": {
+    1: {
         "Level": 1,
         "Name": "Metal Workshop",
         "ResType": "Metal",
@@ -24,7 +24,7 @@ export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
         "Cost_Gold": 600,
         "Cost_Metal": 0
     },
-    "2": {
+    2: {
         "Level": 2,
         "Name": "Metal Workshop",
         "ResType": "Metal",
@@ -35,7 +35,7 @@ export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
         "Cost_Gold": 2700,
         "Cost_Metal": 700
     },
-    "3": {
+    3: {
         "Level": 3,
         "Name": "Metal Workshop",
         "ResType": "Metal",
@@ -46,7 +46,7 @@ export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
         "Cost_Gold": 5100,
         "Cost_Metal": 1200
     },
-    "4": {
+    4: {
         "Level": 4,
         "Name": "Metal Workshop",
         "ResType": "Metal",
@@ -57,7 +57,7 @@ export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
         "Cost_Gold": 9400,
         "Cost_Metal": 2100
     },
-    "5": {
+    5: {
         "Level": 5,
         "Name": "Metal Workshop",
         "ResType": "Metal",
@@ -68,7 +68,7 @@ export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
         "Cost_Gold": 17500,
         "Cost_Metal": 3700
     },
-    "6": {
+    6: {
         "Level": 6,
         "Name": "Metal Workshop",
         "ResType": "Metal",
@@ -79,7 +79,7 @@ export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
         "Cost_Gold": 32500,
         "Cost_Metal": 6500
     },
-    "7": {
+    7: {
         "Level": 7,
         "Name": "Metal Workshop",
         "ResType": "Metal",
@@ -90,7 +90,7 @@ export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
         "Cost_Gold": 60500,
         "Cost_Metal": 11500
     },
-    "8": {
+    8: {
         "Level": 8,
         "Name": "Metal Workshop",
         "ResType": "Metal",
@@ -101,7 +101,7 @@ export const MetalWorkshopData: Record<string | number, IMetalWorkshop> = {
         "Cost_Gold": 111500,
         "Cost_Metal": 20000
     },
-    "9": {
+    9: {
         "Level": 9,
         "Name": "Metal Workshop",
         "ResType": "Metal",

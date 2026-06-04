@@ -69,6 +69,9 @@ export class CRoomType2Data {
 
     @property({ type: SpriteFrame, tooltip: '房间对应的资源spriteframe' })
     sfResourceIcon: SpriteFrame = null;
+
+    @property({ type: SpriteFrame, tooltip: '房间对应的资源容量spriteframe' })
+    sfResCapIcon: SpriteFrame = null;
 }
 
 

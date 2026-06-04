@@ -1,19 +1,141 @@
-import { _decorator, Component, Node } from 'cc';
+import { _decorator, Color, color, Component, Label, Node, Sprite } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
+import { IResData, getResDataByRoomTypeAndLevel } from './ConfigInterface';
+import { LabelGradient } from './common/LabelGradient';
+import { CGlobalData } from './GlobalData';
+import { CResManager } from './ResManager';
+import { getI18nText } from './i18nLan';
+
 const { ccclass, property } = _decorator;
 
 @ccclass('CRoomUpgradePanel')
 export default class CRoomUpgradePanel extends Component {
 
+
+    @property({ type: Label, tooltip: "当前金币" })
+    lblCurCoin: Label = null;
+    @property({ type: Label, tooltip: "当前木材" })
+    lblCurWood: Label = null;
+    @property({ type: Label, tooltip: "当前金属" })
+    lblCurMetal: Label = null;
+
+    @property({ type: Label, tooltip: "当前房间资源" })
+    lblCurRoomRes: Label = null;
+
+    @property({ type: Label, tooltip: "当前房间等级" })
+    lblCurRoomLevel: Label = null;
+    @property({ type: Label, tooltip: "下一级房间等级" })
+    lblNextRoomLevel: Label = null;
+
+    @property({ type: Sprite, tooltip: "当前房间产出图标" })
+    sprResIcon: Sprite = null;
+    @property({ type: Label, tooltip: "当前等级产量" })
+    lblCurLevelOutput: Label = null;
+    @property({ type: Label, tooltip: "下一级产量" })
+    lblNextLevelOutput: Label = null;
+
+    @property({ type: Label, tooltip: "当前存储容量" })
+    lblCurStorage: Label = null;
+
+    @property({ type: Sprite, tooltip: "当前房间容量图标" })
+    sprCapacityIcon: Sprite = null;
+    @property({ type: Label, tooltip: "当前等级容量" })
+    lblCurLevelCapacity: Label = null;
+    @property({ type: Label, tooltip: "下一级容量" })
+    lblNextLevelCapacity: Label = null;
+
+
+    @property({ type: Label, tooltip: "消费金币" })
+    lblCostCoin: Label = null;
+    @property({ type: LabelGradient, tooltip: "消费金币颜色渐变控件" })
+    lblCostCoinGradient: LabelGradient = null;
+
+    @property({ type: Label, tooltip: "消费木材" })
+    lblCostWood: Label = null;
+    @property({ type: LabelGradient, tooltip: "消费木材颜色渐变控件" })
+    lblCostWoodGradient: LabelGradient = null;
+
+    @property({ type: Label, tooltip: "消费金属" })
+    lblCostMetal: Label = null;
+    @property({ type: LabelGradient, tooltip: "消费金属颜色渐变控件" })
+    lblCostMetalGradient: LabelGradient = null;
+
+
+    @property({ type: Node, tooltip: "背景遮罩节点" })
+    nodeMask: Node = null;
+
+
     //当前描述房间index
     nCurRoomIndex: number = -1;
 
     start() {
+        this.nodeMask.on(Node.EventType.TOUCH_START, this.onClose, this);
+    }
 
+    ondestroy() {
+        this.nodeMask.off(Node.EventType.TOUCH_START, this.onClose, this);
+    }
+
+    refreshPanel() {
+        if (this.nCurRoomIndex < 0) {
+            console.error("房间升级面板刷新失败，当前房间index非法", this.nCurRoomIndex);
+            return;
+        }
+
+        const roomData = CGlobalData.instance.getRoomDataByIndex(this.nCurRoomIndex);
+
+        this.lblCurCoin.string = CGlobalData.instance.nCoin.toString();
+        this.lblCurWood.string = CGlobalData.instance.nWood.toString();
+        this.lblCurMetal.string = CGlobalData.instance.nMetal.toString();
+
+
+        this.lblCurRoomLevel.string = `${roomData.level}`;
+        this.lblNextRoomLevel.string = `${roomData.level + 1}`;
+
+        this.sprResIcon.spriteFrame = CResManager.instance.getRoomResIcon(roomData.eType);
+
+        const resDataCur: IResData = getResDataByRoomTypeAndLevel(roomData.eType, roomData.level);
+        const resDataNext: IResData = getResDataByRoomTypeAndLevel(roomData.eType, roomData.level + 1);
+
+
+        this.lblCurRoomRes.string = resDataCur.ResType;
+
+        this.lblCurLevelOutput.string = (resDataCur.ProducePerMin * 60).toString() + "/H";
+        this.lblNextLevelOutput.string = (resDataNext.ProducePerMin * 60).toString() + "/H";
+
+        this.lblCurStorage.string = roomData.nStock.toFixed(2);
+
+        this.sprCapacityIcon.spriteFrame = CResManager.instance.getRoomResCapIcon(roomData.eType);
+
+        this.lblCurLevelCapacity.string = resDataCur.MaxCapacity.toString();
+        this.lblNextLevelCapacity.string = resDataNext.MaxCapacity.toString();
+
+        this.lblCostCoin.string = resDataNext.Cost_Gold.toString();
+        this.lblCostWood.string = resDataNext.Cost_Metal.toString();
+        this.lblCostMetal.string = resDataNext.Cost_Metal.toString();
+
+        if (CGlobalData.instance.nCoin < resDataNext.Cost_Gold) {
+            this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
+        } else {
+            this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
+        }
+
+        if (CGlobalData.instance.nWood < resDataNext.Cost_Metal) {
+            this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
+        } else {
+            this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
+        }
+
+        if (CGlobalData.instance.nMetal < resDataNext.Cost_Metal) {
+            this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
+        } else {
+            this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
+        }
     }
 
     onOpen() {
         this.node.active = true;
+        this.refreshPanel();
     }
 
     onClose() {

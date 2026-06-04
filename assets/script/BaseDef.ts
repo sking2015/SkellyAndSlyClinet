@@ -4,7 +4,7 @@ export enum eRoomType {
     ertNone = 0, // 无
     ertLumberMill = 1,  // 伐木场
     ertMetalWorkshop = 2,   // 金属工坊
-    ertGemMine = 3      // 宝石矿
+    ertCrystalMine = 3      // 水晶矿
 }
 
 //矿场增益类型

@@ -19,6 +19,8 @@ export class CRoomData {
     //目前只有等级，如果为0表示未解锁
     level: number = 0;
 
+    nStock: number = 0; // 当前房间的库存量
+
     constructor(eType: eRoomType, nLvel: number) {
         this.eType = eType;
         this.level = nLvel;
@@ -81,8 +83,8 @@ export class CGlobalData {
         this.listRooms[1] = new CRoomData(eRoomType.ertLumberMill, 0);
         this.listRooms[2] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
         this.listRooms[3] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
-        this.listRooms[4] = new CRoomData(eRoomType.ertGemMine, 0);
-        this.listRooms[5] = new CRoomData(eRoomType.ertGemMine, 0);
+        this.listRooms[4] = new CRoomData(eRoomType.ertCrystalMine, 0);
+        this.listRooms[5] = new CRoomData(eRoomType.ertCrystalMine, 0);
     }
 
     foreachRooms(callback: Function) {
@@ -97,5 +99,31 @@ export class CGlobalData {
 
     unlockRoom() {
         this.nUnlockRoomNum++;
+    }
+
+    getRoomDataByIndex(idx: number): CRoomData | null {
+        if (idx < 0 || idx >= this.listRooms.length) {
+            return null;
+        }
+        return this.listRooms[idx];
+    }
+
+    getRoomTypeByIndex(idx: number): eRoomType {
+        const roomData = this.getRoomDataByIndex(idx);
+        return roomData ? roomData.eType : eRoomType.ertNone;
+    }
+
+    setRoomStockByIndex(idx: number, nStock: number) {
+        const roomData = this.getRoomDataByIndex(idx);
+        if (roomData) {
+            roomData.nStock = nStock;
+        }
+    }
+
+    setRoomLevelByIndex(idx: number, nLevel: number) {
+        const roomData = this.getRoomDataByIndex(idx);
+        if (roomData) {
+            roomData.level = nLevel;
+        }
     }
 }

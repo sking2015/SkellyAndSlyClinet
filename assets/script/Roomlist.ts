@@ -108,7 +108,10 @@ export class Roomlist extends Component {
             ComRoom.index = index;
             ComRoom.setRoomType(data.eType);
             ComRoom.setRoomLevel(data.level);
-            ComRoom.refreshRoomShow();
+            if (data.level > 0) {
+                ComRoom.refreshRoomData();
+            }
+
 
             this.rooms[index] = ComRoom;
             ++index;

@@ -5720,6 +5720,10 @@
     "sfResourceIcon": {
       "__uuid__": "fb34dba9-9dcb-4b3f-8bee-336e4aa9d6c4@3e0ca",
       "__expectedType__": "cc.SpriteFrame"
+    },
+    "sfResCapIcon": {
+      "__uuid__": "015a5d99-567c-4007-8b89-0c13098920af@f9941",
+      "__expectedType__": "cc.SpriteFrame"
     }
   },
   {
@@ -5770,6 +5774,10 @@
     "sfResourceIcon": {
       "__uuid__": "fb34dba9-9dcb-4b3f-8bee-336e4aa9d6c4@4f698",
       "__expectedType__": "cc.SpriteFrame"
+    },
+    "sfResCapIcon": {
+      "__uuid__": "ba5a90cd-c3a8-4ee3-b50f-7298c9780f60@f9941",
+      "__expectedType__": "cc.SpriteFrame"
     }
   },
   {
@@ -5819,6 +5827,10 @@
     },
     "sfResourceIcon": {
       "__uuid__": "fb34dba9-9dcb-4b3f-8bee-336e4aa9d6c4@15b9d",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "sfResCapIcon": {
+      "__uuid__": "7a833a18-830b-450b-9a62-c86c1bf64d54@f9941",
       "__expectedType__": "cc.SpriteFrame"
     }
   },

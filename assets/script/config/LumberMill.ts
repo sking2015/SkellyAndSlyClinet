@@ -13,7 +13,7 @@ export interface ILumberMill {
 }
 
 export const LumberMillData: Record<string | number, ILumberMill> = {
-    "1": {
+    1: {
         "Level": 1,
         "Name": "Lumber Mill",
         "ResType": "Lumber",
@@ -24,7 +24,7 @@ export const LumberMillData: Record<string | number, ILumberMill> = {
         "Cost_Gold": 0,
         "Cost_Metal": 0
     },
-    "2": {
+    2: {
         "Level": 2,
         "Name": "Lumber Mill",
         "ResType": "Lumber",
@@ -35,7 +35,7 @@ export const LumberMillData: Record<string | number, ILumberMill> = {
         "Cost_Gold": 1800,
         "Cost_Metal": 350
     },
-    "3": {
+    3: {
         "Level": 3,
         "Name": "Lumber Mill",
         "ResType": "Lumber",
@@ -46,7 +46,7 @@ export const LumberMillData: Record<string | number, ILumberMill> = {
         "Cost_Gold": 3400,
         "Cost_Metal": 610
     },
-    "4": {
+    4: {
         "Level": 4,
         "Name": "Lumber Mill",
         "ResType": "Lumber",
@@ -57,7 +57,7 @@ export const LumberMillData: Record<string | number, ILumberMill> = {
         "Cost_Gold": 6300,
         "Cost_Metal": 1000
     },
-    "5": {
+    5: {
         "Level": 5,
         "Name": "Lumber Mill",
         "ResType": "Lumber",
@@ -68,7 +68,7 @@ export const LumberMillData: Record<string | number, ILumberMill> = {
         "Cost_Gold": 11500,
         "Cost_Metal": 1800
     },
-    "6": {
+    6: {
         "Level": 6,
         "Name": "Lumber Mill",
         "ResType": "Lumber",
@@ -79,7 +79,7 @@ export const LumberMillData: Record<string | number, ILumberMill> = {
         "Cost_Gold": 21500,
         "Cost_Metal": 3200
     },
-    "7": {
+    7: {
         "Level": 7,
         "Name": "Lumber Mill",
         "ResType": "Lumber",
@@ -90,7 +90,7 @@ export const LumberMillData: Record<string | number, ILumberMill> = {
         "Cost_Gold": 40000,
         "Cost_Metal": 5700
     },
-    "8": {
+    8: {
         "Level": 8,
         "Name": "Lumber Mill",
         "ResType": "Lumber",
@@ -101,7 +101,7 @@ export const LumberMillData: Record<string | number, ILumberMill> = {
         "Cost_Gold": 74000,
         "Cost_Metal": 10000
     },
-    "9": {
+    9: {
         "Level": 9,
         "Name": "Lumber Mill",
         "ResType": "Lumber",

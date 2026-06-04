@@ -125,6 +125,11 @@ export class CResManager extends Component {
         return roomdata.sfResourceIcon;
     }
 
+    getRoomResCapIcon(eType: eRoomType): SpriteFrame {
+        const roomdata: CRoomType2Data = this.mapRoomImgData.get(eType);
+        return roomdata.sfResCapIcon;
+    }
+
     start() {
 
     }

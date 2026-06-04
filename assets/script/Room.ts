@@ -6,14 +6,14 @@ import { CResManager } from './ResManager';
 import { CGlobalData } from './GlobalData';
 import { fadeInOut } from './common/common';
 
-import { ICrystalMine, CrystalMineData } from './config/CrystalMine';
-import { IMetalWorkshop, MetalWorkshopData } from './config/MetalWorkshop';
-import { ILumberMill, LumberMillData } from './config/LumberMill';
+import { IResData, getResDataByRoomTypeAndLevel } from './ConfigInterface';
 
 
 const INTERVAL_OUTPUT_PER_TIME = 5; // 生产一个单位资源需要的时间
 
 const { ccclass, property } = _decorator;
+
+
 
 
 
@@ -133,8 +133,12 @@ export class Room extends Component {
         this.refreshCurrentStock();
     }
 
+    loadRoomData() {
+
+    }
+
     refreshCurrentStock() {
-        this.labelCurrentStock.string = `${this.nCurrentStock}/${this.nCapacity}`;
+        this.labelCurrentStock.string = `${this.nCurrentStock.toFixed(2)}/${this.nCapacity}`;
         this.progressBarCurrentStock.progress = this.nCurrentStock / this.nCapacity;
     }
 
@@ -153,19 +157,11 @@ export class Room extends Component {
         let level = this.roomLevel > 0 ? this.roomLevel : 1;
         let name = "Mine"
 
-        switch (this.roomType) {
-            case eRoomType.ertLumberMill:
-                this.nodeOSBorn.y = -80;
-                name = LumberMillData[level].Name;
-                break;
-            case eRoomType.ertGemMine:
-                this.nodeOSBorn.y = -80;
-                name = CrystalMineData[level].Name;
-                break;
-            case eRoomType.ertMetalWorkshop:
-                this.nodeOSBorn.y = -90;
-                name = MetalWorkshopData[level].Name;
-                break;
+        const resData = getResDataByRoomTypeAndLevel(this.roomType, level);
+        if (resData) {
+            name = resData.Name;
+        } else {
+            console.error("can't get res data by room type ", this.roomType, " level ", level);
         }
 
         this.labelRoomName.string = name;
@@ -176,6 +172,7 @@ export class Room extends Component {
 
     setRoomLevel(level: number) {
         this.roomLevel = level;
+        CGlobalData.instance.setRoomLevelByIndex(this.index, this.roomLevel);
         this.refreshRoomLevel();
     }
 
@@ -183,6 +180,30 @@ export class Room extends Component {
         if (this.roomLevel > 0) {
             this.labelRoomLevel.string = `Lv.${this.roomLevel}`;
         }
+    }
+
+    refreshRoomData() {
+
+        if (this.roomLevel <= 0) {
+            console.error("can't refresh room data,room level is ", this.roomLevel);
+            return;
+        }
+
+        let resData: IResData = getResDataByRoomTypeAndLevel(this.roomType, this.roomLevel);
+        if (!resData) {
+            console.error("can't get res data by room type ", this.roomType, " level ", this.roomLevel);
+            return;
+        }
+
+
+        this.nOutputPerTime = resData.ProducePerMin / 60 * INTERVAL_OUTPUT_PER_TIME;
+        this.nCapacity = resData.MaxCapacity;
+
+
+
+
+        this.refreshCurrentStock();
+        this.refreshRoomShow();
     }
 
     refreshRoomShow() {
@@ -222,7 +243,7 @@ export class Room extends Component {
         CGlobalData.instance.unlockRoom();
 
         this.playUpgradeEffect(false);
-        this.refreshRoomShow();
+        this.refreshRoomData();
 
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_unlock, true, { roomIdx: this.index }));
     }
@@ -231,7 +252,7 @@ export class Room extends Component {
         let workerNum = 0;
         let prefab = CResManager.instance.getRoomWorker(this.roomType);
         switch (this.roomType) {
-            case eRoomType.ertGemMine:
+            case eRoomType.ertCrystalMine:
             case eRoomType.ertLumberMill:
                 workerNum = 2;
                 break;
@@ -327,18 +348,6 @@ export class Room extends Component {
     }
 
     onceGather() {
-        switch (this.roomType) {
-            case eRoomType.ertLumberMill:
-                CGlobalData.instance.nWood += this.nOutputPerTime;
-                break;
-            case eRoomType.ertMetalWorkshop:
-                CGlobalData.instance.nMetal += this.nOutputPerTime;
-                break;
-            case eRoomType.ertGemMine:
-                CGlobalData.instance.nGem += this.nOutputPerTime;
-                break;
-        }
-
         this.nCurrentStock -= this.nOutputPerTime;
 
         //收集完毕
@@ -385,7 +394,7 @@ export class Room extends Component {
     onUpgrade() {
         console.log("room upgrade~!!!")
         if (this.roomLevel < 3) {
-            ++this.roomLevel;
+            this.setRoomLevel(this.roomLevel + 1);
             this.refreshRoomLevel();
             this.refreshRoomShow();
             this.playUpgradeEffect();
@@ -411,12 +420,14 @@ export class Room extends Component {
             if (this.nCurrentStock > this.nCapacity) {
                 this.nCurrentStock = this.nCapacity;
             }
+
+            CGlobalData.instance.setRoomStockByIndex(this.index, this.nCurrentStock);
             this.refreshCurrentStock();
         }
     }
 
     playOutputAnim() {
-        this.labelOutputPerTime.string = `+${this.nOutputPerTime}`;
+        this.labelOutputPerTime.string = `+${this.nOutputPerTime.toFixed(2)}`;
         if (this.animOutputPerTime) {
             this.animOutputPerTime.play(this.animOutputPerTime.clips[0].name);
             this.animOutputPerTime.once(Animation.EventType.FINISHED, () => {
