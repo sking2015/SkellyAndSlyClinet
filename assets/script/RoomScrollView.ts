@@ -51,14 +51,17 @@ export class RoomScrollView extends Component {
     private onRoomStatueChange(event: CustomEvent) {
         // event.target 可以获取到最初触发该事件的子节点
         // console.log("触发事件数据:", event.target.name);
-        console.log("触发事件数据:", event);
-        if (event.type == UniEvent.on_room_expand) {
-            const info = event.detail;
+        console.log("Y轴偏移:", event.detail.offset);
+        this.scheduleOnce(() => {
+            if (event.type == UniEvent.on_room_expand) {
+                const info = event.detail;
 
-            const offset = new Vec2(0, info.offset);
+                const offset = new Vec2(0, info.offset);
 
-            this.scrollView.scrollToOffset(offset, 0.5);
-        }
+                this.scrollView.scrollToOffset(offset, 0.5);
+            }
+        }, 0.1)
+
 
     }
 

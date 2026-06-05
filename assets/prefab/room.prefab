@@ -8954,6 +8954,9 @@
       "__uuid__": "d67e0b15-15e6-4197-b450-660c87cf40a0",
       "__expectedType__": "cc.Prefab"
     },
+    "tfBase": {
+      "__id__": 187
+    },
     "sprBg": {
       "__id__": 6
     },

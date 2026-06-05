@@ -23,6 +23,9 @@ export class Room extends Component {
     @property(Prefab)
     prefabMiner: Prefab = null;
 
+    @property(UITransform)
+    tfBase: UITransform = null;
+
     @property(Sprite)
     sprBg: Sprite = null;
 
@@ -119,8 +122,7 @@ export class Room extends Component {
     protected onLoad(): void {
         this.nodeExpandPanel.active = false;
 
-        const uiTransform = this.node.getComponent(UITransform);
-        this.oriHeight = uiTransform.height;
+        this.oriHeight = this.tfBase.height;
 
         //显示的监工先值空
         this.sprOSAvart.spriteFrame = null;

@@ -66,8 +66,8 @@ export class ResourceShowArea extends Component {
         let nodeRes = new Node();
         let sprRes = nodeRes.addComponent(Sprite);
         switch (roomType) {
-            case eRoomType.ertGemMine:
-                sprRes.spriteFrame = CResManager.instance.getRoomResIcon(eRoomType.ertGemMine);
+            case eRoomType.ertCrystalMine:
+                sprRes.spriteFrame = CResManager.instance.getRoomResIcon(eRoomType.ertCrystalMine);
                 targetPos = this.nodeCrystalIcon.getWorldPosition();
                 break;
             case eRoomType.ertLumberMill:
@@ -93,7 +93,7 @@ export class ResourceShowArea extends Component {
             .to(0.5, { position: targetPos }, { easing: 'expoOut' })
             .to(0.3, { scale: math.v3(0, 0, 0) }, { easing: 'backIn' }).call(() => {
                 switch (roomType) {
-                    case eRoomType.ertGemMine:
+                    case eRoomType.ertCrystalMine:
                         CGlobalData.instance.nGem += amount;
                         break;
                     case eRoomType.ertLumberMill:
