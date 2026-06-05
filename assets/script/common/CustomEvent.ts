@@ -21,4 +21,5 @@ export enum UniEvent {
     on_rooms_init_finish = "onRoomsInitFinish",
     on_resource_change = "onResourceChange",
     on_click_gather_res = "onClickGatherRes",
+    on_pop_tips = "onPopTips",
 }

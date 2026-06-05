@@ -68,6 +68,10 @@ export default class CRoomUpgradePanel extends Component {
     //当前描述房间index
     nCurRoomIndex: number = -1;
 
+    bCoinNotEnough: boolean = false;
+    bWoodNotEnough: boolean = false;
+    bMetalNotEnough: boolean = false;
+
     start() {
         this.nodeMask.on(Node.EventType.TOUCH_START, this.onClose, this);
     }
@@ -114,19 +118,23 @@ export default class CRoomUpgradePanel extends Component {
         this.lblCostWood.string = resDataNext.Cost_Metal.toString();
         this.lblCostMetal.string = resDataNext.Cost_Metal.toString();
 
-        if (CGlobalData.instance.nCoin < resDataNext.Cost_Gold) {
+        this.bCoinNotEnough = CGlobalData.instance.nCoin < resDataNext.Cost_Gold;
+        this.bWoodNotEnough = CGlobalData.instance.nWood < resDataNext.Cost_Metal;
+        this.bMetalNotEnough = CGlobalData.instance.nMetal < resDataNext.Cost_Metal;
+
+        if (this.bCoinNotEnough) {
             this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
         } else {
             this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
         }
 
-        if (CGlobalData.instance.nWood < resDataNext.Cost_Metal) {
+        if (this.bWoodNotEnough) {
             this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
         } else {
             this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
         }
 
-        if (CGlobalData.instance.nMetal < resDataNext.Cost_Metal) {
+        if (this.bMetalNotEnough) {
             this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
         } else {
             this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
@@ -148,8 +156,23 @@ export default class CRoomUpgradePanel extends Component {
 
     onClickConfirm() {
 
-        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_room_upgrade, true, { roomIdx: this.nCurRoomIndex }))
-        this.onClose();
+        if (this.bCoinNotEnough || this.bWoodNotEnough || this.bMetalNotEnough) {
+            //资源不足，无法升级
+            let tips = "";
+            if (this.bCoinNotEnough) {
+                tips = getI18nText("RES_NOT_ENOUGH", "coin");
+            } else if (this.bWoodNotEnough) {
+                tips += getI18nText("RES_NOT_ENOUGH", "wood");
+            } else if (this.bMetalNotEnough) {
+                tips += getI18nText("RES_NOT_ENOUGH", "metal");
+            }
+
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: tips }));
+        } else {
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_room_upgrade, true, { roomIdx: this.nCurRoomIndex }))
+            this.onClose();
+        }
+
     }
 
     update(deltaTime: number) {

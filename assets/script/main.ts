@@ -1,13 +1,18 @@
-import { _decorator, Component, Node, ScrollView, Prefab, Label } from 'cc';
+import { _decorator, Component, Node, ScrollView, Prefab, Label, UITransform } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import OSSelectPanel from './OSSelectPanel';
 import CRoomUpgradePanel from './RoomUpgradePanel';
 import { CGlobalData } from './GlobalData';
 import { ResourceShowArea } from './ResourceShowArea';
+import { fadeInOut, initGlobalButtonCooldown } from './common/common';
+
+
 
 import { Roomlist } from './Roomlist';
 
 const { ccclass, property } = _decorator;
+
+
 
 
 @ccclass('main')
@@ -22,12 +27,24 @@ export class main extends Component {
     @property({ type: ResourceShowArea, tooltip: "资源显示区域组件" })
     comResShowArea: ResourceShowArea = null;
 
+    @property({ type: Node, tooltip: "tips节点" })
+    nodeTips: Node = null;
+
+    @property({ type: Node, tooltip: "tips背景节点" })
+    nodeTipsBg: Node = null;
+
 
     @property(ScrollView)
     roomSV: ScrollView = null;
 
     @property(Roomlist)
     roomList: Roomlist = null;
+
+
+    tipsQueue: string[] = [];
+
+
+    bShowTips: boolean = false;
 
 
     startListnerEvent() {
@@ -37,6 +54,7 @@ export class main extends Component {
         this.node.on(UniEvent.on_open_room_upgrade, this.onPopRoomUpgrade, this);
         this.node.on(UniEvent.on_click_room_upgrade, this.onRoomUpgrade, this);
         this.node.on(UniEvent.on_click_gather_res, this.onGatherRes, this);
+        this.node.on(UniEvent.on_pop_tips, this.onPopTips, this);
     }
 
     stopListnerEvent() {
@@ -45,6 +63,7 @@ export class main extends Component {
         this.node.off(UniEvent.on_open_room_upgrade, this.onPopRoomUpgrade, this);
         this.node.off(UniEvent.on_click_room_upgrade, this.onRoomUpgrade, this);
         this.node.off(UniEvent.on_click_gather_res, this.onGatherRes, this);
+        this.node.off(UniEvent.on_pop_tips, this.onPopTips, this);
     }
 
     onEnable() {
@@ -80,16 +99,48 @@ export class main extends Component {
     }
 
 
+    onPopTips(event: CustomEvent) {
+        this.tipsQueue.push(event.detail.tips);
+    }
+
+    popOneTips() {
+        if (this.tipsQueue.length === 0) {
+            return;
+        }
+
+        if (this.bShowTips) {
+            return;
+        }
+
+        const tips = this.tipsQueue.shift();
+        console.log("onPopTips~~", tips);
+        this.bShowTips = true;
+        this.nodeTips.active = true;
+        let lbl = this.nodeTips.getComponentInChildren(Label);
+        lbl.string = tips;
+
+        this.nodeTipsBg.getComponent(UITransform).height = lbl.node.getComponent(UITransform).height + 10;
+
+        fadeInOut(this.nodeTips, 0.3, true, () => {
+            this.scheduleOnce(() => {
+                fadeInOut(this.nodeTips, 0.3, false, () => {
+                    this.bShowTips = false;
+                });
+            }, 2);
+
+        });
+    }
 
     protected onLoad(): void {
-
+        initGlobalButtonCooldown();
     }
 
     start() {
+        this.nodeTips.active = false;
     }
 
     update(deltaTime: number) {
-
+        this.popOneTips();
     }
 }
 
