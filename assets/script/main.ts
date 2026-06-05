@@ -30,6 +30,9 @@ export class main extends Component {
     @property({ type: Node, tooltip: "tips节点" })
     nodeTips: Node = null;
 
+    @property({ type: Label, tooltip: "tips文本控件" })
+    lblTips: Label = null;
+
     @property({ type: Node, tooltip: "tips背景节点" })
     nodeTipsBg: Node = null;
 
@@ -116,10 +119,13 @@ export class main extends Component {
         console.log("onPopTips~~", tips);
         this.bShowTips = true;
         this.nodeTips.active = true;
-        let lbl = this.nodeTips.getComponentInChildren(Label);
-        lbl.string = tips;
 
-        this.nodeTipsBg.getComponent(UITransform).height = lbl.node.getComponent(UITransform).height + 10;
+        this.lblTips.string = tips;
+
+        this.scheduleOnce(() => {
+            this.nodeTipsBg.getComponent(UITransform).height = this.lblTips.node.getComponent(UITransform).height + 20;
+        }, 0.1);
+
 
         fadeInOut(this.nodeTips, 0.3, true, () => {
             this.scheduleOnce(() => {

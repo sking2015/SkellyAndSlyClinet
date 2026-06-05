@@ -7721,9 +7721,9 @@
     },
     "_bottomColor": {
       "__type__": "cc.Color",
-      "r": 221,
-      "g": 194,
-      "b": 0,
+      "r": 167,
+      "g": 167,
+      "b": 167,
       "a": 255
     },
     "_id": ""
@@ -7997,6 +7997,9 @@
     },
     "lblCostMetalGradient": {
       "__id__": 304
+    },
+    "lgButtonText": {
+      "__id__": 312
     },
     "nodeMask": {
       "__id__": 2

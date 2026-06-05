@@ -5689,7 +5689,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 650,
-      "height": 45.199999999999996
+      "height": 90.39999999999999
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -5718,13 +5718,13 @@
       "b": 158,
       "a": 255
     },
-    "_string": "       Here is system tip,1234567890 123456788 one two three four five....",
-    "_horizontalAlign": 0,
+    "_string": "       Here is system tip,1234567890 1",
+    "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 20,
-    "_fontSize": 20,
+    "_actualFontSize": 40,
+    "_fontSize": 40,
     "_fontFamily": "Arial",
-    "_lineHeight": 20,
+    "_lineHeight": 40,
     "_overflow": 3,
     "_enableWrapText": true,
     "_font": {
@@ -5848,6 +5848,9 @@
     },
     "nodeTips": {
       "__id__": 167
+    },
+    "lblTips": {
+      "__id__": 173
     },
     "nodeTipsBg": {
       "__id__": 168

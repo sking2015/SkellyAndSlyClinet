@@ -61,6 +61,10 @@ export default class CRoomUpgradePanel extends Component {
     lblCostMetalGradient: LabelGradient = null;
 
 
+    @property({ type: Label, tooltip: "按钮文字颜色渐变控件" })
+    lgButtonText: LabelGradient = null;
+
+
     @property({ type: Node, tooltip: "背景遮罩节点" })
     nodeMask: Node = null;
 
@@ -124,18 +128,22 @@ export default class CRoomUpgradePanel extends Component {
 
         if (this.bCoinNotEnough) {
             this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
+            this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
             this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
+
         }
 
         if (this.bWoodNotEnough) {
             this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
+            this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
             this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
         }
 
         if (this.bMetalNotEnough) {
             this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
+            this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
             this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
         }
