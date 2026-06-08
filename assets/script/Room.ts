@@ -1,10 +1,13 @@
-import { _decorator, Component, instantiate, Node, Prefab, math, UITransform, Sprite, SpriteFrame, Animation, Label, ProgressBar, tween } from 'cc';
+import { _decorator, Color, Component, instantiate, Node, Prefab, math, UITransform, Sprite, SpriteFrame, Animation, Label, ProgressBar, AnimationClip } from 'cc';
 import { eRoomType, eMineBuffType, eOverseerType, eWorkerType } from './BaseDef';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CCharactor } from './charactor';
 import { CResManager } from './ResManager';
 import { CGlobalData } from './GlobalData';
-import { fadeInOut } from './common/common';
+import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinished, delay } from './common/common';
+import { COSCfgData, COSSkill, COverseerManager } from './OverseerMan';
+import { LabelGradient } from './common/LabelGradient';
+import { getI18nText } from './i18nLan';
 
 import { IResData, getResDataByRoomTypeAndLevel } from './ConfigInterface';
 
@@ -83,14 +86,41 @@ export class Room extends Component {
     @property({ type: Sprite, tooltip: "显示资源图标" })
     sprResourceIcon: Sprite = null;
 
+    @property({ type: Label, tooltip: "监工名字" })
+    lblOSName: Label = null;
+
+    @property({ type: Sprite, tooltip: "监工技能图标" })
+    sprOSSkillIcons: Sprite[] = [];
+
+    @property({ type: Label, tooltip: "监工技能说明" })
+    lblOSSkillTips: Label[] = [];
+
+    @property({ type: Sprite, tooltip: "扩展面板资源图标" })
+    sprExpandResIcon: Sprite = null;
+
+    @property({ type: Label, tooltip: "房间资源产量" })
+    lblOutputPerHours: Label = null;
+
+    @property({ type: Sprite, tooltip: "扩展面板资源容量图标" })
+    sprResCapIcon: Sprite = null;
+
+    @property({ type: Label, tooltip: "房间资源当前诸量" })
+    lblStock: Label = null;
+
+    @property({ type: Label, tooltip: "房间资源当前容量" })
+    lblCapacity: Label = null;
+
 
     //监工的角色对像
     charOverseer: CCharactor = null;
+    eOverseerType: eOverseerType = eOverseerType.eotNone;
 
     roomType: eRoomType = eRoomType.ertNone; // 房间类型
     roomLevel: number = 0;
 
     nWorkerNum: number = 0;
+
+    nOutputPerHours: number = 0; //标准产量(以小时计)
 
     nOutputPerTime: number = 5;// 每单位时间产量
 
@@ -140,8 +170,13 @@ export class Room extends Component {
     }
 
     refreshCurrentStock() {
-        this.labelCurrentStock.string = `${this.nCurrentStock.toFixed(2)}/${this.nCapacity}`;
+        this.labelCurrentStock.string = `${formatCompactNumber(this.nCurrentStock)}/${formatCompactNumber(this.nCapacity)}`;
         this.progressBarCurrentStock.progress = this.nCurrentStock / this.nCapacity;
+
+        //如果扩展界打开，要刷新扩展界面的当前存量
+        if (this.nodeExpandPanel.active) {
+            this.lblStock.string = formatCompactNumber(this.nCurrentStock);
+        }
     }
 
     start() {
@@ -191,26 +226,61 @@ export class Room extends Component {
             return;
         }
 
-        let resData: IResData = getResDataByRoomTypeAndLevel(this.roomType, this.roomLevel);
-        if (!resData) {
+        let resDataCur: IResData = getResDataByRoomTypeAndLevel(this.roomType, this.roomLevel);
+        if (!resDataCur) {
             console.error("can't get res data by room type ", this.roomType, " level ", this.roomLevel);
             return;
         }
 
 
-        this.nOutputPerTime = resData.ProducePerMin / 60 * INTERVAL_OUTPUT_PER_TIME;
-        this.nCapacity = resData.MaxCapacity;
+        //计算一下每小时产量
+        this.nOutputPerHours = resDataCur.ProducePer5Sec * 12 * 60;
+        this.nCapacity = resDataCur.MaxCapacity;
+
+        console.log("refreshRoomData~~", this.roomType);
 
 
+        const osData: COSCfgData = COverseerManager.instance.getOverseerData(this.eOverseerType);
+        if (osData) {
+            this.lblOSName.string = osData.name;
+
+            for (let i = 0; i < osData.skills.length; ++i) {
+                const skillData: COSSkill = osData.skills[i];
+                this.sprOSSkillIcons[i].spriteFrame = skillData.sfIcon;
+                this.lblOSSkillTips[i].string = skillData.effectTips;
+
+                this.lblOSSkillTips[i].node.getComponent(LabelGradient).bottomColor = Color.fromHEX(new Color(), '#00FF3D');
+
+                this.nOutputPerHours *= 1 + skillData.nRateAdd;
+                this.nCapacity *= 1 + skillData.nCapAdd;
+            }
+
+        }
 
 
+        this.nOutputPerTime = resDataCur.ProducePer5Sec;
+
+
+        this.refreshExpand();
         this.refreshCurrentStock();
         this.refreshRoomShow();
     }
 
+    refreshExpand() {
+
+        this.sprExpandResIcon.spriteFrame = CResManager.instance.getRoomResIcon(this.roomType);
+        this.sprResCapIcon.spriteFrame = CResManager.instance.getRoomResCapIcon(this.roomType);
+
+        this.lblStock.string = formatCompactNumber(this.nCurrentStock);
+
+        this.lblOutputPerHours.string = formatCompactNumber(this.nOutputPerHours) + "/HOUR";
+        this.lblCapacity.string = formatCompactNumber(this.nCapacity);
+    }
+
     refreshRoomShow() {
-        this.sprBg.spriteFrame = CResManager.instance.getRoomBg(this.roomType, this.roomLevel);
-        this.sprFg.spriteFrame = CResManager.instance.getRoomFg(this.roomType, this.roomLevel);
+        const nBgLv: number = Math.floor(this.roomLevel / 3) + 1;
+        this.sprBg.spriteFrame = CResManager.instance.getRoomBg(this.roomType, nBgLv);
+        this.sprFg.spriteFrame = CResManager.instance.getRoomFg(this.roomType, nBgLv);
     }
 
     refreshRoomLockShow() {
@@ -236,6 +306,9 @@ export class Room extends Component {
         comUnlock.play(comUnlock.clips[0].name);
         comUnlock.once(Animation.EventType.FINISHED, () => {
             fadeInOut(this.nodeLocked, 0.5, false, () => {
+                const nodeText: Node = this.nodeLocked.getChildByName('Label');
+                nodeText.active = false;
+
                 this.nodeLocked.active = false;
             });
 
@@ -270,23 +343,33 @@ export class Room extends Component {
     }
 
     setOverseer(eOverseer: eOverseerType) {
-        let prefabOS: Prefab = CResManager.instance.getOSPrefab(eOverseer);
+        if (this.eOverseerType != eOverseer) {
 
-        const nodeOs = instantiate(prefabOS);
-        nodeOs.position = this.nodeOSBorn.position;
-        console.log("check position", nodeOs.position);
-        nodeOs.parent = this.nodeOSLayer;
-        // nodeOs.scale = math.v3(0.8, 0.8, 0.8);
+            //这里是监工动画部份。。。
+            this.eOverseerType = eOverseer;
+            CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.eOverseerType);
+            let prefabOS: Prefab = CResManager.instance.getOSPrefab(eOverseer);
 
-        //监工只能有一个，设置新的就要把老的释放掉
-        if (this.charOverseer && this.charOverseer.node) {
-            this.charOverseer.node.destroy();
-            this.charOverseer = null;
+            const nodeOs = instantiate(prefabOS);
+            nodeOs.position = this.nodeOSBorn.position;
+            console.log("check position", nodeOs.position);
+            nodeOs.parent = this.nodeOSLayer;
+            // nodeOs.scale = math.v3(0.8, 0.8, 0.8);
+
+            //监工只能有一个，设置新的就要把老的释放掉
+            if (this.charOverseer && this.charOverseer.node) {
+                this.charOverseer.node.destroy();
+                this.charOverseer = null;
+            }
+
+            this.charOverseer = nodeOs.getComponent(CCharactor);
+            this.charOverseer.setActionRange(-250, 250);
+            this.charOverseer.playLand();
+
+            //这里需要刷新数据
+            this.refreshRoomData();
         }
 
-        this.charOverseer = nodeOs.getComponent(CCharactor);
-        this.charOverseer.setActionRange(-250, 250);
-        this.charOverseer.playLand();
 
     }
 
@@ -320,6 +403,7 @@ export class Room extends Component {
 
     onOpenExpand() {
         this.nodeExpandPanel.active = true;
+        this.refreshExpand();
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_expand, true, { index: this.index, offset: this.offset }))
     }
 
@@ -373,7 +457,7 @@ export class Room extends Component {
 
     }
 
-    onSelectOverseer(eType: eOverseerType) {
+    onSelectOverseer(eType: eOverseerType,) {
         let icon: SpriteFrame = CResManager.instance.getOSHead(eType);
         this.sprOSAvart.spriteFrame = icon;
         this.setOverseer(eType);
@@ -386,20 +470,48 @@ export class Room extends Component {
 
         this.nodeUpgradeEffect.active = true;
         let anim = this.nodeUpgradeEffect.getComponent(Animation);
-        anim.play(anim.clips[0].name);
+        const sAni = anim.clips[0].name;
+
+        anim.play(sAni);
         anim.once(Animation.EventType.FINISHED, () => {
             this.nodeUpgradeEffect.active = false;
         });
 
     }
 
-    onUpgrade() {
+    async onUpgrade() {
         console.log("room upgrade~!!!")
-        if (this.roomLevel < 3) {
+        if (this.roomLevel < 9) {
+
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_resource_change, true));
+            if (this.roomLevel == 3 || this.roomLevel == 6) {
+                this.nodeLocked.active = true;
+                await waitFadeInout(this.nodeLocked, 0.3, true);
+
+                let comUnlock = this.nodeLocked.getComponent(Animation);
+                const sAni = comUnlock.clips[0].name;
+
+                const animState = comUnlock.getState(sAni);
+
+                animState.wrapMode = AnimationClip.WrapMode.Reverse;
+                comUnlock.play(sAni);
+                await waitUntilAnimationFinished(comUnlock);
+                await delay(0.3, this);
+
+                animState.wrapMode = AnimationClip.WrapMode.Normal;
+                comUnlock.play(sAni);
+                await waitUntilAnimationFinished(comUnlock);
+            }
+
+
             this.setRoomLevel(this.roomLevel + 1);
             this.refreshRoomLevel();
             this.refreshRoomShow();
             this.playUpgradeEffect();
+
+            await waitFadeInout(this.nodeLocked, 0.3, false);
+            this.nodeLocked.active = false;
+
         }
     }
 
@@ -410,9 +522,14 @@ export class Room extends Component {
 
     onClickRoomUpgrade() {
         console.log("click onClickOpenRoomUpgrade");
-        this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_room_upgrade, true, { roomIdx: this.index }));
+        if (this.roomLevel < 9) {
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_room_upgrade, true, { roomIdx: this.index }));
 
-        this.CloseExpand();
+            this.CloseExpand();
+        } else {
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: getI18nText("HAVE_BEEN_MAXLV") }));
+        }
+
     }
 
 

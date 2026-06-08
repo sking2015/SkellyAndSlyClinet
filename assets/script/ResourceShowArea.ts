@@ -1,4 +1,5 @@
 import { _decorator, Component, Label, Node, Sprite, UITransform, math, tween } from 'cc';
+import { formatCompactNumber } from './common/common';
 import { CGlobalData } from './GlobalData';
 import { UniEvent } from './common/CustomEvent';
 import { CResManager } from './ResManager';
@@ -32,26 +33,6 @@ export class ResourceShowArea extends Component {
 
     @property({ type: Label, tooltip: "金币资源显示文本" })
     labelGold: Label = null;
-
-    startListnerEvent() {
-        // 监听子节点冒泡上来的事件
-        this.node.on(UniEvent.on_resource_change, this.refreshResource, this);
-        this.node.on(UniEvent.on_click_gather_res, this.onGatherRes, this);
-    }
-
-    stopListnerEvent() {
-
-        this.node.off(UniEvent.on_resource_change, this.refreshResource, this);
-        this.node.off(UniEvent.on_click_gather_res, this.onGatherRes, this);
-    }
-
-    onEnable() {
-        this.startListnerEvent();
-    }
-
-    onDisable() {
-        this.stopListnerEvent();
-    }
 
     start() {
         this.refreshResource();
@@ -110,12 +91,13 @@ export class ResourceShowArea extends Component {
     }
 
     refreshResource() {
-        this.labelCrystal.string = CGlobalData.instance.nGem.toString();
-        this.labelFood.string = CGlobalData.instance.nFood.toString();
-        this.labelGold.string = CGlobalData.instance.nCoin.toString();
-        this.labelMetal.string = CGlobalData.instance.nMetal.toString();
-        this.labelSoul.string = CGlobalData.instance.nSoul.toString();
-        this.labelWood.string = CGlobalData.instance.nWood.toString();
+        console.log("refreshResource~!!")
+        this.labelCrystal.string = formatCompactNumber(CGlobalData.instance.nGem);
+        this.labelFood.string = formatCompactNumber(CGlobalData.instance.nFood);
+        this.labelGold.string = formatCompactNumber(CGlobalData.instance.nCoin);
+        this.labelMetal.string = formatCompactNumber(CGlobalData.instance.nMetal);
+        this.labelSoul.string = formatCompactNumber(CGlobalData.instance.nSoul);
+        this.labelWood.string = formatCompactNumber(CGlobalData.instance.nWood);
     }
 
     update(deltaTime: number) {

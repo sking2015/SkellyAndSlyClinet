@@ -1,6 +1,7 @@
 import { _decorator, Color, color, Component, Label, Node, Sprite } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { IResData, getResDataByRoomTypeAndLevel } from './ConfigInterface';
+import { formatCompactNumber } from './common/common';
 import { LabelGradient } from './common/LabelGradient';
 import { CGlobalData } from './GlobalData';
 import { CResManager } from './ResManager';
@@ -61,7 +62,7 @@ export default class CRoomUpgradePanel extends Component {
     lblCostMetalGradient: LabelGradient = null;
 
 
-    @property({ type: Label, tooltip: "按钮文字颜色渐变控件" })
+    @property({ type: LabelGradient, tooltip: "按钮文字颜色渐变控件" })
     lgButtonText: LabelGradient = null;
 
 
@@ -75,6 +76,11 @@ export default class CRoomUpgradePanel extends Component {
     bCoinNotEnough: boolean = false;
     bWoodNotEnough: boolean = false;
     bMetalNotEnough: boolean = false;
+
+
+    nCostCoin: number = 0;
+    nCostWood: number = 0;
+    nCostMetal: number = 0;
 
     start() {
         this.nodeMask.on(Node.EventType.TOUCH_START, this.onClose, this);
@@ -92,9 +98,9 @@ export default class CRoomUpgradePanel extends Component {
 
         const roomData = CGlobalData.instance.getRoomDataByIndex(this.nCurRoomIndex);
 
-        this.lblCurCoin.string = CGlobalData.instance.nCoin.toString();
-        this.lblCurWood.string = CGlobalData.instance.nWood.toString();
-        this.lblCurMetal.string = CGlobalData.instance.nMetal.toString();
+        this.lblCurCoin.string = formatCompactNumber(CGlobalData.instance.nCoin);
+        this.lblCurWood.string = formatCompactNumber(CGlobalData.instance.nWood);
+        this.lblCurMetal.string = formatCompactNumber(CGlobalData.instance.nMetal);
 
 
         this.lblCurRoomLevel.string = `${roomData.level}`;
@@ -108,19 +114,19 @@ export default class CRoomUpgradePanel extends Component {
 
         this.lblCurRoomRes.string = resDataCur.ResType;
 
-        this.lblCurLevelOutput.string = (resDataCur.ProducePerMin * 60).toString() + "/H";
-        this.lblNextLevelOutput.string = (resDataNext.ProducePerMin * 60).toString() + "/H";
+        this.lblCurLevelOutput.string = formatCompactNumber(resDataCur.ProducePer5Sec * 12 * 60) + "/H";
+        this.lblNextLevelOutput.string = formatCompactNumber(resDataNext.ProducePer5Sec * 12 * 60) + "/H";
 
-        this.lblCurStorage.string = roomData.nStock.toFixed(2);
+        this.lblCurStorage.string = formatCompactNumber(roomData.nStock);
 
         this.sprCapacityIcon.spriteFrame = CResManager.instance.getRoomResCapIcon(roomData.eType);
 
-        this.lblCurLevelCapacity.string = resDataCur.MaxCapacity.toString();
-        this.lblNextLevelCapacity.string = resDataNext.MaxCapacity.toString();
+        this.lblCurLevelCapacity.string = formatCompactNumber(resDataCur.MaxCapacity);
+        this.lblNextLevelCapacity.string = formatCompactNumber(resDataNext.MaxCapacity);
 
-        this.lblCostCoin.string = resDataNext.Cost_Gold.toString();
-        this.lblCostWood.string = resDataNext.Cost_Metal.toString();
-        this.lblCostMetal.string = resDataNext.Cost_Metal.toString();
+        this.lblCostCoin.string = formatCompactNumber(resDataNext.Cost_Gold);
+        this.lblCostWood.string = formatCompactNumber(resDataNext.Cost_Metal);
+        this.lblCostMetal.string = formatCompactNumber(resDataNext.Cost_Metal);
 
         this.bCoinNotEnough = CGlobalData.instance.nCoin < resDataNext.Cost_Gold;
         this.bWoodNotEnough = CGlobalData.instance.nWood < resDataNext.Cost_Metal;
@@ -130,7 +136,9 @@ export default class CRoomUpgradePanel extends Component {
             this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
+            this.nCostCoin = resDataNext.Cost_Gold;
             this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
+            this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#DDC200')
 
         }
 
@@ -138,14 +146,18 @@ export default class CRoomUpgradePanel extends Component {
             this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
+            this.nCostWood = resDataNext.Cost_Metal;
             this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
+            this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#DDC200')
         }
 
         if (this.bMetalNotEnough) {
             this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
+            this.nCostMetal = resDataNext.Cost_Metal;
             this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
+            this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#DDC200')
         }
     }
 
@@ -160,6 +172,14 @@ export default class CRoomUpgradePanel extends Component {
 
     setRoomIndex(idx: number) {
         this.nCurRoomIndex = idx;
+    }
+
+    onCostRes() {
+        console.log("资源消耗前", CGlobalData.instance);
+        CGlobalData.instance.nCoin -= this.nCostCoin;
+        CGlobalData.instance.nMetal -= this.nCostMetal;
+        CGlobalData.instance.nWood -= this.nCostWood;
+        console.log("资源消耗后", CGlobalData.instance);
     }
 
     onClickConfirm() {
@@ -177,6 +197,7 @@ export default class CRoomUpgradePanel extends Component {
 
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: tips }));
         } else {
+            this.onCostRes();
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_room_upgrade, true, { roomIdx: this.nCurRoomIndex }))
             this.onClose();
         }

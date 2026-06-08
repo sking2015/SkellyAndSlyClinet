@@ -9,8 +9,8 @@ export interface IResData {
     readonly Name: string;
     readonly ResType: string;
     readonly FixedOutput: number;
-    readonly ProducePerMin: number;
-    readonly MaxAccTime_Min: number;
+    readonly ProducePer5Sec: number;
+    readonly Hourly_resource: number;
     readonly MaxCapacity: number;
     readonly Cost_Gold: number;
     readonly Cost_Metal: number;

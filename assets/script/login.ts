@@ -3,7 +3,6 @@
 import * as cc from 'cc'
 import { gameStateMgr } from './GameStateMgr';
 import { SessionResult } from './GameConfig';
-import { Prefab } from 'cc';
 const { ccclass, property } = cc._decorator;
 
 @ccclass('login')

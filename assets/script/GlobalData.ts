@@ -21,6 +21,8 @@ export class CRoomData {
 
     nStock: number = 0; // 当前房间的库存量
 
+    eOSType: eOverseerType = eOverseerType.eotNone;
+
     constructor(eType: eRoomType, nLvel: number) {
         this.eType = eType;
         this.level = nLvel;
@@ -34,12 +36,12 @@ export class CGlobalData {
 
     private nUnlockRoomNum: number = 0; // 已经解锁的房间数量
 
-    nWood: number = 200;
-    nMetal: number = 200;
-    nGem: number = 200;
-    nCoin: number = 1000;
-    nFood: number = 200;
-    nSoul: number = 200;
+    nWood: number = 200000000;
+    nMetal: number = 200000000;
+    nGem: number = 20000000;
+    nCoin: number = 1000000000;
+    nFood: number = 2000000000;
+    nSoul: number = 200000;
 
     constructor() {
         console.log("全局数据类开始构造");
@@ -125,5 +127,21 @@ export class CGlobalData {
         if (roomData) {
             roomData.level = nLevel;
         }
+    }
+
+    setRoomOSTypeByIndex(idx: number, eot: eOverseerType) {
+        const roomData = this.getRoomDataByIndex(idx);
+        if (roomData) {
+            roomData.eOSType = eot;
+        }
+    }
+
+    getRoomOSTypeByIndex(idx: number): eOverseerType {
+        const roomData = this.getRoomDataByIndex(idx);
+        if (roomData) {
+            return roomData.eOSType;
+        }
+
+        return eOverseerType.eotNone;
     }
 }

@@ -57,6 +57,7 @@ export class main extends Component {
         this.node.on(UniEvent.on_open_room_upgrade, this.onPopRoomUpgrade, this);
         this.node.on(UniEvent.on_click_room_upgrade, this.onRoomUpgrade, this);
         this.node.on(UniEvent.on_click_gather_res, this.onGatherRes, this);
+        this.node.on(UniEvent.on_resource_change, this.refreshResource, this);
         this.node.on(UniEvent.on_pop_tips, this.onPopTips, this);
     }
 
@@ -66,6 +67,7 @@ export class main extends Component {
         this.node.off(UniEvent.on_open_room_upgrade, this.onPopRoomUpgrade, this);
         this.node.off(UniEvent.on_click_room_upgrade, this.onRoomUpgrade, this);
         this.node.off(UniEvent.on_click_gather_res, this.onGatherRes, this);
+        this.node.off(UniEvent.on_resource_change, this.refreshResource, this);
         this.node.off(UniEvent.on_pop_tips, this.onPopTips, this);
     }
 
@@ -75,6 +77,10 @@ export class main extends Component {
 
     onDisable() {
         this.stopListnerEvent();
+    }
+
+    refreshResource(event: CustomEvent) {
+        this.comResShowArea.refreshResource();
     }
 
     onGatherRes(event: CustomEvent) {

@@ -5,11 +5,12 @@ export interface ICrystalMine {
     readonly Name: string;
     readonly ResType: string;
     readonly FixedOutput: number;
-    readonly ProducePerMin: number;
-    readonly MaxAccTime_Min: number;
+    readonly ProducePer5Sec: number;
+    readonly Hourly_resource: number;
     readonly MaxCapacity: number;
     readonly Cost_Gold: number;
     readonly Cost_Metal: number;
+    readonly Cost_lumber: number;
 }
 
 export const CrystalMineData: Record<string | number, ICrystalMine> = {
@@ -18,98 +19,107 @@ export const CrystalMineData: Record<string | number, ICrystalMine> = {
         "Name": "Crystal Mine",
         "ResType": "Crystal",
         "FixedOutput": 0,
-        "ProducePerMin": 2,
-        "MaxAccTime_Min": 480,
-        "MaxCapacity": 960,
-        "Cost_Gold": 2000,
-        "Cost_Metal": 0
+        "ProducePer5Sec": 50,
+        "Hourly_resource": 36000,
+        "MaxCapacity": 300000,
+        "Cost_Gold": 0,
+        "Cost_Metal": 0,
+        "Cost_lumber": 0
     },
     2: {
         "Level": 2,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
-        "FixedOutput": 75,
-        "ProducePerMin": 3,
-        "MaxAccTime_Min": 480,
-        "MaxCapacity": 1440,
-        "Cost_Gold": 9200,
-        "Cost_Metal": 2600
+        "FixedOutput": 115000,
+        "ProducePer5Sec": 80,
+        "Hourly_resource": 57600,
+        "MaxCapacity": 500000,
+        "Cost_Gold": 50000,
+        "Cost_Metal": 38000,
+        "Cost_lumber": 50000
     },
     3: {
         "Level": 3,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
-        "FixedOutput": 120,
-        "ProducePerMin": 4,
-        "MaxAccTime_Min": 480,
-        "MaxCapacity": 1920,
-        "Cost_Gold": 17000,
-        "Cost_Metal": 4500
+        "FixedOutput": 185000,
+        "ProducePer5Sec": 130,
+        "Hourly_resource": 93600,
+        "MaxCapacity": 1000000,
+        "Cost_Gold": 400000,
+        "Cost_Metal": 300000,
+        "Cost_lumber": 400000
     },
     4: {
         "Level": 4,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
-        "FixedOutput": 180,
-        "ProducePerMin": 7,
-        "MaxAccTime_Min": 720,
-        "MaxCapacity": 5040,
-        "Cost_Gold": 31500,
-        "Cost_Metal": 8000
+        "FixedOutput": 300000,
+        "ProducePer5Sec": 210,
+        "Hourly_resource": 151200,
+        "MaxCapacity": 2000000,
+        "Cost_Gold": 1500000,
+        "Cost_Metal": 1100000,
+        "Cost_lumber": 1500000
     },
     5: {
         "Level": 5,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
-        "FixedOutput": 280,
-        "ProducePerMin": 11,
-        "MaxAccTime_Min": 720,
-        "MaxCapacity": 7920,
-        "Cost_Gold": 58500,
-        "Cost_Metal": 14000
+        "FixedOutput": 490000,
+        "ProducePer5Sec": 340,
+        "Hourly_resource": 244800,
+        "MaxCapacity": 4000000,
+        "Cost_Gold": 6000000,
+        "Cost_Metal": 4500000,
+        "Cost_lumber": 6000000
     },
     6: {
         "Level": 6,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
-        "FixedOutput": 440,
-        "ProducePerMin": 17,
-        "MaxAccTime_Min": 720,
-        "MaxCapacity": 12240,
-        "Cost_Gold": 108500,
-        "Cost_Metal": 24500
+        "FixedOutput": 790000,
+        "ProducePer5Sec": 550,
+        "Hourly_resource": 396000,
+        "MaxCapacity": 7500000,
+        "Cost_Gold": 15000000,
+        "Cost_Metal": 11200000,
+        "Cost_lumber": 15000000
     },
     7: {
         "Level": 7,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
-        "FixedOutput": 680,
-        "ProducePerMin": 27,
-        "MaxAccTime_Min": 1440,
-        "MaxCapacity": 38880,
-        "Cost_Gold": 201000,
-        "Cost_Metal": 43000
+        "FixedOutput": 1300000,
+        "ProducePer5Sec": 900,
+        "Hourly_resource": 648000,
+        "MaxCapacity": 15000000,
+        "Cost_Gold": 40000000,
+        "Cost_Metal": 30000000,
+        "Cost_lumber": 40000000
     },
     8: {
         "Level": 8,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
-        "FixedOutput": 1000,
-        "ProducePerMin": 42,
-        "MaxAccTime_Min": 1440,
-        "MaxCapacity": 60480,
-        "Cost_Gold": 371500,
-        "Cost_Metal": 75500
+        "FixedOutput": 2100000,
+        "ProducePer5Sec": 1450,
+        "Hourly_resource": 1044000,
+        "MaxCapacity": 25000000,
+        "Cost_Gold": 90000000,
+        "Cost_Metal": 67500000,
+        "Cost_lumber": 90000000
     },
     9: {
         "Level": 9,
         "Name": "Crystal Mine",
         "ResType": "Crystal",
-        "FixedOutput": 1600,
-        "ProducePerMin": 65,
-        "MaxAccTime_Min": 1440,
-        "MaxCapacity": 93600,
-        "Cost_Gold": 687500,
-        "Cost_Metal": 132000
+        "FixedOutput": 3400000,
+        "ProducePer5Sec": 2350,
+        "Hourly_resource": 1692000,
+        "MaxCapacity": 42500000,
+        "Cost_Gold": 180000000,
+        "Cost_Metal": 135000000,
+        "Cost_lumber": 180000000
     }
 };

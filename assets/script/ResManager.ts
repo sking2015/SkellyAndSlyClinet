@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Prefab, SpriteFrame } from 'cc';
+import { _decorator, Component, Node, Prefab, SpriteFrame, assetManager, AssetManager, isValid } from 'cc';
 import { COverseerCfg, CRoomType2Data } from './KeyValuePair';
 import { eOverseerType, eRoomType } from './BaseDef';
 const { ccclass, property } = _decorator;
@@ -18,6 +18,9 @@ export class CResManager extends Component {
 
     private mapRoomImgData: Map<eRoomType, CRoomType2Data> = new Map();
 
+
+    private mapSkillsIcon: Map<string, SpriteFrame> = new Map();
+
     // 静态实例变量
     private static _instance: CResManager = null!;
 
@@ -27,6 +30,48 @@ export class CResManager extends Component {
             console.error("CResManager 尚未初始化！请确保它被挂载到了场景的节点上。");
         }
         return CResManager._instance;
+    }
+
+    private async _dynLoadSkillsIcon() {
+        try {
+            // 步骤 A：异步加载 Bundle
+            const bundle = await new Promise<AssetManager.Bundle>((resolve, reject) => {
+                assetManager.loadBundle('skillsicon', (err, bdl) => err ? reject(err) : resolve(bdl));
+            });
+
+            // 异步安全检查：防止加载期间组件已被销毁
+            if (!isValid(this)) return;
+
+            console.log('Bundle 加载成功，开始读取所有 SpriteFrame...');
+
+            // 步骤 B：批量加载 Bundle 根目录（或指定子目录）下的所有 SpriteFrame
+            // 注意：3.x 中加载目录下的 SpriteFrame，路径类型要强行指定为 SpriteFrame
+            const spriteFrames = await new Promise<SpriteFrame[]>((resolve, reject) => {
+                // 如果资源在根目录，路径传 '' 或 '.' ；如果在子目录如 'icons'，则传 'icons'
+                bundle.loadDir('', SpriteFrame, (err, assets) => err ? reject(err) : resolve(assets));
+            });
+
+            if (!isValid(this)) return;
+
+            // 步骤 C：遍历结果，以图片名称为键存入 Map 缓存
+            this.mapSkillsIcon.clear(); // 清空旧缓存
+            for (const sf of spriteFrames) {
+                if (sf && sf.name) {
+                    this.mapSkillsIcon.set(sf.name, sf);
+                    console.log(`成功缓存图标: [${sf.name}]`);
+                }
+            }
+
+            console.log(`所有图标缓存完毕，共计: ${this.mapSkillsIcon.size} 个`);
+
+        } catch (err) {
+            console.error('加载或缓存图标 Bundle 失败:', err);
+        }
+    }
+
+
+    public getSkillIcon(path: string): SpriteFrame {
+        return this.mapSkillsIcon.get(path);
     }
 
     protected onLoad() {
@@ -54,6 +99,8 @@ export class CResManager extends Component {
 
             this.mapRoomImgData.set(data.eRt, data);
         }
+
+        this._dynLoadSkillsIcon();
     }
 
     protected onDestroy() {
