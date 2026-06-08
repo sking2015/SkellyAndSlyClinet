@@ -75,7 +75,7 @@ export class ResourceShowArea extends Component {
             .to(0.3, { scale: math.v3(0, 0, 0) }, { easing: 'backIn' }).call(() => {
                 switch (roomType) {
                     case eRoomType.ertCrystalMine:
-                        CGlobalData.instance.nGem += amount;
+                        CGlobalData.instance.nCrystal += amount;
                         break;
                     case eRoomType.ertLumberMill:
                         CGlobalData.instance.nWood += amount;
@@ -92,7 +92,7 @@ export class ResourceShowArea extends Component {
 
     refreshResource() {
         console.log("refreshResource~!!")
-        this.labelCrystal.string = formatCompactNumber(CGlobalData.instance.nGem);
+        this.labelCrystal.string = formatCompactNumber(CGlobalData.instance.nCrystal);
         this.labelFood.string = formatCompactNumber(CGlobalData.instance.nFood);
         this.labelGold.string = formatCompactNumber(CGlobalData.instance.nCoin);
         this.labelMetal.string = formatCompactNumber(CGlobalData.instance.nMetal);

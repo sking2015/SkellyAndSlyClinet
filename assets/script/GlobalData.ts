@@ -1,4 +1,4 @@
-import { eOverseerType, eRoomType } from './BaseDef';
+import { eOverseerType, eRoomType, IPlayer } from './BaseDef';
 
 export class COverseerData {
     //类型
@@ -38,7 +38,7 @@ export class CGlobalData {
 
     nWood: number = 200000000;
     nMetal: number = 200000000;
-    nGem: number = 20000000;
+    nCrystal: number = 20000000;
     nCoin: number = 1000000000;
     nFood: number = 2000000000;
     nSoul: number = 200000;
@@ -143,5 +143,15 @@ export class CGlobalData {
         }
 
         return eOverseerType.eotNone;
+    }
+
+    //加载数据
+    loadData(data: IPlayer) {
+        this.nCoin = data.data.resources.coin;
+        this.nWood = data.data.resources.wood;
+        this.nMetal = data.data.resources.metal;
+        this.nCrystal = data.data.resources.crystal;
+        this.nFood = data.data.resources.food;
+        this.nSoul = data.data.resources.soul;
     }
 }

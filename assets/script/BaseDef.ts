@@ -1,3 +1,4 @@
+import { Interface } from "readline";
 
 //房间类型
 export enum eRoomType {
@@ -32,6 +33,31 @@ export enum eWorkerType {
     ewtWood = 2,                //木匠
 }
 
+////////////////////////
+//网络交换数据定义
+//////////////////////////
+export interface IResources {
+    readonly coin: number;
+    readonly wood: number;
+    readonly metal: number;
+    readonly crystal: number;
+    readonly food: number;
+    readonly soul: number;
 
+}
+
+export interface IPlayerData {
+    readonly overseers: any[];
+    readonly rooms: any[];
+    readonly resources: IResources;
+}
+
+export interface IPlayer {
+    readonly playerId: string;
+    readonly level: number;
+    readonly data: IPlayerData;
+    readonly token: string;
+
+}
 
 

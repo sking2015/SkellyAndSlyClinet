@@ -1,6 +1,7 @@
 import { director } from 'cc';
 import { WebSession } from './WebSession';
 import { GameConfig, SessionResult, GameState } from './GameConfig';
+import { CGlobalData } from './GlobalData';
 
 /**
  * 登录回调类型
@@ -86,6 +87,8 @@ class GameStateMgr {
 
         const [result, data] = await WebSession.instance.requestLogin(this._playerId);
 
+        console.log("login request respond data", data);
+
         if (result === SessionResult.SUCCESS) {
             if (data?.token) {
                 this._playerToken = data.token;
@@ -95,6 +98,7 @@ class GameStateMgr {
                     console.warn('[GameStateMgr] Failed to save token:', e);
                 }
             }
+            CGlobalData.instance.loadData(data);
             this._currentState = GameState.MAIN;
             console.log('[GameStateMgr] Login successful!');
         } else {

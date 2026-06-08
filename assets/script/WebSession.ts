@@ -1,6 +1,7 @@
 
 
 import { GameConfig, SessionResult, GameState } from './GameConfig';
+import { IPlayer } from './BaseDef';
 
 export class WebSession {
     private static _instance: WebSession = null;
@@ -12,7 +13,7 @@ export class WebSession {
         return WebSession._instance;
     }
 
-    public async requestLogin(playerId: string): Promise<[SessionResult, any]> {
+    public async requestLogin(playerId: string): Promise<[SessionResult, IPlayer]> {
         const url = GameConfig.LOGIN_URL;
         console.log('[GameStateMgr] Request URL:', url);
 
