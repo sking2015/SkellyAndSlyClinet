@@ -5,7 +5,8 @@ export enum eRoomType {
     ertNone = 0, // 无
     ertLumberMill = 1,  // 伐木场
     ertMetalWorkshop = 2,   // 金属工坊
-    ertCrystalMine = 3      // 水晶矿
+    ertCrystalMine = 3,      // 水晶矿
+    ertDoor = 10,            //魔王城大门
 }
 
 //矿场增益类型
@@ -43,18 +44,26 @@ export interface IResources {
     readonly crystal: number;
     readonly food: number;
     readonly soul: number;
+}
+
+export interface IRoom {
+    readonly index: number;
+    readonly room_type: number;
+    readonly level: number;
+    readonly overseer_index: number;
+    readonly storage: number;
 
 }
 
 export interface IPlayerData {
+    readonly level: number;
     readonly overseers: any[];
-    readonly rooms: any[];
+    readonly rooms: IRoom[];
     readonly resources: IResources;
 }
 
 export interface IPlayer {
     readonly playerId: string;
-    readonly level: number;
     readonly data: IPlayerData;
     readonly token: string;
 

@@ -61,6 +61,9 @@ export class CRoomType2Data {
     @property({ type: Enum(eRoomType), tooltip: '房间类型' })
     eRt: eRoomType = eRoomType.ertNone;
 
+    @property({ type: Prefab, tooltip: '房间对应的prefab' })
+    prefabRoom: Prefab = null;
+
     @property({ type: CRoomLv2Spriteframe, tooltip: '对应的类型的房间等级数据' })
     lvdata: CRoomLv2Spriteframe[] = [];
 

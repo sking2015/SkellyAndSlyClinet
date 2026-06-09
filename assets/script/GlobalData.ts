@@ -81,12 +81,13 @@ export class CGlobalData {
 
     initRoomsData() {
         //先每种房间来两个吧
-        this.listRooms[0] = new CRoomData(eRoomType.ertLumberMill, 0);
+        this.listRooms[0] = new CRoomData(eRoomType.ertDoor, 0);
         this.listRooms[1] = new CRoomData(eRoomType.ertLumberMill, 0);
-        this.listRooms[2] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
+        this.listRooms[2] = new CRoomData(eRoomType.ertLumberMill, 0);
         this.listRooms[3] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
-        this.listRooms[4] = new CRoomData(eRoomType.ertCrystalMine, 0);
+        this.listRooms[4] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
         this.listRooms[5] = new CRoomData(eRoomType.ertCrystalMine, 0);
+        this.listRooms[6] = new CRoomData(eRoomType.ertCrystalMine, 0);
     }
 
     foreachRooms(callback: Function) {

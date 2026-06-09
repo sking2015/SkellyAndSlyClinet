@@ -71,6 +71,8 @@ class GameStateMgr {
         this.doLogin(callback);
     }
 
+    //public room
+
     /**
      *  更换监工
      */

@@ -1,21 +1,16 @@
 import { _decorator, Component, instantiate, Node, Prefab } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
-
+import { CResManager } from './ResManager';
 import { Room } from './Room';
+import { CBaseRoom } from './room/BaseRoom';
 import { eOverseerType } from './BaseDef';
 import { CRoomData, CGlobalData } from './GlobalData';
 const { ccclass, property } = _decorator;
 
 @ccclass('Roomlist')
 export class Roomlist extends Component {
-    @property({
-        type: Prefab,
-        tooltip: "房间预制件"
-    })
-    prefabRoom: Prefab = null;
 
-
-    rooms: Room[] = [];
+    rooms: CBaseRoom[] = [];
 
 
     startListnerEvent() {
@@ -101,10 +96,12 @@ export class Roomlist extends Component {
         let index: number = 0;
         CGlobalData.instance.foreachRooms((data: CRoomData) => {
             console.log("room data", data);
-            const nodeRoom = instantiate(this.prefabRoom);
+
+            const prefabRoom: Prefab = CResManager.instance.getRoomPrefab(data.eType);
+            const nodeRoom = instantiate(prefabRoom);
             nodeRoom.parent = this.node;
 
-            const ComRoom: Room = nodeRoom.getComponent(Room);
+            const ComRoom: CBaseRoom = nodeRoom.getComponent(CBaseRoom);
             ComRoom.index = index;
             ComRoom.setRoomType(data.eType);
             ComRoom.setRoomLevel(data.level);

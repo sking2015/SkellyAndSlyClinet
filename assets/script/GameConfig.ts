@@ -10,8 +10,10 @@ export class GameConfig {
 
     //具体请求...
 
-    //第一个是登录
+    //登录请求
     public static readonly API_LOGIN: string = '/api/login';
+    //房间相关类请求
+    public static readonly API_ROOM: string = '/api/room';
     //改变监工
     public static readonly API_CHANGE_OVERSEER: string = '/api/change_overseer'
 
@@ -21,6 +23,9 @@ export class GameConfig {
     //完整请求地址
     // 登录API地址
     public static readonly LOGIN_URL: string = this.ADDRESS + this.API_LOGIN;
+
+    //房间相关类请求地址
+    public static readonly ROOM_URL: string = this.ADDRESS + this.API_ROOM;
 
     // 请求改变监工地址
     public static readonly CHANGE_OS_URL: string = this.ADDRESS + this.API_CHANGE_OVERSEER;

@@ -3,6 +3,7 @@ import { eRoomType } from './BaseDef';
 import { CrystalMineData } from './config/CrystalMine';
 import { MetalWorkshopData } from './config/MetalWorkshop';
 import { LumberMillData } from './config/LumberMill';
+import { IRoomConfig, RoomConfigData } from './config/RoomConfig';
 
 export interface IResData {
     readonly Level: number;
@@ -28,4 +29,8 @@ export function getResDataByRoomTypeAndLevel(eRt: eRoomType, level: number): IRe
             console.error("未知的房间类型", eRt);
             return null;
     }
+}
+
+export function getRoomName(idx: number): string {
+    return RoomConfigData[idx].RoomName;
 }

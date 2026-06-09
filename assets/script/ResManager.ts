@@ -136,6 +136,11 @@ export class CResManager extends Component {
         return null;
     }
 
+    getRoomPrefab(eType: eRoomType): Prefab {
+        const roomdata: CRoomType2Data = this.mapRoomImgData.get(eType);
+        return roomdata.prefabRoom;
+    }
+
     getRoomBg(eType: eRoomType, level: number): SpriteFrame {
         const roomdata: CRoomType2Data = this.mapRoomImgData.get(eType);
         if (level >= 1) {
