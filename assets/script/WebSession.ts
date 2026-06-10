@@ -57,6 +57,12 @@ export class WebSession {
         return this.sendGameData(url, playerID, token, actiton, gameData);
     }
 
+    public async requestGather(playerID: string, token: string, gameData: any): Promise<[SessionResult, IPlayerData]> {
+        const url = GameConfig.ROOM_URL;
+        const actiton = eWebAction.ewa_room_gather;
+        return this.sendGameData(url, playerID, token, actiton, gameData);
+    }
+
     private async sendGameData(url: string, playerID: string, token: string, action: string, gameData: any): Promise<[SessionResult, IPlayerData]> {
         const timestamp = Math.floor(Date.now() / 1000);
 

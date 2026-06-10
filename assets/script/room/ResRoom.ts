@@ -1,7 +1,7 @@
 import { _decorator, Node, Label, ProgressBar, Color, Sprite, SpriteFrame, math, Prefab, instantiate, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CCharactor } from '../charactor';
-import { eRoomType, eMineBuffType, eOverseerType, eWorkerType } from '../BaseDef';
+import { eRoomType, eMineBuffType, eOverseerType, IPlayerData } from '../BaseDef';
 import { COSCfgData, COSSkill, COverseerManager } from '../OverseerMan';
 import { CGlobalData } from '../GlobalData';
 import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinished, delay } from '../common/common';
@@ -9,6 +9,8 @@ import { CResManager } from '../ResManager';
 import { IResData, getResDataByRoomTypeAndLevel } from '../ConfigInterface';
 import { LabelGradient } from '../common/LabelGradient';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
+import { gameStateMgr } from '../GameStateMgr';
+import { SessionResult } from '../GameConfig';
 
 const { ccclass, property } = _decorator;
 
@@ -96,6 +98,11 @@ export class CResRoom extends CBaseRoom {
 
     start() {
         super.start();
+        this.labelOutputPerTime.string = "";
+    }
+
+    setStock(nStock: number) {
+        this.nCurrentStock = nStock;
     }
 
     refreshCurrentStock() {
@@ -253,22 +260,43 @@ export class CResRoom extends CBaseRoom {
         this.genWorker();
     }
 
+    //采集由于有客户端表现，所以要分两次采发送消息，首先是开始采集是收到服务器返回成功开始采集
+    //由于采集可能耗时很久，在采集完了时要再发一次采集请求，用服务器最新数据刷新界面显示    
     bGatering: boolean = false;
     startGatherRes() {
-        this.bGatering = true;
+        gameStateMgr.RoomGather(this.index, (result: SessionResult, data: IPlayerData) => {
+            if (SessionResult.SUCCESS == result) {
+                this.bGatering = true;
+            }
+        })
+
     }
 
     onceGather() {
-        this.nCurrentStock -= this.nOutputPerTime;
 
-        //收集完毕
-        if (this.nCurrentStock <= 0) {
-            this.nCurrentStock = 0;
+        //要大于单位产量才收集
+        if (this.nCurrentStock > 0) {
+
+            let count = this.nCurrentStock > this.nOutputPerTime ? this.nOutputPerTime : this.nCurrentStock;
+            this.nCurrentStock -= count;
+
+            this.refreshCurrentStock();
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_gather_res, true, { roomType: this.roomType, amount: count, srcNode: this.sprResourceIcon.node }));
+        } else {
+            //如果已经不大于零，表示已经采集完毕，需要再向服务器请求一次
             this.bGatering = false;
-        }
+            gameStateMgr.RoomGather(this.index, (result: SessionResult, data: IPlayerData) => {
+                if (SessionResult.SUCCESS == result) {
+                    CGlobalData.instance.loadData(data);
 
-        this.refreshCurrentStock();
-        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_gather_res, true, { roomType: this.roomType, amount: this.nOutputPerTime, srcNode: this.sprResourceIcon.node }));
+                    this.nCurrentStock = CGlobalData.instance.getRoomStockByIndex(this.index);
+                    this.refreshCurrentStock();
+
+                    //再通知主界面刷新一次，避免和服务器不同步
+                    this.node.dispatchEvent((new CustomEvent(UniEvent.on_resource_change, true)));
+                }
+            })
+        }
     }
 
 

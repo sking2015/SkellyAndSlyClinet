@@ -89,6 +89,10 @@ export class CBaseRoom extends Component {
         }
     }
 
+    setStock(nStock: number) {
+        console.log("资源型房间需要设置当前存量资源");
+    }
+
     refreshRoomData() {
         this.refreshExpand();
         this.refreshRoomShow();
@@ -176,17 +180,20 @@ export class CBaseRoom extends Component {
 
         //解锁和升级的服务器逻辑完全一样
         const [result, data] = await gameStateMgr.RoomLvUpPromise(this.index);
-        if (result === SessionResult.SUCCESS) {
+        if (result != SessionResult.SUCCESS) {
             console.log("服务器错误，以后看是弹个窗叫玩家重连还是干啥")
             return;
         }
 
         this.setRoomLevel(1);
 
+
         let comUnlock = this.nodeLocked.getComponent(Animation);
         comUnlock.play(comUnlock.clips[0].name);
         comUnlock.once(Animation.EventType.FINISHED, () => {
+
             fadeInOut(this.nodeLocked, 0.5, false, () => {
+
                 const nodeText: Node = this.nodeLocked.getChildByName('Label');
                 nodeText.active = false;
 
@@ -196,7 +203,8 @@ export class CBaseRoom extends Component {
             this.onUnlock();
         });
 
-        CGlobalData.instance.unlockRoom();
+
+        //CGlobalData.instance.unlockRoom();
 
         this.playUpgradeEffect(false);
         this.refreshRoomData();
@@ -218,7 +226,7 @@ export class CBaseRoom extends Component {
         if (this.roomLevel < 9) {
 
             const [result, data] = await gameStateMgr.RoomLvUpPromise(this.index);
-            if (result === SessionResult.SUCCESS) {
+            if (result != SessionResult.SUCCESS) {
                 console.log("服务器错误，以后看是弹个窗叫玩家重连还是干啥")
                 return;
             }

@@ -1,7 +1,6 @@
 import { _decorator, Component, instantiate, Node, Prefab } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CResManager } from './ResManager';
-import { Room } from './Room';
 import { CBaseRoom } from './room/BaseRoom';
 import { eOverseerType } from './BaseDef';
 import { CRoomData, CGlobalData } from './GlobalData';
@@ -106,7 +105,10 @@ export class Roomlist extends Component {
             ComRoom.setRoomType(data.eType);
             ComRoom.setRoomLevel(data.level);
             if (data.level > 0) {
+                ComRoom.onUnlock();
+                ComRoom.setStock(data.nStock);
                 ComRoom.refreshRoomData();
+
             }
 
 

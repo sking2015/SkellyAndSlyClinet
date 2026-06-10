@@ -37,6 +37,12 @@ export class CRoomData {
         this.nStock = room.storage;
         this.eOSType = room.overseer_index
     }
+
+    load(data: IRoom) {
+        this.nStock = data.storage;
+        this.level = data.level;
+        this.eOSType = data.overseer_index;
+    }
 }
 
 //全局数据类，用来保存从服务器下发的数据
@@ -156,6 +162,15 @@ export class CGlobalData {
         return eOverseerType.eotNone;
     }
 
+    getRoomStockByIndex(idx: number): number {
+        const roomData = this.getRoomDataByIndex(idx);
+        if (roomData) {
+            return roomData.nStock;
+        }
+
+        return 0;
+    }
+
     //加载数据
     loadData(data: IPlayerData) {
         this.nCoin = data.resources.coin;
@@ -165,10 +180,24 @@ export class CGlobalData {
         this.nFood = data.resources.food;
         this.nSoul = data.resources.soul;
 
+        //新加载数据重新计算解锁房间数
+        this.nUnlockRoomNum = 0;
         for (let i = 0; i < data.rooms.length; ++i) {
             const rd: IRoom = data.rooms[i];
             console.log("room data", rd);
-            this.listRooms[i] = new CRoomData(rd);
+            if (this.listRooms[i]) {
+                this.listRooms[i].load(rd);
+            } else {
+                this.listRooms[i] = new CRoomData(rd);
+            }
+
+            //如果有等级，解锁房间要加1
+            if (rd.level > 0) {
+                this.nUnlockRoomNum++;
+            }
+
         }
+
+        console.log("当前解锁房间数", this.nUnlockRoomNum);
     }
 }

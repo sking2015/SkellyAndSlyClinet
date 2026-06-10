@@ -134,6 +134,18 @@ class GameStateMgr {
         }
     }
 
+    public async RoomGatherPromise(index: number): Promise<[SessionResult, IPlayerData]> {
+        const gameData = { room_index: index }
+        const [result, data] = await WebSession.instance.requestGather(this.playerId, this.playerToken, gameData)
+
+        return [result, data];
+    }
+
+    public async RoomGather(index: number, cb: Function) {
+        const [result, data] = await this.RoomGatherPromise(index);
+        cb(result, data);
+    }
+
     public async RoomLvUpPromise(index: number): Promise<[SessionResult, IPlayerData]> {
         const gameData = { room_index: index }
         const [result, data] = await WebSession.instance.requestRoomLvUp(this.playerId, this.playerToken, gameData)
@@ -146,8 +158,7 @@ class GameStateMgr {
 
     public async RoomLvUp(index: number, cb: Function) {
         const [result, data] = await this.RoomLvUpPromise(index);
-        cb(result, data);
-
+        cb(result, data)
     }
 }
 
