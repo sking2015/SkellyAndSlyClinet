@@ -9,7 +9,7 @@ export interface IRoomConfig {
 export const RoomConfigData: Record<string | number, IRoomConfig> = {
     0: {
         "Index": 0,
-        "RoomType": 4,
+        "RoomType": 10,
         "RoomName": "Castle Door"
     },
     1: {

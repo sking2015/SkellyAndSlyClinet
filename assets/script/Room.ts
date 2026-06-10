@@ -10,6 +10,8 @@ import { LabelGradient } from './common/LabelGradient';
 import { getI18nText } from './i18nLan';
 
 import { IResData, getResDataByRoomTypeAndLevel } from './ConfigInterface';
+import { gameStateMgr } from './GameStateMgr';
+import { GameConfig, SessionResult, GameState, eWebAction } from './GameConfig';
 
 
 const INTERVAL_OUTPUT_PER_TIME = 5; // 生产一个单位资源需要的时间
@@ -481,7 +483,14 @@ export class Room extends Component {
 
     async onUpgrade() {
         console.log("room upgrade~!!!")
+
         if (this.roomLevel < 9) {
+
+            const [result, data] = await gameStateMgr.RoomLvUpPromise(this.index);
+            if (result != SessionResult.SUCCESS) {
+                console.log("服务器错误，以后看是弹个窗叫玩家重连还是干啥")
+                return;
+            }
 
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_resource_change, true));
             if (this.roomLevel == 3 || this.roomLevel == 6) {

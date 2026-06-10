@@ -1,6 +1,6 @@
 
 
-import { GameConfig, SessionResult, GameState } from './GameConfig';
+import { GameConfig, SessionResult, GameState, eWebAction } from './GameConfig';
 import { IPlayer, IPlayerData } from './BaseDef';
 import { Md5 } from 'ts-md5';
 
@@ -51,23 +51,25 @@ export class WebSession {
         }
     }
 
-    public async requestRoomUnlock(playerID: string, token: string, gameData: any): Promise<[SessionResult, IPlayerData]> {
-        const url = GameConfig.API_ROOM;
-        return this.sendGameData(url, playerID, token, gameData);
+    public async requestRoomLvUp(playerID: string, token: string, gameData: any): Promise<[SessionResult, IPlayerData]> {
+        const url = GameConfig.ROOM_URL;
+        const actiton = eWebAction.ewa_room_lvup;
+        return this.sendGameData(url, playerID, token, actiton, gameData);
     }
 
-    private async sendGameData(url: string, playerID: string, token: string, gameData: any): Promise<[SessionResult, IPlayerData]> {
+    private async sendGameData(url: string, playerID: string, token: string, action: string, gameData: any): Promise<[SessionResult, IPlayerData]> {
         const timestamp = Math.floor(Date.now() / 1000);
 
         // 保持和服务器完全一致的拼接顺序
         const strData: string = JSON.stringify(gameData);
-        const originStr = playerID + token + timestamp + strData + SECRET_KEY;
+        const originStr = playerID + token + timestamp + action + strData + SECRET_KEY;
         const sign = Md5.hashStr(originStr); // 计算出 MD5
 
         const body = {
             player_id: playerID,
             token: token,
             timestamp: timestamp,
+            action: action,
             data: strData,
             sign: sign
         };

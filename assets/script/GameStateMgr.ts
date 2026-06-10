@@ -2,6 +2,7 @@ import { director } from 'cc';
 import { WebSession } from './WebSession';
 import { GameConfig, SessionResult, GameState } from './GameConfig';
 import { CGlobalData } from './GlobalData';
+import { IPlayer, IPlayerData } from './BaseDef';
 
 /**
  * 登录回调类型
@@ -100,7 +101,7 @@ class GameStateMgr {
                     console.warn('[GameStateMgr] Failed to save token:', e);
                 }
             }
-            CGlobalData.instance.loadData(data);
+            CGlobalData.instance.loadData(data.data);
             this._currentState = GameState.MAIN;
             console.log('[GameStateMgr] Login successful!');
         } else {
@@ -131,6 +132,22 @@ class GameStateMgr {
         } catch (e) {
             console.warn('[GameStateMgr] Failed to clear token:', e);
         }
+    }
+
+    public async RoomLvUpPromise(index: number): Promise<[SessionResult, IPlayerData]> {
+        const gameData = { room_index: index }
+        const [result, data] = await WebSession.instance.requestRoomLvUp(this.playerId, this.playerToken, gameData)
+        if (result === SessionResult.SUCCESS) {
+            CGlobalData.instance.loadData(data);
+        }
+
+        return [result, data];
+    }
+
+    public async RoomLvUp(index: number, cb: Function) {
+        const [result, data] = await this.RoomLvUpPromise(index);
+        cb(result, data);
+
     }
 }
 

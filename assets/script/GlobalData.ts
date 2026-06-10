@@ -1,4 +1,4 @@
-import { eOverseerType, eRoomType, IPlayer } from './BaseDef';
+import { eOverseerType, eRoomType, IPlayer, IPlayerData, IRoom } from './BaseDef';
 
 export class COverseerData {
     //类型
@@ -14,6 +14,8 @@ export class COverseerData {
 
 //房间数据
 export class CRoomData {
+    //索引
+    index: number = 0;
     //类型
     eType: eRoomType = eRoomType.ertNone;
     //目前只有等级，如果为0表示未解锁
@@ -23,9 +25,17 @@ export class CRoomData {
 
     eOSType: eOverseerType = eOverseerType.eotNone;
 
-    constructor(eType: eRoomType, nLvel: number) {
-        this.eType = eType;
-        this.level = nLvel;
+    // constructor(eType: eRoomType, nLvel: number) {
+    //     this.eType = eType;
+    //     this.level = nLvel;
+    // }
+
+    constructor(room: IRoom) {
+        this.index = room.index;
+        this.eType = room.room_type;
+        this.level = room.level;
+        this.nStock = room.storage;
+        this.eOSType = room.overseer_index
     }
 }
 
@@ -81,13 +91,13 @@ export class CGlobalData {
 
     initSimRoomsData() {
         //先每种房间来两个吧
-        this.listRooms[0] = new CRoomData(eRoomType.ertDoor, 0);
-        this.listRooms[1] = new CRoomData(eRoomType.ertLumberMill, 0);
-        this.listRooms[2] = new CRoomData(eRoomType.ertLumberMill, 0);
-        this.listRooms[3] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
-        this.listRooms[4] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
-        this.listRooms[5] = new CRoomData(eRoomType.ertCrystalMine, 0);
-        this.listRooms[6] = new CRoomData(eRoomType.ertCrystalMine, 0);
+        // this.listRooms[0] = new CRoomData(eRoomType.ertDoor, 0);
+        // this.listRooms[1] = new CRoomData(eRoomType.ertLumberMill, 0);
+        // this.listRooms[2] = new CRoomData(eRoomType.ertLumberMill, 0);
+        // this.listRooms[3] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
+        // this.listRooms[4] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
+        // this.listRooms[5] = new CRoomData(eRoomType.ertCrystalMine, 0);
+        // this.listRooms[6] = new CRoomData(eRoomType.ertCrystalMine, 0);
     }
 
     foreachRooms(callback: Function) {
@@ -147,12 +157,18 @@ export class CGlobalData {
     }
 
     //加载数据
-    loadData(data: IPlayer) {
-        this.nCoin = data.data.resources.coin;
-        this.nWood = data.data.resources.wood;
-        this.nMetal = data.data.resources.metal;
-        this.nCrystal = data.data.resources.crystal;
-        this.nFood = data.data.resources.food;
-        this.nSoul = data.data.resources.soul;
+    loadData(data: IPlayerData) {
+        this.nCoin = data.resources.coin;
+        this.nWood = data.resources.wood;
+        this.nMetal = data.resources.metal;
+        this.nCrystal = data.resources.crystal;
+        this.nFood = data.resources.food;
+        this.nSoul = data.resources.soul;
+
+        for (let i = 0; i < data.rooms.length; ++i) {
+            const rd: IRoom = data.rooms[i];
+            console.log("room data", rd);
+            this.listRooms[i] = new CRoomData(rd);
+        }
     }
 }

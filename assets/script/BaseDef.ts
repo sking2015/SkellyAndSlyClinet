@@ -1,4 +1,3 @@
-import { Interface } from "readline";
 
 //房间类型
 export enum eRoomType {
@@ -34,6 +33,7 @@ export enum eWorkerType {
     ewtWood = 2,                //木匠
 }
 
+
 ////////////////////////
 //网络交换数据定义
 //////////////////////////
@@ -66,7 +66,8 @@ export interface IPlayer {
     readonly playerId: string;
     readonly data: IPlayerData;
     readonly token: string;
-
 }
+
+
 
 

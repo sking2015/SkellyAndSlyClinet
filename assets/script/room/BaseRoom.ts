@@ -6,6 +6,9 @@ import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinish
 import { getRoomName } from '../ConfigInterface';
 import { CResManager } from '../ResManager';
 import { getI18nText } from '../i18nLan';
+import { gameStateMgr } from '../GameStateMgr';
+import { GameConfig, SessionResult, GameState, eWebAction } from '../GameConfig';
+
 
 const { ccclass, property } = _decorator;
 
@@ -164,10 +167,17 @@ export class CBaseRoom extends Component {
 
     }
 
-    onClickUnLock() {
+    async onClickUnLock() {
         console.log("click unlock");
         if (!this.bUnlockable) {
             console.log("can't unlock,not unlockable");
+            return;
+        }
+
+        //解锁和升级的服务器逻辑完全一样
+        const [result, data] = await gameStateMgr.RoomLvUpPromise(this.index);
+        if (result === SessionResult.SUCCESS) {
+            console.log("服务器错误，以后看是弹个窗叫玩家重连还是干啥")
             return;
         }
 
@@ -206,6 +216,12 @@ export class CBaseRoom extends Component {
     async onUpgrade() {
         console.log("room upgrade~!!!")
         if (this.roomLevel < 9) {
+
+            const [result, data] = await gameStateMgr.RoomLvUpPromise(this.index);
+            if (result === SessionResult.SUCCESS) {
+                console.log("服务器错误，以后看是弹个窗叫玩家重连还是干啥")
+                return;
+            }
 
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_resource_change, true));
             if (this.roomLevel == 3 || this.roomLevel == 6) {
