@@ -3,7 +3,10 @@ import { eRoomType } from './BaseDef';
 import { CrystalMineData } from './config/CrystalMine';
 import { MetalWorkshopData } from './config/MetalWorkshop';
 import { LumberMillData } from './config/LumberMill';
-import { IRoomConfig, RoomConfigData } from './config/RoomConfig';
+import { RoomConfigData } from './config/RoomConfig';
+import { IdefaultRoomLvUpCfg, defaultRoomLvUpCfgData } from './config/defaultRoomLvUpCfg';
+
+
 
 export interface IResData {
     readonly Level: number;
@@ -15,6 +18,12 @@ export interface IResData {
     readonly MaxCapacity: number;
     readonly Cost_Gold: number;
     readonly Cost_Metal: number;
+    readonly Cost_lumber: number;
+}
+
+export function getDefaultRoomLvUpCfg(level: number): IdefaultRoomLvUpCfg {
+    return defaultRoomLvUpCfgData[level];
+
 }
 
 export function getResDataByRoomTypeAndLevel(eRt: eRoomType, level: number): IResData | null {

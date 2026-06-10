@@ -505,7 +505,6 @@ export class Room extends Component {
 
 
             this.setRoomLevel(this.roomLevel + 1);
-            this.refreshRoomLevel();
             this.refreshRoomShow();
             this.playUpgradeEffect();
 

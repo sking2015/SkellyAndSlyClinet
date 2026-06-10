@@ -119,9 +119,9 @@ export class CBaseRoom extends Component {
 
         this.labelRoomName.string = name;
 
-        const nBgLv: number = Math.floor(this.roomLevel / 3) + 1;
-        this.sprBg.spriteFrame = CResManager.instance.getRoomBg(this.roomType, nBgLv);
-        this.sprFg.spriteFrame = CResManager.instance.getRoomFg(this.roomType, nBgLv);
+        const nImgLv: number = Math.floor(this.roomLevel / 3 - 0.1) + 1;
+        this.sprBg.spriteFrame = CResManager.instance.getRoomBg(this.roomType, nImgLv);
+        this.sprFg.spriteFrame = CResManager.instance.getRoomFg(this.roomType, nImgLv);
     }
 
     onOpenExpand() {
@@ -222,15 +222,17 @@ export class CBaseRoom extends Component {
                 await waitUntilAnimationFinished(comUnlock);
                 await delay(0.3, this);
 
+                this.setRoomLevel(this.roomLevel + 1);
+                this.refreshRoomShow();
+
                 animState.wrapMode = AnimationClip.WrapMode.Normal;
                 comUnlock.play(sAni);
                 await waitUntilAnimationFinished(comUnlock);
+            } else {
+                this.setRoomLevel(this.roomLevel + 1);
+                this.refreshRoomShow();
             }
 
-
-            this.setRoomLevel(this.roomLevel + 1);
-            this.refreshRoomLevel();
-            this.refreshRoomShow();
             this.playUpgradeEffect();
 
             await waitFadeInout(this.nodeLocked, 0.3, false);

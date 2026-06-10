@@ -1,11 +1,12 @@
 import { _decorator, Color, color, Component, Label, Node, Sprite } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
-import { IResData, getResDataByRoomTypeAndLevel } from './ConfigInterface';
+import { IResData, getResDataByRoomTypeAndLevel, getDefaultRoomLvUpCfg } from './ConfigInterface';
 import { formatCompactNumber } from './common/common';
 import { LabelGradient } from './common/LabelGradient';
-import { CGlobalData } from './GlobalData';
+import { CGlobalData, CRoomData } from './GlobalData';
 import { CResManager } from './ResManager';
 import { getI18nText } from './i18nLan';
+import { eRoomType } from './BaseDef';
 
 const { ccclass, property } = _decorator;
 
@@ -90,22 +91,7 @@ export default class CRoomUpgradePanel extends Component {
         this.nodeMask.off(Node.EventType.TOUCH_START, this.onClose, this);
     }
 
-    refreshPanel() {
-        if (this.nCurRoomIndex < 0) {
-            console.error("房间升级面板刷新失败，当前房间index非法", this.nCurRoomIndex);
-            return;
-        }
-
-        const roomData = CGlobalData.instance.getRoomDataByIndex(this.nCurRoomIndex);
-
-        this.lblCurCoin.string = formatCompactNumber(CGlobalData.instance.nCoin);
-        this.lblCurWood.string = formatCompactNumber(CGlobalData.instance.nWood);
-        this.lblCurMetal.string = formatCompactNumber(CGlobalData.instance.nMetal);
-
-
-        this.lblCurRoomLevel.string = `${roomData.level}`;
-        this.lblNextRoomLevel.string = `${roomData.level + 1}`;
-
+    refreshPanel4Resroom(roomData: CRoomData) {
         this.sprResIcon.spriteFrame = CResManager.instance.getRoomResIcon(roomData.eType);
 
         const resDataCur: IResData = getResDataByRoomTypeAndLevel(roomData.eType, roomData.level);
@@ -124,19 +110,59 @@ export default class CRoomUpgradePanel extends Component {
         this.lblCurLevelCapacity.string = formatCompactNumber(resDataCur.MaxCapacity);
         this.lblNextLevelCapacity.string = formatCompactNumber(resDataNext.MaxCapacity);
 
-        this.lblCostCoin.string = formatCompactNumber(resDataNext.Cost_Gold);
-        this.lblCostWood.string = formatCompactNumber(resDataNext.Cost_Metal);
-        this.lblCostMetal.string = formatCompactNumber(resDataNext.Cost_Metal);
+        this.nCostCoin = resDataNext.Cost_Gold;
+        this.nCostWood = resDataNext.Cost_lumber;
+        this.nCostMetal = resDataNext.Cost_Metal;
+    }
 
-        this.bCoinNotEnough = CGlobalData.instance.nCoin < resDataNext.Cost_Gold;
-        this.bWoodNotEnough = CGlobalData.instance.nWood < resDataNext.Cost_Metal;
-        this.bMetalNotEnough = CGlobalData.instance.nMetal < resDataNext.Cost_Metal;
+    refreshPanel4Default(roomData: CRoomData) {
+        const dataLvUp = getDefaultRoomLvUpCfg(roomData.level + 1);
+        if (dataLvUp) {
+            this.nCostCoin = dataLvUp.Cost_Gold;
+            this.nCostWood = dataLvUp.Cost_lumber;
+            this.nCostMetal = dataLvUp.Cost_Metal;
+        }
+    }
+
+    refreshPanel() {
+        if (this.nCurRoomIndex < 0) {
+            console.error("房间升级面板刷新失败，当前房间index非法", this.nCurRoomIndex);
+            return;
+        }
+
+        const roomData = CGlobalData.instance.getRoomDataByIndex(this.nCurRoomIndex);
+
+        this.lblCurCoin.string = formatCompactNumber(CGlobalData.instance.nCoin);
+        this.lblCurWood.string = formatCompactNumber(CGlobalData.instance.nWood);
+        this.lblCurMetal.string = formatCompactNumber(CGlobalData.instance.nMetal);
+
+
+        this.lblCurRoomLevel.string = `${roomData.level}`;
+        this.lblNextRoomLevel.string = `${roomData.level + 1}`;
+
+        switch (roomData.eType) {
+            case eRoomType.ertCrystalMine:
+            case eRoomType.ertLumberMill:
+            case eRoomType.ertMetalWorkshop:
+                this.refreshPanel4Resroom(roomData);
+                break;
+            default:
+                this.refreshPanel4Default(roomData);
+        }
+
+        this.lblCostCoin.string = formatCompactNumber(this.nCostCoin);
+        this.lblCostWood.string = formatCompactNumber(this.nCostWood);
+        this.lblCostMetal.string = formatCompactNumber(this.nCostMetal);
+
+        this.bCoinNotEnough = CGlobalData.instance.nCoin < this.nCostCoin;
+        this.bWoodNotEnough = CGlobalData.instance.nWood < this.nCostCoin;
+        this.bMetalNotEnough = CGlobalData.instance.nMetal < this.nCostCoin;
 
         if (this.bCoinNotEnough) {
             this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
-            this.nCostCoin = resDataNext.Cost_Gold;
+
             this.lblCostCoinGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#DDC200')
 
@@ -146,7 +172,6 @@ export default class CRoomUpgradePanel extends Component {
             this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
-            this.nCostWood = resDataNext.Cost_Metal;
             this.lblCostWoodGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#DDC200')
         }
@@ -155,7 +180,7 @@ export default class CRoomUpgradePanel extends Component {
             this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#FF0000');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#A7A7A7')
         } else {
-            this.nCostMetal = resDataNext.Cost_Metal;
+
             this.lblCostMetalGradient.bottomColor = Color.fromHEX(new Color(), '#F7CAFF');
             this.lgButtonText.bottomColor = Color.fromHEX(new Color(), '#DDC200')
         }

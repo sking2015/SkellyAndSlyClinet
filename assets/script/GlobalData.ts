@@ -46,7 +46,7 @@ export class CGlobalData {
     constructor() {
         console.log("全局数据类开始构造");
         this.initOverseerData();
-        this.initRoomsData();
+        this.initSimRoomsData();
     }
 
     private static _instance: CGlobalData = null;
@@ -79,7 +79,7 @@ export class CGlobalData {
         })
     }
 
-    initRoomsData() {
+    initSimRoomsData() {
         //先每种房间来两个吧
         this.listRooms[0] = new CRoomData(eRoomType.ertDoor, 0);
         this.listRooms[1] = new CRoomData(eRoomType.ertLumberMill, 0);
