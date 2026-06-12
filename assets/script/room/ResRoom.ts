@@ -15,6 +15,7 @@ import { SessionResult } from '../GameConfig';
 const { ccclass, property } = _decorator;
 
 const INTERVAL_OUTPUT_PER_TIME = 5; // 生产一个单位资源需要的时间
+const MAX_GATHER_TIME = 10;
 
 @ccclass('CResRoom')
 export class CResRoom extends CBaseRoom {
@@ -229,6 +230,7 @@ export class CResRoom extends CBaseRoom {
 
     }
 
+    listWorker: CCharactor[] = [];
     addWorker(prefabWorder: Prefab) {
         const nodeWorker = instantiate(prefabWorder);
 
@@ -239,6 +241,9 @@ export class CResRoom extends CBaseRoom {
         }
 
         const charWorker = nodeWorker.getComponent(CCharactor);
+
+        charWorker.EnableWork(!this.isResFull());
+        this.listWorker.push(charWorker);
 
         if (this.roomType == eRoomType.ertMetalWorkshop) {
             nodeWorker.setPosition(math.v3(8, -80));
@@ -263,10 +268,17 @@ export class CResRoom extends CBaseRoom {
     //采集由于有客户端表现，所以要分两次采发送消息，首先是开始采集是收到服务器返回成功开始采集
     //由于采集可能耗时很久，在采集完了时要再发一次采集请求，用服务器最新数据刷新界面显示    
     bGatering: boolean = false;
+    nOnceGather: number = 0;
     startGatherRes() {
         gameStateMgr.RoomGather(this.index, (result: SessionResult, data: IPlayerData) => {
             if (SessionResult.SUCCESS == result) {
                 this.bGatering = true;
+                this.enableWorkersWork(true);
+
+                //最多十个飞行图标，让最大一秒钟内收取完毕
+                this.nOnceGather = this.nCurrentStock / MAX_GATHER_TIME;
+                //但如果一个图标的量过小，设为单位产出，量过少可以不满十次
+                this.nOnceGather = this.nOnceGather >= this.nOutputPerTime ? this.nOnceGather : this.nOutputPerTime;
             }
         })
 
@@ -274,10 +286,9 @@ export class CResRoom extends CBaseRoom {
 
     onceGather() {
 
-        //要大于单位产量才收集
         if (this.nCurrentStock > 0) {
 
-            let count = this.nCurrentStock > this.nOutputPerTime ? this.nOutputPerTime : this.nCurrentStock;
+            let count = this.nCurrentStock > this.nOnceGather ? this.nOnceGather : this.nCurrentStock;
             this.nCurrentStock -= count;
 
             this.refreshCurrentStock();
@@ -321,11 +332,23 @@ export class CResRoom extends CBaseRoom {
 
     }
 
+    private enableWorkersWork(bEnable: boolean) {
+        this.listWorker.forEach((char: CCharactor) => {
+            char.EnableWork(bEnable);
+        })
+    }
+
+    //资源是否已满
+    private isResFull(): boolean {
+        return this.nCurrentStock >= this.nCapacity;
+    }
+
     onOutputRes() {
-        if (this.nCurrentStock < this.nCapacity) {
+        if (!this.isResFull()) {
             this.nCurrentStock += this.nOutputPerTime;
             if (this.nCurrentStock > this.nCapacity) {
                 this.nCurrentStock = this.nCapacity;
+                this.enableWorkersWork(false);
             }
 
             CGlobalData.instance.setRoomStockByIndex(this.index, this.nCurrentStock);
@@ -362,12 +385,15 @@ export class CResRoom extends CBaseRoom {
             return;
         }
 
-        this.nOutputInterval += deltaTime;
-        if (this.nOutputInterval >= INTERVAL_OUTPUT_PER_TIME) {
-            this.nOutputInterval = 0;
-            this.onOutputRes();
-            this.playOutputAnim();
+        if (!this.isResFull()) {
+            this.nOutputInterval += deltaTime;
+            if (this.nOutputInterval >= INTERVAL_OUTPUT_PER_TIME) {
+                this.nOutputInterval = 0;
+                this.onOutputRes();
+                this.playOutputAnim();
+            }
         }
+
 
         if (this.bGatering) {
             this.updateGather(deltaTime);

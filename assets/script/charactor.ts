@@ -77,6 +77,13 @@ export class CCharactor extends Component {
         this.checkInitialPosition();
     }
 
+
+    bEnableWork: boolean = true;
+    //禁止工作，在房间里资源满了之后调用
+    public EnableWork(bEnable: boolean) {
+        this.bEnableWork = bEnable;
+    }
+
     /** 依照规则初始化/重置各动作的意愿权重 */
     private resetWeightsToRoute() {
         this.actionList.forEach(item => {
@@ -107,6 +114,16 @@ export class CCharactor extends Component {
         this.actionList.forEach(item => {
             const key = item.key;
             const w = this._currentWeights.get(key) || 0;
+
+            if (key == 'work') {
+                console.log("现在的key是工作", key, w);
+            }
+
+            //当不允许工作时跳过这个键
+            if (!this.bEnableWork && key == "work") {
+                return;
+            }
+
             if (w > 0) {
                 totalWeight += w;
                 validList.push({ key, weight: w });
