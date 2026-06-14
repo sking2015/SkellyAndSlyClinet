@@ -1,17 +1,6 @@
-import { CCharacterID, eRoomType, IPlayer, IPlayerData, IRoom } from './BaseDef';
+import { eCCharacterID, eRoomType, IPlayer, IPlayerData, IRoom } from './BaseDef';
+import { CCharData, CCharactersData } from './CharacatersData';
 import { GameConfig } from './GameConfig';
-
-export class CCharacterData {
-    //类型
-    eType: CCharacterID = CCharacterID.eciNoe;
-    //目前只有等级，如果为0表示未解锁
-    level: number = 0;
-
-    constructor(eType: CCharacterID, nLvel: number) {
-        this.eType = eType;
-        this.level = nLvel;
-    }
-}
 
 //房间数据
 export class CRoomData {
@@ -24,7 +13,7 @@ export class CRoomData {
 
     nStock: number = 0; // 当前房间的库存量
 
-    eOSType: CCharacterID = CCharacterID.eciNoe;
+    eOSType: eCCharacterID = eCCharacterID.eciNoe;
 
     // constructor(eType: eRoomType, nLvel: number) {
     //     this.eType = eType;
@@ -48,7 +37,7 @@ export class CRoomData {
 
 //全局数据类，用来保存从服务器下发的数据
 export class CGlobalData {
-    private mapCharacter: Map<CCharacterID, CCharacterData> = new Map();
+    private mapMonsters: Map<eCCharacterID, CCharData> = new Map();
     private listRooms: CRoomData[] = [];
 
     private nUnlockRoomNum: number = 0; // 已经解锁的房间数量
@@ -62,7 +51,7 @@ export class CGlobalData {
 
     constructor() {
         console.log("全局数据类开始构造");
-        this.initOverseerData();
+        this.initMonstersData();
         this.initSimRoomsData();
     }
 
@@ -78,23 +67,31 @@ export class CGlobalData {
 
 
     //监工目前只有有限种类,所以eotWizard后面的lv都设为0
-    initOverseerData() {
-        for (let eType = CCharacterID.eciEyetyarnt; eType != CCharacterID.eciMax; ++eType) {
-            let lv: number = 1;
-            if (eType > CCharacterID.eciOrc) {
-                lv = 0;
-            }
-
-            this.mapCharacter.set(eType, new CCharacterData(eType, lv));
+    initMonstersData() {
+        for (let eID = eCCharacterID.eciEyetyarnt; eID != eCCharacterID.eciMax; ++eID) {
+            const char: CCharData = CCharactersData.instance.GetCharData(eID, 0);
+            this.mapMonsters.set(eID, char);
         }
     }
 
     //遍历所有监工
-    foreachOverseers(callback: Function) {
-        this.mapCharacter.forEach((data, eType) => {
+    foreachMonsters(callback: Function) {
+        this.mapMonsters.forEach((data, eType) => {
             callback(data);
         })
     }
+
+    //取得魔物等级
+    getMonsterLevel(eID: eCCharacterID): number {
+        const monData: CCharData = this.mapMonsters.get(eID);
+        if (monData) {
+            return monData.Level;
+        }
+
+        return 0;
+    }
+
+
 
     initSimRoomsData() {
         //模拟数据，免得每次开服务器        
@@ -146,20 +143,20 @@ export class CGlobalData {
         }
     }
 
-    setRoomOSTypeByIndex(idx: number, eot: CCharacterID) {
+    setRoomOSTypeByIndex(idx: number, eot: eCCharacterID) {
         const roomData = this.getRoomDataByIndex(idx);
         if (roomData) {
             roomData.eOSType = eot;
         }
     }
 
-    getRoomOSTypeByIndex(idx: number): CCharacterID {
+    getRoomOSTypeByIndex(idx: number): eCCharacterID {
         const roomData = this.getRoomDataByIndex(idx);
         if (roomData) {
             return roomData.eOSType;
         }
 
-        return CCharacterID.eciNoe;
+        return eCCharacterID.eciNoe;
     }
 
     getRoomStockByIndex(idx: number): number {

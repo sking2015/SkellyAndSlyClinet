@@ -226,7 +226,7 @@ export class CBaseRoom extends Component {
         this.onOpenExpand();
 
         // console.log("先用来测试一下设置监工");
-        // this.setOverseer(CCharacterID.eciEyetyarnt);
+        // this.setOverseer(eCCharacterID.eciEyetyarnt);
     }
 
     async onUpgrade() {

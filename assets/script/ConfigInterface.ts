@@ -7,7 +7,6 @@ import { RoomConfigData } from './config/RoomConfig';
 import { IdefaultRoomLvUpCfg, defaultRoomLvUpCfgData } from './config/defaultRoomLvUpCfg';
 
 
-
 export interface IResData {
     readonly Level: number;
     readonly Name: string;

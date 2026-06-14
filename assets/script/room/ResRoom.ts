@@ -1,7 +1,7 @@
 import { _decorator, Node, Label, ProgressBar, Color, Sprite, SpriteFrame, math, Prefab, instantiate, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CCharacter } from '../character';
-import { eRoomType, eMineBuffType, CCharacterID, IPlayerData } from '../BaseDef';
+import { eRoomType, eMineBuffType, eCCharacterID, IPlayerData } from '../BaseDef';
 import { COSCfgData, COSSkill, COverseerManager } from '../OverseerMan';
 import { CGlobalData } from '../GlobalData';
 import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinished, delay } from '../common/common';
@@ -77,7 +77,7 @@ export class CResRoom extends CBaseRoom {
 
     //监工的角色对像
     charOverseer: CCharacter = null;
-    CCharacterID: CCharacterID = CCharacterID.eciNoe;
+    eCCharacterID: eCCharacterID = eCCharacterID.eciNoe;
 
     nWorkerNum: number = 0;
 
@@ -154,7 +154,7 @@ export class CResRoom extends CBaseRoom {
         console.log("refreshRoomData~~", this.roomType);
 
 
-        const osData: COSCfgData = COverseerManager.instance.getOverseerData(this.CCharacterID);
+        const osData: COSCfgData = COverseerManager.instance.getOverseerData(this.eCCharacterID);
         if (osData) {
             this.lblOSName.string = osData.name;
 
@@ -199,12 +199,12 @@ export class CResRoom extends CBaseRoom {
         }
     }
 
-    setOverseer(eOverseer: CCharacterID) {
-        if (this.CCharacterID != eOverseer) {
+    setOverseer(eOverseer: eCCharacterID) {
+        if (this.eCCharacterID != eOverseer) {
 
             //这里是监工动画部份。。。
-            this.CCharacterID = eOverseer;
-            CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.CCharacterID);
+            this.eCCharacterID = eOverseer;
+            CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.eCCharacterID);
             let prefabOS: Prefab = CResManager.instance.getCharPrefab(eOverseer);
 
             const nodeOs = instantiate(prefabOS);
@@ -311,7 +311,7 @@ export class CResRoom extends CBaseRoom {
     }
 
 
-    onSelectOverseer(eType: CCharacterID) {
+    onSelectOverseer(eType: eCCharacterID) {
         let icon: SpriteFrame = CResManager.instance.getCharHead(eType);
         this.sprOSAvart.spriteFrame = icon;
         this.setOverseer(eType);

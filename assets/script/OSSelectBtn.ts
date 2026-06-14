@@ -1,8 +1,8 @@
 import { _decorator, Button, Component, Node, Sprite, SpriteFrame } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CResManager } from './ResManager';
-import { CCharacterData } from './GlobalData';
-import { CCharacterID } from './BaseDef';
+import { eCCharacterID } from './BaseDef';
+import { CCharData } from './CharacatersData';
 
 const { ccclass, property } = _decorator;
 
@@ -20,12 +20,12 @@ export default class OSSelectBtn extends Component {
     })
     nodeSelected: Node = null;
 
-    eType: CCharacterID = CCharacterID.eciNoe;
+    eID: eCCharacterID = eCCharacterID.eciNoe;
 
-    setOverseer(data: CCharacterData) {
-        this.eType = data.eType;
-        if (data.level > 0 && this.eType != CCharacterID.eciNoe) {
-            const sf: SpriteFrame = CResManager.instance.getCharHead(data.eType);
+    setOverseer(data: CCharData) {
+        this.eID = data.ID;
+        if (data.Level > 0 && this.eID != eCCharacterID.eciNoe) {
+            const sf: SpriteFrame = CResManager.instance.getCharHead(data.ID);
             this.sprIcon.spriteFrame = sf;
             this.getComponent(Button).interactable = true;
         } else {
@@ -34,7 +34,7 @@ export default class OSSelectBtn extends Component {
     }
 
     onClick() {
-        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_overseer, true, { osType: this.eType }))
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_overseer, true, { osType: this.eID }))
     }
 
 
@@ -43,7 +43,7 @@ export default class OSSelectBtn extends Component {
     }
 
     setSelect(bSelected: boolean) {
-        console.log(this.eType, "设置选中状态", bSelected);
+        console.log(this.eID, "设置选中状态", bSelected);
         this.nodeSelected.active = bSelected;
     }
 

@@ -1,0 +1,98 @@
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: sprite-vs:vert
+      frag: sprite-fs:frag
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      rasterizerState:
+        cullMode: none
+      properties:
+        alphaThreshold: { value: 0.5 }
+        # 以下为流光自定义属性
+        lightColor:     { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+        lightWidth:     { value: 0.2, editor: { slide: true, range: [0, 1], step: 0.01 } }
+        lightCenter:    { value: -0.5, editor: { slide: true, range: [-1, 2], step: 0.01 } }
+        lightStrength:  { value: 1.5, editor: { slide: true, range: [0, 5], step: 0.1 } }
+}%
+
+CCProgram sprite-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+
+  out vec2 v_uv0;
+  out vec4 v_color;
+
+  vec4 vert () {
+    vec4 pos = vec4(a_position, 1.0);
+    pos = cc_matViewProj * pos;
+
+    v_uv0 = a_texCoord;
+    v_color = a_color;
+
+    return pos;
+  }
+}%
+
+CCProgram sprite-fs %{
+  precision highp float;
+  #include <builtin/internal/embedded-alpha>
+  #include <builtin/internal/alpha-test>
+
+  in vec2 v_uv0;
+  in vec4 v_color;
+
+  #if USE_TEXTURE
+    in vec4 v_uv1;
+    #pragma builtin(local)
+    layout(set = 2, binding = 12) uniform sampler2D cc_spriteTexture;
+  #endif
+
+  uniform Constants {
+    vec4 lightColor;
+    float lightWidth;
+    float lightCenter;
+    float lightStrength;
+  };
+
+  vec4 frag () {
+    vec4 o = vec4(1.0);
+
+    #if USE_TEXTURE
+      o *= texture(cc_spriteTexture, v_uv0);
+      #if IS_GRAY
+        float gray  = 0.2126 * o.r + 0.7152 * o.g + 0.0722 * o.b;
+        o.r = o.g = o.b = gray;
+      #endif
+    #endif
+
+    o *= v_color;
+    ALPHA_TEST(o);
+
+    // 从左上到右下的斜线方程变形：u + v 
+    float project = v_uv0.x + v_uv0.y;
+
+    // 计算当前像素到流光中心的距离
+    float distance = abs(project - lightCenter * 2.0);
+
+    // 使用 smoothstep 计算流光渐变边缘
+    if (distance < lightWidth) {
+      float factor = 1.0 - (distance / lightWidth);
+      // 将流光颜色叠加到原图上（保持原图的 alpha 通道）
+      o.rgb += lightColor.rgb * factor * lightStrength * o.a;
+    }
+
+    return o;
+  }
+}%

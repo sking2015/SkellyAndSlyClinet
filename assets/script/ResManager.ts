@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Prefab, SpriteFrame, assetManager, AssetManager, isValid } from 'cc';
 import { CCharacterCfg, CRoomType2Data } from './KeyValuePair';
-import { CCharacterID, eRoomType } from './BaseDef';
+import { eCCharacterID, eRoomType } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 @ccclass('CResManager')
@@ -14,7 +14,7 @@ export class CResManager extends Component {
     roomdata: CRoomType2Data[] = [];
 
 
-    private mapCharacter: Map<CCharacterID, CCharacterCfg> = new Map();
+    private mapMonsters: Map<eCCharacterID, CCharacterCfg> = new Map();
 
     private mapRoomImgData: Map<eRoomType, CRoomType2Data> = new Map();
 
@@ -85,11 +85,11 @@ export class CResManager extends Component {
         }
 
         //初始化监工数据
-        this.mapCharacter.clear();
+        this.mapMonsters.clear();
         for (const cfg of this.characterCfg) {
             if (!cfg) continue;
 
-            this.mapCharacter.set(cfg.eType, cfg);
+            this.mapMonsters.set(cfg.eType, cfg);
         }
 
         //初始化房间类型map
@@ -109,8 +109,8 @@ export class CResManager extends Component {
         }
     }
 
-    getCharHead(eType: CCharacterID): SpriteFrame {
-        const cfg = this.mapCharacter.get(eType);
+    getCharHead(eType: eCCharacterID): SpriteFrame {
+        const cfg = this.mapMonsters.get(eType);
         if (cfg) {
             return cfg.sfHead;
         }
@@ -118,8 +118,8 @@ export class CResManager extends Component {
         return null;
     }
 
-    getCharAvatar(eType: CCharacterID): SpriteFrame {
-        const cfg = this.mapCharacter.get(eType);
+    getCharAvatar(eType: eCCharacterID): SpriteFrame {
+        const cfg = this.mapMonsters.get(eType);
         if (cfg) {
             return cfg.sfAvatar;
         }
@@ -127,8 +127,8 @@ export class CResManager extends Component {
         return null;
     }
 
-    getCharPrefab(eType: CCharacterID): Prefab {
-        const cfg = this.mapCharacter.get(eType);
+    getCharPrefab(eType: eCCharacterID): Prefab {
+        const cfg = this.mapMonsters.get(eType);
         if (cfg) {
             return cfg.prefabRole;
         }

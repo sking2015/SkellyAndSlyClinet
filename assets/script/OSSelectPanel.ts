@@ -1,9 +1,10 @@
 import { _decorator, Component, instantiate, Node, Prefab, Sprite, Label, RichText } from 'cc';
-import { CCharacterData, CGlobalData } from './GlobalData';
+import { CGlobalData } from './GlobalData';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import OSSelectBtn from './OSSelectBtn';
-import { CCharacterID } from './BaseDef';
+import { eCCharacterID } from './BaseDef';
 import { CResManager } from './ResManager';
+import { CCharData } from './CharacatersData';
 import { COSCfgData, COSSkill, COverseerManager } from './OverseerMan';
 
 const { ccclass, property } = _decorator;
@@ -43,13 +44,13 @@ export default class OSSelectPanel extends Component {
     nodeBlank: Node = null;
 
 
-    eCurOSType: CCharacterID = CCharacterID.eciNoe;
+    eCurOSType: eCCharacterID = eCCharacterID.eciNoe;
 
     //当前描述房间index
     nCurRoomIndex: number = -1;
 
 
-    mapOSBtn: Map<CCharacterID, OSSelectBtn> = new Map();
+    mapOSBtn: Map<eCCharacterID, OSSelectBtn> = new Map();
 
     start() {
         this.initAllOverseer();
@@ -117,19 +118,19 @@ export default class OSSelectPanel extends Component {
     }
 
     refreshSelected() {
-        this.mapOSBtn.forEach((comBtn: OSSelectBtn, eType: CCharacterID) => {
+        this.mapOSBtn.forEach((comBtn: OSSelectBtn, eType: eCCharacterID) => {
             comBtn.setSelect(this.eCurOSType === eType);
         })
     }
 
     initAllOverseer() {
-        CGlobalData.instance.foreachOverseers((data: CCharacterData) => {
+        CGlobalData.instance.foreachMonsters((data: CCharData) => {
             console.log("看一下初始化overseer", data);
             const btnOS = instantiate(this.prefabOSBtn);
             const comOSBtn = btnOS.getComponent(OSSelectBtn);
             comOSBtn.setOverseer(data);
             this.container.addChild(btnOS);
-            this.mapOSBtn.set(data.eType, comOSBtn);
+            this.mapOSBtn.set(data.ID, comOSBtn);
         })
     }
 
