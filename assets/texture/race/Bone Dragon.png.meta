@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "531f6c3f-8950-40a7-b931-f83624d1c0a7",
+  "uuid": "b07d0c83-e93c-4392-a181-5e75f7429cce",
   "files": [
     ".json",
     ".png"
@@ -10,14 +10,14 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "531f6c3f-8950-40a7-b931-f83624d1c0a7@6c48a",
-      "displayName": "lord Character Avatar Background",
+      "uuid": "b07d0c83-e93c-4392-a181-5e75f7429cce@6c48a",
+      "displayName": "Bone Dragon",
       "id": "6c48a",
       "name": "texture",
       "userData": {
         "wrapModeS": "clamp-to-edge",
         "wrapModeT": "clamp-to-edge",
-        "imageUuidOrDatabaseUri": "531f6c3f-8950-40a7-b931-f83624d1c0a7",
+        "imageUuidOrDatabaseUri": "b07d0c83-e93c-4392-a181-5e75f7429cce",
         "isUuid": true,
         "visible": false,
         "minfilter": "linear",
@@ -34,8 +34,8 @@
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "531f6c3f-8950-40a7-b931-f83624d1c0a7@f9941",
-      "displayName": "lord Character Avatar Background",
+      "uuid": "b07d0c83-e93c-4392-a181-5e75f7429cce@f9941",
+      "displayName": "Bone Dragon",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
@@ -45,10 +45,10 @@
         "offsetY": 0,
         "trimX": 0,
         "trimY": 0,
-        "width": 280,
-        "height": 181,
-        "rawWidth": 280,
-        "rawHeight": 181,
+        "width": 70,
+        "height": 67,
+        "rawWidth": 70,
+        "rawHeight": 67,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +60,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -140,
-            -90.5,
+            -35,
+            -33.5,
             0,
-            140,
-            -90.5,
+            35,
+            -33.5,
             0,
-            -140,
-            90.5,
+            -35,
+            33.5,
             0,
-            140,
-            90.5,
+            35,
+            33.5,
             0
           ],
           "indexes": [
@@ -83,12 +83,12 @@
           ],
           "uv": [
             0,
-            181,
-            280,
-            181,
+            67,
+            70,
+            67,
             0,
             0,
-            280,
+            70,
             0
           ],
           "nuv": [
@@ -102,18 +102,18 @@
             1
           ],
           "minPos": [
-            -140,
-            -90.5,
+            -35,
+            -33.5,
             0
           ],
           "maxPos": [
-            140,
-            90.5,
+            35,
+            33.5,
             0
           ]
         },
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "531f6c3f-8950-40a7-b931-f83624d1c0a7@6c48a",
+        "imageUuidOrDatabaseUri": "b07d0c83-e93c-4392-a181-5e75f7429cce@6c48a",
         "atlasUuid": "",
         "trimType": "auto"
       },
@@ -129,6 +129,6 @@
     "type": "sprite-frame",
     "hasAlpha": true,
     "fixAlphaTransparencyArtifacts": false,
-    "redirect": "531f6c3f-8950-40a7-b931-f83624d1c0a7@6c48a"
+    "redirect": "b07d0c83-e93c-4392-a181-5e75f7429cce@6c48a"
   }
 }

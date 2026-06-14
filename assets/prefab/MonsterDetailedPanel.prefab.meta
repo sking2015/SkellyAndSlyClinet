@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "e8c33dc5-7cfa-4580-bb15-297208550b33",
+  "uuid": "3acaa764-aaed-41d0-8f96-6f376ed1b939",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "CharDetailedPanel"
+    "syncNodeName": "MonsterDetailedPanel"
   }
 }
