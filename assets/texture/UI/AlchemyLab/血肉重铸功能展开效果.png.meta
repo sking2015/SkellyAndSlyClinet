@@ -1,0 +1,134 @@
+{
+  "ver": "1.0.27",
+  "importer": "image",
+  "imported": true,
+  "uuid": "c353358d-60f8-43f0-897b-27add9c9deeb",
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "subMetas": {
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "c353358d-60f8-43f0-897b-27add9c9deeb@6c48a",
+      "displayName": "血肉重铸功能展开效果",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
+        "imageUuidOrDatabaseUri": "c353358d-60f8-43f0-897b-27add9c9deeb",
+        "isUuid": true,
+        "visible": false,
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "f9941": {
+      "importer": "sprite-frame",
+      "uuid": "c353358d-60f8-43f0-897b-27add9c9deeb@f9941",
+      "displayName": "血肉重铸功能展开效果",
+      "id": "f9941",
+      "name": "spriteFrame",
+      "userData": {
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 4.5,
+        "trimX": 0,
+        "trimY": 0,
+        "width": 670,
+        "height": 933,
+        "rawWidth": 670,
+        "rawHeight": 942,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "pixelsToUnit": 100,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "meshType": 0,
+        "vertices": {
+          "rawPosition": [
+            -335,
+            -466.5,
+            0,
+            335,
+            -466.5,
+            0,
+            -335,
+            466.5,
+            0,
+            335,
+            466.5,
+            0
+          ],
+          "indexes": [
+            0,
+            1,
+            2,
+            2,
+            1,
+            3
+          ],
+          "uv": [
+            0,
+            942,
+            670,
+            942,
+            0,
+            9,
+            670,
+            9
+          ],
+          "nuv": [
+            0,
+            0.009554140127388535,
+            1,
+            0.009554140127388535,
+            0,
+            1,
+            1,
+            1
+          ],
+          "minPos": [
+            -335,
+            -466.5,
+            0
+          ],
+          "maxPos": [
+            335,
+            466.5,
+            0
+          ]
+        },
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "c353358d-60f8-43f0-897b-27add9c9deeb@6c48a",
+        "atlasUuid": "",
+        "trimType": "auto"
+      },
+      "ver": "1.0.12",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "type": "sprite-frame",
+    "hasAlpha": true,
+    "fixAlphaTransparencyArtifacts": false,
+    "redirect": "c353358d-60f8-43f0-897b-27add9c9deeb@6c48a"
+  }
+}

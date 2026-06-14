@@ -1,6 +1,6 @@
 import { IOverseerBasicStats, OverseerBasicStatsData } from "./config/OverseerBasicStats";
 import { IOverseerSkill, OverseerSkillData } from "./config/OverseerSkill";
-import { eOverseerType } from "./BaseDef";
+import { CCharacterID } from "./BaseDef";
 import { CResManager } from "./ResManager";
 import { getI18nText } from "./i18nLan";
 
@@ -86,7 +86,7 @@ export class COverseerManager {
         return COverseerManager._instance;
     }
 
-    getOverseerData(eot: eOverseerType): COSCfgData {
+    getOverseerData(eot: CCharacterID): COSCfgData {
         const cfg: IOverseerBasicStats = OverseerBasicStatsData[eot];
         if (cfg) {
             const data: COSCfgData = new COSCfgData();

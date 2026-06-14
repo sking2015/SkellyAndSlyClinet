@@ -2,7 +2,7 @@ import { _decorator, Component, instantiate, Node, Prefab } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CResManager } from './ResManager';
 import { CBaseRoom } from './room/BaseRoom';
-import { eOverseerType } from './BaseDef';
+import { CCharacterID } from './BaseDef';
 import { CRoomData, CGlobalData } from './GlobalData';
 const { ccclass, property } = _decorator;
 
@@ -66,7 +66,7 @@ export class Roomlist extends Component {
         }
     }
 
-    onChangeOverseer(roomIndex: number, eOSType: eOverseerType) {
+    onChangeOverseer(roomIndex: number, eOSType: CCharacterID) {
         const room = this.rooms[roomIndex];
         if (room) {
             room.onSelectOverseer(eOSType);

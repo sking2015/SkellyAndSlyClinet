@@ -126,6 +126,11 @@ export class CBaseRoom extends Component {
 
         this.labelRoomName.string = name;
 
+        this.refreshRoomScenery();
+    }
+
+    //刷新房间布景
+    refreshRoomScenery() {
         const nImgLv: number = Math.floor(this.roomLevel / 3 - 0.1) + 1;
         this.sprBg.spriteFrame = CResManager.instance.getRoomBg(this.roomType, nImgLv);
         this.sprFg.spriteFrame = CResManager.instance.getRoomFg(this.roomType, nImgLv);
@@ -204,7 +209,10 @@ export class CBaseRoom extends Component {
         });
 
 
-        //CGlobalData.instance.unlockRoom();
+        if (GameConfig.ONLY_DEBUG_CLINTE) {
+            CGlobalData.instance.unlockRoom();
+        }
+
 
         this.playUpgradeEffect(false);
         this.refreshRoomData();
@@ -218,7 +226,7 @@ export class CBaseRoom extends Component {
         this.onOpenExpand();
 
         // console.log("先用来测试一下设置监工");
-        // this.setOverseer(eOverseerType.eotEyetyarnt);
+        // this.setOverseer(CCharacterID.eciEyetyarnt);
     }
 
     async onUpgrade() {

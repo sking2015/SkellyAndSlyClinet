@@ -1,7 +1,7 @@
 import { _decorator, Node, Label, ProgressBar, Color, Sprite, SpriteFrame, math, Prefab, instantiate, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CCharactor } from '../charactor';
-import { eRoomType, eMineBuffType, eOverseerType, IPlayerData } from '../BaseDef';
+import { eRoomType, eMineBuffType, CCharacterID, IPlayerData } from '../BaseDef';
 import { COSCfgData, COSSkill, COverseerManager } from '../OverseerMan';
 import { CGlobalData } from '../GlobalData';
 import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinished, delay } from '../common/common';
@@ -77,7 +77,7 @@ export class CResRoom extends CBaseRoom {
 
     //监工的角色对像
     charOverseer: CCharactor = null;
-    eOverseerType: eOverseerType = eOverseerType.eotNone;
+    CCharacterID: CCharacterID = CCharacterID.eciNoe;
 
     nWorkerNum: number = 0;
 
@@ -154,7 +154,7 @@ export class CResRoom extends CBaseRoom {
         console.log("refreshRoomData~~", this.roomType);
 
 
-        const osData: COSCfgData = COverseerManager.instance.getOverseerData(this.eOverseerType);
+        const osData: COSCfgData = COverseerManager.instance.getOverseerData(this.CCharacterID);
         if (osData) {
             this.lblOSName.string = osData.name;
 
@@ -199,13 +199,13 @@ export class CResRoom extends CBaseRoom {
         }
     }
 
-    setOverseer(eOverseer: eOverseerType) {
-        if (this.eOverseerType != eOverseer) {
+    setOverseer(eOverseer: CCharacterID) {
+        if (this.CCharacterID != eOverseer) {
 
             //这里是监工动画部份。。。
-            this.eOverseerType = eOverseer;
-            CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.eOverseerType);
-            let prefabOS: Prefab = CResManager.instance.getOSPrefab(eOverseer);
+            this.CCharacterID = eOverseer;
+            CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.CCharacterID);
+            let prefabOS: Prefab = CResManager.instance.getCharPrefab(eOverseer);
 
             const nodeOs = instantiate(prefabOS);
             nodeOs.position = this.nodeOSBorn.position;
@@ -311,8 +311,8 @@ export class CResRoom extends CBaseRoom {
     }
 
 
-    onSelectOverseer(eType: eOverseerType) {
-        let icon: SpriteFrame = CResManager.instance.getOSHead(eType);
+    onSelectOverseer(eType: CCharacterID) {
+        let icon: SpriteFrame = CResManager.instance.getCharHead(eType);
         this.sprOSAvart.spriteFrame = icon;
         this.setOverseer(eType);
     }

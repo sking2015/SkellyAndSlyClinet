@@ -1,12 +1,13 @@
-import { eOverseerType, eRoomType, IPlayer, IPlayerData, IRoom } from './BaseDef';
+import { CCharacterID, eRoomType, IPlayer, IPlayerData, IRoom } from './BaseDef';
+import { GameConfig } from './GameConfig';
 
-export class COverseerData {
+export class CCharacterData {
     //类型
-    eType: eOverseerType = eOverseerType.eotNone;
+    eType: CCharacterID = CCharacterID.eciNoe;
     //目前只有等级，如果为0表示未解锁
     level: number = 0;
 
-    constructor(eType: eOverseerType, nLvel: number) {
+    constructor(eType: CCharacterID, nLvel: number) {
         this.eType = eType;
         this.level = nLvel;
     }
@@ -23,7 +24,7 @@ export class CRoomData {
 
     nStock: number = 0; // 当前房间的库存量
 
-    eOSType: eOverseerType = eOverseerType.eotNone;
+    eOSType: CCharacterID = CCharacterID.eciNoe;
 
     // constructor(eType: eRoomType, nLvel: number) {
     //     this.eType = eType;
@@ -47,7 +48,7 @@ export class CRoomData {
 
 //全局数据类，用来保存从服务器下发的数据
 export class CGlobalData {
-    private mapOverseer: Map<eOverseerType, COverseerData> = new Map();
+    private mapCharacter: Map<CCharacterID, CCharacterData> = new Map();
     private listRooms: CRoomData[] = [];
 
     private nUnlockRoomNum: number = 0; // 已经解锁的房间数量
@@ -78,32 +79,31 @@ export class CGlobalData {
 
     //监工目前只有有限种类,所以eotWizard后面的lv都设为0
     initOverseerData() {
-        for (let eType = eOverseerType.eotEyetyarnt; eType != eOverseerType.eotMax; ++eType) {
+        for (let eType = CCharacterID.eciEyetyarnt; eType != CCharacterID.eciMax; ++eType) {
             let lv: number = 1;
-            if (eType > eOverseerType.eotOrc) {
+            if (eType > CCharacterID.eciOrc) {
                 lv = 0;
             }
 
-            this.mapOverseer.set(eType, new COverseerData(eType, lv));
+            this.mapCharacter.set(eType, new CCharacterData(eType, lv));
         }
     }
 
     //遍历所有监工
     foreachOverseers(callback: Function) {
-        this.mapOverseer.forEach((data, eType) => {
+        this.mapCharacter.forEach((data, eType) => {
             callback(data);
         })
     }
 
     initSimRoomsData() {
-        //先每种房间来两个吧
-        // this.listRooms[0] = new CRoomData(eRoomType.ertDoor, 0);
-        // this.listRooms[1] = new CRoomData(eRoomType.ertLumberMill, 0);
-        // this.listRooms[2] = new CRoomData(eRoomType.ertLumberMill, 0);
-        // this.listRooms[3] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
-        // this.listRooms[4] = new CRoomData(eRoomType.ertMetalWorkshop, 0);
-        // this.listRooms[5] = new CRoomData(eRoomType.ertCrystalMine, 0);
-        // this.listRooms[6] = new CRoomData(eRoomType.ertCrystalMine, 0);
+        //模拟数据，免得每次开服务器        
+        this.listRooms[0] = new CRoomData({ index: 0, room_type: eRoomType.ertDoor, level: 0, overseer_index: 0, storage: 0 });
+        this.listRooms[1] = new CRoomData({ index: 1, room_type: eRoomType.ertAlchemy, level: 0, overseer_index: 0, storage: 0 });
+        this.listRooms[2] = new CRoomData({ index: 2, room_type: eRoomType.ertLumberMill, level: 0, overseer_index: 0, storage: 0 });
+        this.listRooms[3] = new CRoomData({ index: 3, room_type: eRoomType.ertMetalWorkshop, level: 0, overseer_index: 0, storage: 0 });
+        this.listRooms[4] = new CRoomData({ index: 4, room_type: eRoomType.ertCrystalMine, level: 0, overseer_index: 0, storage: 0 });
+
     }
 
     foreachRooms(callback: Function) {
@@ -146,20 +146,20 @@ export class CGlobalData {
         }
     }
 
-    setRoomOSTypeByIndex(idx: number, eot: eOverseerType) {
+    setRoomOSTypeByIndex(idx: number, eot: CCharacterID) {
         const roomData = this.getRoomDataByIndex(idx);
         if (roomData) {
             roomData.eOSType = eot;
         }
     }
 
-    getRoomOSTypeByIndex(idx: number): eOverseerType {
+    getRoomOSTypeByIndex(idx: number): CCharacterID {
         const roomData = this.getRoomDataByIndex(idx);
         if (roomData) {
             return roomData.eOSType;
         }
 
-        return eOverseerType.eotNone;
+        return CCharacterID.eciNoe;
     }
 
     getRoomStockByIndex(idx: number): number {
@@ -173,6 +173,8 @@ export class CGlobalData {
 
     //加载数据
     loadData(data: IPlayerData) {
+        if (GameConfig.ONLY_DEBUG_CLINTE) return;
+
         this.nCoin = data.resources.coin;
         this.nWood = data.resources.wood;
         this.nMetal = data.resources.metal;

@@ -1,8 +1,8 @@
 import { _decorator, Button, Component, Node, Sprite, SpriteFrame } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CResManager } from './ResManager';
-import { COverseerData } from './GlobalData';
-import { eOverseerType } from './BaseDef';
+import { CCharacterData } from './GlobalData';
+import { CCharacterID } from './BaseDef';
 
 const { ccclass, property } = _decorator;
 
@@ -20,12 +20,12 @@ export default class OSSelectBtn extends Component {
     })
     nodeSelected: Node = null;
 
-    eType: eOverseerType = eOverseerType.eotNone;
+    eType: CCharacterID = CCharacterID.eciNoe;
 
-    setOverseer(data: COverseerData) {
+    setOverseer(data: CCharacterData) {
         this.eType = data.eType;
-        if (data.level > 0 && this.eType != eOverseerType.eotNone) {
-            const sf: SpriteFrame = CResManager.instance.getOSHead(data.eType);
+        if (data.level > 0 && this.eType != CCharacterID.eciNoe) {
+            const sf: SpriteFrame = CResManager.instance.getCharHead(data.eType);
             this.sprIcon.spriteFrame = sf;
             this.getComponent(Button).interactable = true;
         } else {

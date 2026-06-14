@@ -6,6 +6,7 @@ export enum eRoomType {
     ertMetalWorkshop = 2,   // 金属工坊
     ertCrystalMine = 3,      // 水晶矿
     ertDoor = 10,            //魔王城大门
+    ertAlchemy = 11,        //炼金术实验室
 }
 
 //矿场增益类型
@@ -17,13 +18,13 @@ export enum eMineBuffType {
 }
 
 //监工类型
-export enum eOverseerType {
-    eotNone = 0,
-    eotEyetyarnt = 1,               //独眼巨人
-    eotLich = 2,                  //巫妖
-    eotOrc = 3,                      //兽人
-    eotUnknown2 = 4,                 //占位
-    eotMax = 5                      //最大数量
+export enum CCharacterID {
+    eciNoe = 0,
+    eciEyetyarnt = 1,               //独眼巨人
+    eciLich = 2,                  //巫妖
+    eciOrc = 3,                      //兽人
+    dragon = 4,                 //龙
+    eciMax = 5                      //最大数量
 }
 
 //监工类型

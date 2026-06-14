@@ -22,4 +22,6 @@ export enum UniEvent {
     on_resource_change = "onResourceChange",
     on_click_gather_res = "onClickGatherRes",
     on_pop_tips = "onPopTips",
+    on_open_room_panel = "onOpenRoomFunPanel",
+    on_close_room_panel = "onCloseRoomFunPanel"
 }

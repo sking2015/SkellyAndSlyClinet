@@ -80,6 +80,10 @@ export class WebSession {
             sign: sign
         };
 
+        if (GameConfig.ONLY_DEBUG_CLINTE) {
+            return [SessionResult.SUCCESS, null];
+        }
+
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

@@ -1,8 +1,8 @@
 import { _decorator, Component, instantiate, Node, Prefab, Sprite, Label, RichText } from 'cc';
-import { COverseerData, CGlobalData } from './GlobalData';
+import { CCharacterData, CGlobalData } from './GlobalData';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import OSSelectBtn from './OSSelectBtn';
-import { eOverseerType } from './BaseDef';
+import { CCharacterID } from './BaseDef';
 import { CResManager } from './ResManager';
 import { COSCfgData, COSSkill, COverseerManager } from './OverseerMan';
 
@@ -43,13 +43,13 @@ export default class OSSelectPanel extends Component {
     nodeBlank: Node = null;
 
 
-    eCurOSType: eOverseerType = eOverseerType.eotNone;
+    eCurOSType: CCharacterID = CCharacterID.eciNoe;
 
     //当前描述房间index
     nCurRoomIndex: number = -1;
 
 
-    mapOSBtn: Map<eOverseerType, OSSelectBtn> = new Map();
+    mapOSBtn: Map<CCharacterID, OSSelectBtn> = new Map();
 
     start() {
         this.initAllOverseer();
@@ -59,7 +59,7 @@ export default class OSSelectPanel extends Component {
     refreshInfo() {
 
         this.refreshSelected();
-        this.sprImg.spriteFrame = CResManager.instance.getOSAvatar(this.eCurOSType);
+        this.sprImg.spriteFrame = CResManager.instance.getCharAvatar(this.eCurOSType);
 
         const osData: COSCfgData = COverseerManager.instance.getOverseerData(this.eCurOSType);
 
@@ -117,13 +117,13 @@ export default class OSSelectPanel extends Component {
     }
 
     refreshSelected() {
-        this.mapOSBtn.forEach((comBtn: OSSelectBtn, eType: eOverseerType) => {
+        this.mapOSBtn.forEach((comBtn: OSSelectBtn, eType: CCharacterID) => {
             comBtn.setSelect(this.eCurOSType === eType);
         })
     }
 
     initAllOverseer() {
-        CGlobalData.instance.foreachOverseers((data: COverseerData) => {
+        CGlobalData.instance.foreachOverseers((data: CCharacterData) => {
             console.log("看一下初始化overseer", data);
             const btnOS = instantiate(this.prefabOSBtn);
             const comOSBtn = btnOS.getComponent(OSSelectBtn);

@@ -5,10 +5,12 @@ import CRoomUpgradePanel from './RoomUpgradePanel';
 import { CGlobalData } from './GlobalData';
 import { ResourceShowArea } from './ResourceShowArea';
 import { fadeInOut, initGlobalButtonCooldown } from './common/common';
+import { CMALPanel } from './MALPanel';
 
 
 
 import { Roomlist } from './Roomlist';
+import { eRoomType } from './BaseDef';
 
 const { ccclass, property } = _decorator;
 
@@ -18,11 +20,17 @@ const { ccclass, property } = _decorator;
 @ccclass('main')
 export class main extends Component {
 
+    @property({ type: Node, tooltip: "所有弹出面板底层遮罩" })
+    nodeMask: Node = null;
+
     @property({ type: OSSelectPanel, tooltip: "监工选择面板" })
     comOSListPanel: OSSelectPanel = null;
 
     @property({ type: CRoomUpgradePanel, tooltip: "房间升级面板" })
     comRoomUpgradePanel: CRoomUpgradePanel = null;
+
+    @property({ type: CMALPanel, tooltip: "炼金实验室面板" })
+    comMALPanel: CMALPanel = null;
 
     @property({ type: ResourceShowArea, tooltip: "资源显示区域组件" })
     comResShowArea: ResourceShowArea = null;
@@ -59,6 +67,9 @@ export class main extends Component {
         this.node.on(UniEvent.on_click_gather_res, this.onGatherRes, this);
         this.node.on(UniEvent.on_resource_change, this.refreshResource, this);
         this.node.on(UniEvent.on_pop_tips, this.onPopTips, this);
+        this.node.on(UniEvent.on_open_room_panel, this.onPopRoomFunPanel, this);
+        this.node.on(UniEvent.on_close_room_panel, this.onCloseRoomFunPanel, this);
+
     }
 
     stopListnerEvent() {
@@ -69,6 +80,8 @@ export class main extends Component {
         this.node.off(UniEvent.on_click_gather_res, this.onGatherRes, this);
         this.node.off(UniEvent.on_resource_change, this.refreshResource, this);
         this.node.off(UniEvent.on_pop_tips, this.onPopTips, this);
+        this.node.off(UniEvent.on_open_room_panel, this.onPopRoomFunPanel, this);
+        this.node.off(UniEvent.on_close_room_panel, this.onCloseRoomFunPanel, this);
     }
 
     onEnable() {
@@ -105,6 +118,22 @@ export class main extends Component {
     onPopRoomUpgrade(event: CustomEvent) {
         this.comRoomUpgradePanel.setRoomIndex(event.detail.roomIdx);
         this.comRoomUpgradePanel.onOpen();
+    }
+
+    onCloseRoomFunPanel() {
+        this.nodeMask.active = false;
+    }
+
+    //打开房间功能面板
+    onPopRoomFunPanel(event: CustomEvent) {
+        this.nodeMask.active = true;
+        switch (event.detail.roomType) {
+            case eRoomType.ertAlchemy:
+                this.comMALPanel.Show(true);
+                break;
+            default:
+                console.log("不认识的房间类型")
+        }
     }
 
 
@@ -149,6 +178,10 @@ export class main extends Component {
 
     start() {
         this.nodeTips.active = false;
+        this.nodeMask.active = false;
+
+        this.comMALPanel.Show(false);
+
     }
 
     update(deltaTime: number) {

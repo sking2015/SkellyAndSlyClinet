@@ -1,20 +1,20 @@
 import { _decorator, Component, Node, Prefab, SpriteFrame, assetManager, AssetManager, isValid } from 'cc';
-import { COverseerCfg, CRoomType2Data } from './KeyValuePair';
-import { eOverseerType, eRoomType } from './BaseDef';
+import { CCharacterCfg, CRoomType2Data } from './KeyValuePair';
+import { CCharacterID, eRoomType } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 @ccclass('CResManager')
 export class CResManager extends Component {
 
-    @property({ type: COverseerCfg, tooltip: "所有监工定义" })
-    overseerCfg: COverseerCfg[] = [];
+    @property({ type: CCharacterCfg, tooltip: "所有角色定义" })
+    characterCfg: CCharacterCfg[] = [];
 
 
     @property({ type: CRoomType2Data, tooltip: "所有房间数据定义" })
     roomdata: CRoomType2Data[] = [];
 
 
-    private mapOverseer: Map<eOverseerType, COverseerCfg> = new Map();
+    private mapCharacter: Map<CCharacterID, CCharacterCfg> = new Map();
 
     private mapRoomImgData: Map<eRoomType, CRoomType2Data> = new Map();
 
@@ -85,11 +85,11 @@ export class CResManager extends Component {
         }
 
         //初始化监工数据
-        this.mapOverseer.clear();
-        for (const cfg of this.overseerCfg) {
+        this.mapCharacter.clear();
+        for (const cfg of this.characterCfg) {
             if (!cfg) continue;
 
-            this.mapOverseer.set(cfg.eType, cfg);
+            this.mapCharacter.set(cfg.eType, cfg);
         }
 
         //初始化房间类型map
@@ -109,8 +109,8 @@ export class CResManager extends Component {
         }
     }
 
-    getOSHead(eType: eOverseerType): SpriteFrame {
-        const cfg = this.mapOverseer.get(eType);
+    getCharHead(eType: CCharacterID): SpriteFrame {
+        const cfg = this.mapCharacter.get(eType);
         if (cfg) {
             return cfg.sfHead;
         }
@@ -118,8 +118,8 @@ export class CResManager extends Component {
         return null;
     }
 
-    getOSAvatar(eType: eOverseerType): SpriteFrame {
-        const cfg = this.mapOverseer.get(eType);
+    getCharAvatar(eType: CCharacterID): SpriteFrame {
+        const cfg = this.mapCharacter.get(eType);
         if (cfg) {
             return cfg.sfAvatar;
         }
@@ -127,8 +127,8 @@ export class CResManager extends Component {
         return null;
     }
 
-    getOSPrefab(eType: eOverseerType): Prefab {
-        const cfg = this.mapOverseer.get(eType);
+    getCharPrefab(eType: CCharacterID): Prefab {
+        const cfg = this.mapCharacter.get(eType);
         if (cfg) {
             return cfg.prefabRole;
         }

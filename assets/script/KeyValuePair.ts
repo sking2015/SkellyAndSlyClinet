@@ -1,5 +1,5 @@
 import { _decorator, Prefab, SpriteFrame, Enum } from 'cc';
-import { eRoomType, eOverseerType } from './BaseDef';
+import { eRoomType, CCharacterID } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 //用于序列化展示的键值对
@@ -23,12 +23,12 @@ export class CkeyValuePair4Spriteframe {
 }
 
 // 2. 使用 Enum 函数包裹并注册你的枚举
-Enum(eOverseerType);
+Enum(CCharacterID);
 
-@ccclass('COverseerCfg')
-export class COverseerCfg {
-    @property({ type: Enum(eOverseerType), tooltip: '监工的枚举类型' })
-    eType: eOverseerType = eOverseerType.eotNone;
+@ccclass('CCharacterCfg')
+export class CCharacterCfg {
+    @property({ type: Enum(CCharacterID), tooltip: '监工的枚举类型' })
+    eType: CCharacterID = CCharacterID.eciNoe;
 
     @property({ type: SpriteFrame, tooltip: '监工对应的头像spriteframe' })
     sfHead: SpriteFrame = null;

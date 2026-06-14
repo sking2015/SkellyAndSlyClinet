@@ -36,6 +36,8 @@ export class GameConfig {
 
     // 游戏状态键名
     public static readonly GAME_STATE_KEY: string = 'game_state';
+
+    public static readonly ONLY_DEBUG_CLINTE: boolean = true;
 }
 
 /**
@@ -63,3 +65,4 @@ export enum eWebAction {
     ewa_room_gather = 'room-gather',            //房间收集资源
     ewa_room_change_os = 'room-change-os'       //房间改变监工
 }
+
