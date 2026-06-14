@@ -4,8 +4,8 @@ const { ccclass, property } = _decorator;
 
 export const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
 
-@ccclass('CCharactor')
-export class CCharactor extends Component {
+@ccclass('CCharacter')
+export class CCharacter extends Component {
     @property(CkeyValuePair)
     actionList: CkeyValuePair[] = [];
 
@@ -33,39 +33,39 @@ export class CCharactor extends Component {
     protected _currentWeights: Map<string, number> = new Map();
 
     protected onLoad(): void {
-        console.log("CCharactor onLoad", this.node.name);
+        console.log("CCharacter onLoad", this.node.name);
 
         this.nodeChar = this.node.getChildByName('char');
         if (!this.nodeChar) {
-            console.error("can't find node char for charactor", this.node.name);
+            console.error("can't find node char for character", this.node.name);
         }
 
         this._animation = this.nodeChar.getComponent(Animation);
         if (!this._animation) {
-            error(`[CCharactor] 节点 ${this.node.name} 上未找到 Animation 组件！`);
+            error(`[CCharacter] 节点 ${this.node.name} 上未找到 Animation 组件！`);
             return;
         }
     }
 
     start() {
-        console.log("CCharactor start", this.node.name);
+        console.log("CCharacter start", this.node.name);
 
         // 校验 actionList
         this.actionList.forEach(item => {
             const key = item.key;
             if (key === 'run' || key === 'walk') {
                 if (!this._animation!.getState('run') && !this._animation!.getState('walk')) {
-                    error(`[CCharactor] 动作列表中包含移动行为 "${key}"，但在 Animation 中找不到 "run" 或 "walk"！`);
+                    error(`[CCharacter] 动作列表中包含移动行为 "${key}"，但在 Animation 中找不到 "run" 或 "walk"！`);
                 }
             } else {
                 if (!this._animation!.getState(key)) {
-                    error(`[CCharactor] 动作列表中定义的 "${key}" 在 Animation 组件中找不到！`);
+                    error(`[CCharacter] 动作列表中定义的 "${key}" 在 Animation 组件中找不到！`);
                 }
             }
 
             let baseDuration = parseFloat(item.value);
             if (isNaN(baseDuration) || baseDuration < 2) {
-                warn(`[CCharactor] "${key}" 的持续时间低于2秒或无效，已重置为2秒。`);
+                warn(`[CCharacter] "${key}" 的持续时间低于2秒或无效，已重置为2秒。`);
                 item.value = "2";
             }
         });
@@ -160,7 +160,7 @@ export class CCharactor extends Component {
             this.play(secondChoice);
             return secondChoice;
         } else {
-            error(`[CCharactor] 节点 ${this.node.name} 尝试移动，但 Animation 中既没有 "run" 也没有 "walk"！`);
+            error(`[CCharacter] 节点 ${this.node.name} 尝试移动，但 Animation 中既没有 "run" 也没有 "walk"！`);
             this._currentActionKey = '';
             return '';
         }
@@ -193,7 +193,7 @@ export class CCharactor extends Component {
             }
 
             this._moveDirection = this._returnTargetX > currentX ? 1 : -1;
-            console.log(`[CCharactor] 外部刷新开启回归。目标点: ${this._returnTargetX.toFixed(1)}`);
+            console.log(`[CCharacter] 外部刷新开启回归。目标点: ${this._returnTargetX.toFixed(1)}`);
         } else {
             this.switchRandomAction();
         }
@@ -323,7 +323,7 @@ export class CCharactor extends Component {
             pos.x = this._returnTargetX;
             this.node.setPosition(pos);
             this._isReturningToRange = false;
-            console.log("[CCharactor] 角色已顺利入场，重置意愿池并激活日常工作循环。");
+            console.log("[CCharacter] 角色已顺利入场，重置意愿池并激活日常工作循环。");
 
             // 入场后，强制刷新行为
             this.switchRandomAction();

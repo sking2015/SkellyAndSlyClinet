@@ -1,6 +1,6 @@
 import { _decorator, Node, Label, ProgressBar, Color, Sprite, SpriteFrame, math, Prefab, instantiate, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
-import { CCharactor } from '../charactor';
+import { CCharacter } from '../character';
 import { eRoomType, eMineBuffType, CCharacterID, IPlayerData } from '../BaseDef';
 import { COSCfgData, COSSkill, COverseerManager } from '../OverseerMan';
 import { CGlobalData } from '../GlobalData';
@@ -76,7 +76,7 @@ export class CResRoom extends CBaseRoom {
     lblCapacity: Label = null;
 
     //监工的角色对像
-    charOverseer: CCharactor = null;
+    charOverseer: CCharacter = null;
     CCharacterID: CCharacterID = CCharacterID.eciNoe;
 
     nWorkerNum: number = 0;
@@ -219,7 +219,7 @@ export class CResRoom extends CBaseRoom {
                 this.charOverseer = null;
             }
 
-            this.charOverseer = nodeOs.getComponent(CCharactor);
+            this.charOverseer = nodeOs.getComponent(CCharacter);
             this.charOverseer.setActionRange(-250, 250);
             this.charOverseer.playLand();
 
@@ -230,7 +230,7 @@ export class CResRoom extends CBaseRoom {
 
     }
 
-    listWorker: CCharactor[] = [];
+    listWorker: CCharacter[] = [];
     addWorker(prefabWorder: Prefab) {
         const nodeWorker = instantiate(prefabWorder);
 
@@ -240,7 +240,7 @@ export class CResRoom extends CBaseRoom {
             nodeWorker.parent = this.nodeWokerLayer;
         }
 
-        const charWorker = nodeWorker.getComponent(CCharactor);
+        const charWorker = nodeWorker.getComponent(CCharacter);
 
         charWorker.EnableWork(!this.isResFull());
         this.listWorker.push(charWorker);
@@ -333,7 +333,7 @@ export class CResRoom extends CBaseRoom {
     }
 
     private enableWorkersWork(bEnable: boolean) {
-        this.listWorker.forEach((char: CCharactor) => {
+        this.listWorker.forEach((char: CCharacter) => {
             char.EnableWork(bEnable);
         })
     }

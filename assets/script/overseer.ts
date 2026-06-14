@@ -1,10 +1,10 @@
 import { _decorator, Component, Node } from 'cc';
 const { ccclass, property } = _decorator;
-import { CCharactor, AI_INTERVAL } from './charactor';
+import { CCharacter, AI_INTERVAL } from './character';
 
 //监工，主要是动作权重AI不同
 @ccclass('overseer')
-export class overseer extends CCharactor {
+export class overseer extends CCharacter {
     ActionByWeightAI() {
         // 【核心动态更新规则】随着在 work 状态下时间的积累，动态调整权重
 
