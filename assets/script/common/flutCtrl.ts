@@ -4,15 +4,18 @@ const { ccclass, property } = _decorator;
 @ccclass('FluxLightController')
 export class FluxLightController extends Component {
 
-    @property({ type: Sprite })
+    @property({ type: Sprite, tooltip: '需要加流光的Sprite组件' })
     public sprite: Sprite = null!;
 
-    @property
-    public duration: number = 2.0; // 单词扫过的时间（秒）
+    @property({ tooltip: '单次流光扫过的时间（秒），数值越大速度越慢' })
+    public duration: number = 5.0; // 默认改为 5 秒扫一次，速度会明显变慢
+
+    @property({ tooltip: '每次扫完后，停顿多长时间再开始下一次（秒）' })
+    public intervalDelay: number = 1.0; // 新增：扫完后停顿 1 秒，效果更自然
 
     private _material: Material | null = null;
     private _timer: number = 0;
-    private _isLooping: boolean = true;
+
 
     start() {
         if (this.sprite) {
@@ -25,16 +28,21 @@ export class FluxLightController extends Component {
         if (!this._material) return;
 
         this._timer += dt;
-        if (this._timer > this.duration) {
-            if (this._isLooping) {
-                this._timer = 0; // 循环播放
-            } else {
-                return;
-            }
+
+        // 总周期为：扫过时间 + 停顿时间
+        let totalCycle = this.duration + this.intervalDelay;
+
+        if (this._timer > totalCycle) {
+            this._timer = 0; // 循环播放
         }
 
-        // 将时间映射到进度 (-0.5 到 1.5)
-        let progress = (this._timer / this.duration) * 2.0 - 0.5;
+        // 如果当前时间在扫过的时间段内，计算进度；如果在停顿期间，保持在终点外
+        let progress = -0.5;
+        if (this._timer <= this.duration) {
+            progress = (this._timer / this.duration);
+        } else {
+            progress = 1.5; // 扫完隐藏
+        }
 
         // 传递给 Shader 里的 lightCenter 变量
         this._material.setProperty('lightCenter', progress);
