@@ -3,6 +3,7 @@ import { eCCharacterID } from './BaseDef';
 import { CCharData, CCharactersData } from './CharacatersData';
 import { CGlobalData } from './GlobalData';
 import { CResManager } from './ResManager';
+import { CustomEvent, UniEvent } from './common/CustomEvent';
 const { ccclass, property } = _decorator;
 
 @ccclass('CCharButton')
@@ -39,7 +40,12 @@ export class CCharButton extends Component {
     level: number = 0;
 
     start() {
+    }
 
+
+    parentPanel: Node = null;
+    SetParentPanel(panel: Node) {
+        this.parentPanel = panel;
     }
 
     SetCharId(eID: eCCharacterID) {
@@ -73,6 +79,11 @@ export class CCharButton extends Component {
         this.level = CGlobalData.instance.getMonsterLevel(this.eCharID);
         const data: CCharData = CCharactersData.instance.GetCharData(this.eCharID, this.level);
         this.setCharData(data);
+    }
+
+    onClick() {
+        this.parentPanel.active = false;
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_char_ui, true, { charID: this.eCharID, panel: this.parentPanel }))
     }
 
     update(deltaTime: number) {

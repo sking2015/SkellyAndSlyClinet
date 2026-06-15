@@ -35,6 +35,7 @@ export class CMALPanel extends Component {
             const monster = instantiate(this.prefabCharButton);
             const comCharBtn: CCharButton = monster.getComponent(CCharButton);
             comCharBtn.setCharData(data);
+            comCharBtn.SetParentPanel(this.node);
             monster.parent = this.nodeCharList;
         })
     }

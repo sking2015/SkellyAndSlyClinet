@@ -6,6 +6,7 @@ import { CGlobalData } from './GlobalData';
 import { ResourceShowArea } from './ResourceShowArea';
 import { fadeInOut, initGlobalButtonCooldown } from './common/common';
 import { CMALPanel } from './MALPanel';
+import { CMonsterDetailPanel } from './MonsterDetailPanel';
 
 
 
@@ -34,6 +35,9 @@ export class main extends Component {
 
     @property({ type: ResourceShowArea, tooltip: "资源显示区域组件" })
     comResShowArea: ResourceShowArea = null;
+
+    @property({ type: CMonsterDetailPanel, tooltip: "魔物属性界面" })
+    comMDPanel: CMonsterDetailPanel = null;
 
     @property({ type: Node, tooltip: "tips节点" })
     nodeTips: Node = null;
@@ -69,6 +73,7 @@ export class main extends Component {
         this.node.on(UniEvent.on_pop_tips, this.onPopTips, this);
         this.node.on(UniEvent.on_open_room_panel, this.onPopRoomFunPanel, this);
         this.node.on(UniEvent.on_close_room_panel, this.onCloseRoomFunPanel, this);
+        this.node.on(UniEvent.on_click_char_ui, this.onPopMonsterDetailPanel, this);
 
     }
 
@@ -82,6 +87,7 @@ export class main extends Component {
         this.node.off(UniEvent.on_pop_tips, this.onPopTips, this);
         this.node.off(UniEvent.on_open_room_panel, this.onPopRoomFunPanel, this);
         this.node.off(UniEvent.on_close_room_panel, this.onCloseRoomFunPanel, this);
+        this.node.off(UniEvent.on_click_char_ui, this.onPopMonsterDetailPanel, this);
     }
 
     onEnable() {
@@ -136,6 +142,13 @@ export class main extends Component {
         }
     }
 
+    //打开魔物属性界面
+    onPopMonsterDetailPanel(event: CustomEvent) {
+        this.nodeMask.active = true;
+        this.comMDPanel.setCharID(event.detail.charID);
+        this.comMDPanel.ShowFromOther(event.detail.panel);
+    }
+
 
     onPopTips(event: CustomEvent) {
         this.tipsQueue.push(event.detail.tips);
@@ -181,7 +194,7 @@ export class main extends Component {
         this.nodeMask.active = false;
 
         this.comMALPanel.Show(false);
-
+        this.comMDPanel.Close();
     }
 
     update(deltaTime: number) {

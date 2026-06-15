@@ -1,6 +1,6 @@
 import { _decorator, Node, Label, ProgressBar, Color, Sprite, SpriteFrame, math, Prefab, instantiate, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
-import { CCharacter } from '../character';
+import { CCharacter } from '../character/character';
 import { eRoomType, eMineBuffType, eCCharacterID, IPlayerData } from '../BaseDef';
 import { COSCfgData, COSSkill, COverseerManager } from '../OverseerMan';
 import { CGlobalData } from '../GlobalData';

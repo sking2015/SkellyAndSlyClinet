@@ -1,5 +1,5 @@
 import { _decorator, Prefab, SpriteFrame, Enum } from 'cc';
-import { eRoomType, eCCharacterID } from './BaseDef';
+import { eRoomType, eCCharacterID, eProperty, eRace } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 //用于序列化展示的键值对
@@ -17,6 +17,24 @@ export class CkeyValuePair {
 export class CkeyValuePair4Spriteframe {
     @property({ tooltip: '键' })
     key: string = '';
+
+    @property({ type: SpriteFrame, tooltip: '对应的spriteframe' })
+    value: SpriteFrame = null;
+}
+
+@ccclass('CProperty2Spriteframe')
+export class CProperty2Spriteframe {
+    @property({ type: Enum(eProperty), tooltip: '键' })
+    key: eProperty = eProperty.eProATK;
+
+    @property({ type: SpriteFrame, tooltip: '对应的spriteframe' })
+    value: SpriteFrame = null;
+}
+
+@ccclass('CRace2Spriteframe')
+export class CRace2Spriteframe {
+    @property({ type: Enum(eRace), tooltip: '键' })
+    key: eRace = eRace.erNoe;
 
     @property({ type: SpriteFrame, tooltip: '对应的spriteframe' })
     value: SpriteFrame = null;

@@ -1,5 +1,6 @@
-import { CkeyValuePair } from './KeyValuePair';
+import { CkeyValuePair } from '../KeyValuePair';
 import { _decorator, Component, Node, Animation, error, warn, math } from 'cc';
+import { fadeInOut } from '../common/common';
 const { ccclass, property } = _decorator;
 
 export const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
@@ -23,7 +24,15 @@ export class CCharacter extends Component {
     @property
     limitRight: number = 250;
 
+    //角色动画节点
     nodeChar: Node = null;
+
+    //角色灰度消像节点,用于一些特殊效果
+    nodeGray: Node = null;
+
+    nodeEffect: Node = null;
+
+    bStone: boolean = false;
 
     // ====== 范围外回归专属变量 ======
     private _isReturningToRange: boolean = false; // 是否正在回归范围内
@@ -40,11 +49,59 @@ export class CCharacter extends Component {
             console.error("can't find node char for character", this.node.name);
         }
 
+        this.nodeGray = this.node.getChildByName('gray');
+
+        this.nodeEffect = this.node.getChildByName('effect')
+
+        this.nodeGray.active = false;
+
+        this.nodeEffect.active = false;
+
         this._animation = this.nodeChar.getComponent(Animation);
         if (!this._animation) {
             error(`[CCharacter] 节点 ${this.node.name} 上未找到 Animation 组件！`);
             return;
         }
+    }
+
+    playEffect() {
+        this.nodeEffect.active = true;
+        const aniEffect = this.nodeEffect.getComponent(Animation);
+        if (aniEffect) {
+            const ani = aniEffect.clips[0].name;
+            aniEffect.on(Animation.EventType.FINISHED, () => {
+                this.nodeEffect.active = false;
+            }, this, true)
+
+            aniEffect.play(ani);
+        }
+    }
+
+    //角色石化
+    ToStone() {
+        this._animation.stop();
+
+        if (this.nodeGray) {
+            this.nodeGray.active = true;
+            fadeInOut(this.nodeGray, 0.5, true);
+        }
+
+        //this.nodeChar.active = false;
+
+        this.bStone = true;
+    }
+
+    ResumeFromStone() {
+        this.nodeChar.active = true;
+
+        if (this.nodeGray) {
+            fadeInOut(this.nodeGray, 0.5, false, () => {
+                this.nodeGray.active == false;
+                this.play(this.actionList[0].key);
+            })
+        }
+
+        this.bStone = false;
     }
 
     start() {
@@ -201,7 +258,10 @@ export class CCharacter extends Component {
 
     /** 播放指定动画 */
     play(ani: string) {
+        if (this.bStone) return;
+
         if (this._animation && this._animation.getState(ani)) {
+            console.log("播放动画", ani);
             this._animation.play(ani);
             this._currentActionKey = ani;
         }
@@ -288,6 +348,8 @@ export class CCharacter extends Component {
 
     aiBoostTime = 0;
     update(deltaTime: number) {
+        if (this.bStone) return;
+
         this.aiBoostTime += deltaTime;
         if (this.aiBoostTime > AI_INTERVAL) {
             this.AITick();

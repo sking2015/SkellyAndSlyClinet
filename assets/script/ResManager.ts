@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Prefab, SpriteFrame, assetManager, AssetManager, isValid } from 'cc';
-import { CCharacterCfg, CRoomType2Data } from './KeyValuePair';
-import { eCCharacterID, eRoomType } from './BaseDef';
+import { CCharacterCfg, CRoomType2Data, CProperty2Spriteframe, CRace2Spriteframe } from './KeyValuePair';
+import { eCCharacterID, eProperty, eRoomType } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 @ccclass('CResManager')
@@ -12,6 +12,12 @@ export class CResManager extends Component {
 
     @property({ type: CRoomType2Data, tooltip: "所有房间数据定义" })
     roomdata: CRoomType2Data[] = [];
+
+    @property({ type: CProperty2Spriteframe, tooltip: "所有属性进度条图块定义" })
+    propertyBarCfg: CProperty2Spriteframe[] = [];
+
+    @property({ type: CRace2Spriteframe, tooltip: "所有种族图标定义" })
+    raceSFCfg: CRace2Spriteframe[] = [];
 
 
     private mapMonsters: Map<eCCharacterID, CCharacterCfg> = new Map();
@@ -67,6 +73,17 @@ export class CResManager extends Component {
         } catch (err) {
             console.error('加载或缓存图标 Bundle 失败:', err);
         }
+    }
+
+    public getPropertyBarSF(e: eProperty): SpriteFrame {
+        for (let i = 0; i < this.propertyBarCfg.length; ++i) {
+            if (e = this.propertyBarCfg[i].key) {
+                return this.propertyBarCfg[i].value;
+            }
+        }
+
+        return null;
+
     }
 
 

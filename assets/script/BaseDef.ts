@@ -17,7 +17,7 @@ export enum eMineBuffType {
     embtSupervisor = 3 // 监管
 }
 
-//监工类型
+//角色ID,以后多了移到配置表
 export enum eCCharacterID {
     eciNoe = 0,
     eciEyetyarnt = 1,               //独眼巨人
@@ -27,11 +27,39 @@ export enum eCCharacterID {
     eciMax = 5                      //最大数量
 }
 
+//种族
+export enum eRace {
+    erNoe = 0,
+    erArchdemon = 1,               //大恶魔
+    erBeast = 2,                  //魔兽
+    erBoneDragon = 3,              //骨龙
+    erConstruct = 4,                //造物
+    erDragon = 5,                 //龙
+    erGiant = 6,                    //巨人
+    erSlime = 7,                    //史莱姆
+    erSkull = 8,                    //骷髅
+    erSpirit = 9,                   //精灵
+    eciMax = 10                      //最大数量
+}
+
 //监工类型
 export enum eWorkerType {
     ewtNone = 0,
     ewtMiner = 1,               //矿工
     ewtWood = 2,                //木匠
+}
+
+//角色属性定义
+export enum eProperty {
+    eProNone = "None",
+    eProHP = "HP",
+    eProMP = "MP",
+    eProATK = "ATK",
+    eProDEF = "DEF",
+    eProMDF = "MDF",
+    eProINT = "INT",
+    eProSPD = "SPD",
+    eProLCA = "LCA",
 }
 
 
