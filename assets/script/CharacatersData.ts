@@ -1,10 +1,11 @@
-import { eCCharacterID } from './BaseDef';
+import { eCCharacterID, eProperty } from './BaseDef';
 import { IMonsters, MonstersData } from './config/Monsters';
 
 export class CCharData {
     ID: number = 0;
     Name: string = "";
     Level: number = 0;
+    Race: number = 0;
     HP: number = 0;
     MP: number = 0;
     ATK: number = 0;
@@ -20,9 +21,15 @@ export class CCharData {
     ResisDark: number = 0;
     ResisShine: number = 0;
 
+    CostCoin: number = 0;
+    CostFood: number = 0;
+    CostSoul: number = 0;
+
     //技能和能力在数据结构上都一样，用相同数据结构
     skills: Map<number, number> = new Map();
     ability: Map<number, number> = new Map();
+
+    properties: Map<eProperty, number> = new Map();
 
     constructor(eID: eCCharacterID, level: number) {
         this.ID = eID;
@@ -63,6 +70,7 @@ export class CCharData {
         const lv: number = this.Level;
 
         this.Name = data.Name;
+        this.Race = data.Race;
 
         //基础数据全部用基础数据加上等级乘以每级增量
         this.HP = data.HP + data.HPup * lv;
@@ -73,6 +81,15 @@ export class CCharData {
         this.INT = data.INT + data.INTup * lv;
         this.SPD = data.SPD + data.SPDup * lv;
         this.LCA = data.LCA + data.LCAup * lv;
+
+        this.properties.set(eProperty.eProHP, this.HP);
+        this.properties.set(eProperty.eProMP, this.MP);
+        this.properties.set(eProperty.eProATK, this.ATK);
+        this.properties.set(eProperty.eProDEF, this.DEF);
+        this.properties.set(eProperty.eProMDF, this.MDF);
+        this.properties.set(eProperty.eProINT, this.INT);
+        this.properties.set(eProperty.eProSPD, this.SPD);
+        this.properties.set(eProperty.eProLCA, this.LCA);
 
         this.addSkillbyCfg(data.Skill1);
         this.addSkillbyCfg(data.Skill2);
@@ -86,6 +103,21 @@ export class CCharData {
         this.addAbilitybyCfg(data.Ability6);
         this.addAbilitybyCfg(data.Ability7);
         this.addAbilitybyCfg(data.Ability8);
+
+        this.ResisFire = data.ResisFire;
+        this.ResisIce = data.ResisIce;
+        this.ResisWind = data.ResisWind;
+        this.ResisThunder = data.ResisThunder;
+        this.ResisDark = data.ResisDark;
+        this.ResisShine = data.ResisShine;
+
+        this.CostCoin = data.ReforgeCoin;
+        this.CostFood = data.ReforgeFood;
+        this.CostSoul = data.ReforgeSoul;
+    }
+
+    getProperty(e: eProperty): number {
+        return this.properties.get(e);
     }
 }
 

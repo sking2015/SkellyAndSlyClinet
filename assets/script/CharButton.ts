@@ -39,6 +39,8 @@ export class CCharButton extends Component {
     eCharID: eCCharacterID = eCCharacterID.eciNoe;
     level: number = 0;
 
+    data: CCharData = null;
+
     start() {
     }
 
@@ -50,40 +52,39 @@ export class CCharButton extends Component {
 
     SetCharId(eID: eCCharacterID) {
         this.eCharID = eID;
+        this.level = CGlobalData.instance.getMonsterLevel(this.eCharID);
+        this.data = CCharactersData.instance.GetCharData(this.eCharID, this.level);
         this.refreshShow();
     }
 
     setCharData(data: CCharData) {
         this.eCharID = data.ID;
         this.level = data.Level;
+        this.data = data;
 
+        this.refreshShow();
+    }
 
-
-        this.lblName.string = data.Name;
+    private refreshShow() {
+        this.lblName.string = this.data.Name;
         this.sprHead.spriteFrame = CResManager.instance.getCharHead(this.eCharID);
 
         const nShowLevel = this.level > 0 ? this.level : 1;
         this.lblLevel.string = "LV " + nShowLevel;
 
-        this.lblHP.string = data.HP.toString();
-        this.lblAtk.string = data.ATK.toString();
-        this.lblDef.string = data.DEF.toString();
-        this.lblLCA.string = data.LCA.toString();
+        this.lblHP.string = this.data.HP.toString();
+        this.lblAtk.string = this.data.ATK.toString();
+        this.lblDef.string = this.data.DEF.toString();
+        this.lblLCA.string = this.data.LCA.toString();
 
         if (this.level > 0) {
             this.sprMark.spriteFrame = this.sfMark[1];
         }
     }
 
-    private refreshShow() {
-        this.level = CGlobalData.instance.getMonsterLevel(this.eCharID);
-        const data: CCharData = CCharactersData.instance.GetCharData(this.eCharID, this.level);
-        this.setCharData(data);
-    }
-
     onClick() {
         this.parentPanel.active = false;
-        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_char_ui, true, { charID: this.eCharID, panel: this.parentPanel }))
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_char_ui, true, { charID: this.eCharID, data: this.data, panel: this.parentPanel }))
     }
 
     update(deltaTime: number) {

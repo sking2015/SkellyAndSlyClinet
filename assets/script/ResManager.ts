@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Prefab, SpriteFrame, assetManager, AssetManager, isValid } from 'cc';
 import { CCharacterCfg, CRoomType2Data, CProperty2Spriteframe, CRace2Spriteframe } from './KeyValuePair';
-import { eCCharacterID, eProperty, eRoomType } from './BaseDef';
+import { eCCharacterID, eProperty, eRoomType, eRace } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 @ccclass('CResManager')
@@ -23,6 +23,8 @@ export class CResManager extends Component {
     private mapMonsters: Map<eCCharacterID, CCharacterCfg> = new Map();
 
     private mapRoomImgData: Map<eRoomType, CRoomType2Data> = new Map();
+
+    private mapRace: Map<eRace, SpriteFrame> = new Map();
 
 
     private mapSkillsIcon: Map<string, SpriteFrame> = new Map();
@@ -117,7 +119,17 @@ export class CResManager extends Component {
             this.mapRoomImgData.set(data.eRt, data);
         }
 
+        for (const data of this.raceSFCfg) {
+            if (!data) continue;
+
+            this.mapRace.set(data.key, data.value);
+        }
+
         this._dynLoadSkillsIcon();
+    }
+
+    getRaceIcon(e: eRace): SpriteFrame {
+        return this.mapRace.get(e);
     }
 
     protected onDestroy() {

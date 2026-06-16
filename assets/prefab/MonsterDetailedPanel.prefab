@@ -2088,7 +2088,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 154.078,
+      "y": 128.019,
       "z": 0
     },
     "_lrot": {
@@ -9441,7 +9441,7 @@
     "lblLevel": {
       "__id__": 75
     },
-    "lblRace": {
+    "sprRace": {
       "__id__": 63
     },
     "nodeRoleBase": {
@@ -9464,26 +9464,24 @@
       null,
       null
     ],
-    "arrUIResist": [
-      {
-        "__id__": 269
-      },
-      {
-        "__id__": 287
-      },
-      {
-        "__id__": 305
-      },
-      {
-        "__id__": 323
-      },
-      {
-        "__id__": 341
-      },
-      {
-        "__id__": 359
-      }
-    ],
+    "uiFireResist": {
+      "__id__": 269
+    },
+    "uiIceResist": {
+      "__id__": 287
+    },
+    "uiWindResist": {
+      "__id__": 305
+    },
+    "uiThunderResist": {
+      "__id__": 323
+    },
+    "uiDarkResist": {
+      "__id__": 341
+    },
+    "uiHolyResist": {
+      "__id__": 359
+    },
     "_id": ""
   },
   {

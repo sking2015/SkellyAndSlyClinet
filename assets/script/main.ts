@@ -145,7 +145,8 @@ export class main extends Component {
     //打开魔物属性界面
     onPopMonsterDetailPanel(event: CustomEvent) {
         this.nodeMask.active = true;
-        this.comMDPanel.setCharID(event.detail.charID);
+        //this.comMDPanel.setCharID(event.detail.charID);
+        this.comMDPanel.setChar(event.detail.data);
         this.comMDPanel.ShowFromOther(event.detail.panel);
     }
 

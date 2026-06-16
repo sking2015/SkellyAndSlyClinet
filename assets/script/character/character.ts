@@ -1,9 +1,17 @@
 import { CkeyValuePair } from '../KeyValuePair';
-import { _decorator, Component, Node, Animation, error, warn, math } from 'cc';
+import { _decorator, Component, Node, Animation, error, warn, math, Prefab } from 'cc';
+import { eCharPlace } from '../BaseDef';
 import { fadeInOut } from '../common/common';
 const { ccclass, property } = _decorator;
 
 export const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
+
+const ACT_STAND = 'stand';
+const ACT_IDLE = 'idle';
+const ACT_RUN = 'run';
+const ACT_WALK = 'walk';
+const ACT_WORK = 'work';
+const ACT_LAND = 'land';
 
 @ccclass('CCharacter')
 export class CCharacter extends Component {
@@ -41,6 +49,9 @@ export class CCharacter extends Component {
     // ====== 新增：动态权重管理映射 ======
     protected _currentWeights: Map<string, number> = new Map();
 
+
+    ePlace: eCharPlace = eCharPlace.ecpNone;
+
     protected onLoad(): void {
         console.log("CCharacter onLoad", this.node.name);
 
@@ -62,6 +73,10 @@ export class CCharacter extends Component {
             error(`[CCharacter] 节点 ${this.node.name} 上未找到 Animation 组件！`);
             return;
         }
+    }
+
+    SetPlace(place: eCharPlace) {
+        this.ePlace = place;
     }
 
     playEffect() {
@@ -110,8 +125,8 @@ export class CCharacter extends Component {
         // 校验 actionList
         this.actionList.forEach(item => {
             const key = item.key;
-            if (key === 'run' || key === 'walk') {
-                if (!this._animation!.getState('run') && !this._animation!.getState('walk')) {
+            if (key === ACT_RUN || key === ACT_WALK) {
+                if (!this._animation!.getState(ACT_RUN) && !this._animation!.getState(ACT_WALK)) {
                     error(`[CCharacter] 动作列表中包含移动行为 "${key}"，但在 Animation 中找不到 "run" 或 "walk"！`);
                 }
             } else {
@@ -145,9 +160,9 @@ export class CCharacter extends Component {
     private resetWeightsToRoute() {
         this.actionList.forEach(item => {
             const key = item.key;
-            if (key === 'work') {
+            if (key === ACT_WORK) {
                 this._currentWeights.set(key, 10);
-            } else if (key === 'idle' || key === 'stand') {
+            } else if (key === ACT_IDLE || key === ACT_STAND) {
                 this._currentWeights.set(key, 3);
             } else {
                 // run, walk, tried 等休闲动作初始权重全为 0
@@ -177,7 +192,7 @@ export class CCharacter extends Component {
             }
 
             //当不允许工作时跳过这个键
-            if (!this.bEnableWork && key == "work") {
+            if (!this.bEnableWork && key == ACT_WORK) {
                 return;
             }
 
@@ -189,7 +204,7 @@ export class CCharacter extends Component {
 
         // 极端兜底：如果全部权重都沦为0，返回列表中第一个可用的动作
         if (totalWeight <= 0) {
-            return this.actionList[0]?.key || 'stand';
+            return this.actionList[0]?.key || ACT_STAND;
         }
 
         // 加权随机滚轮算法
@@ -207,8 +222,8 @@ export class CCharacter extends Component {
     private playMoveAnimation(preferRun: boolean): string {
         if (!this._animation) return '';
 
-        const firstChoice = preferRun ? 'run' : 'walk';
-        const secondChoice = preferRun ? 'walk' : 'run';
+        const firstChoice = preferRun ? ACT_RUN : ACT_WALK;
+        const secondChoice = preferRun ? ACT_WALK : ACT_RUN;
 
         if (this._animation.getState(firstChoice)) {
             this.play(firstChoice);
@@ -264,13 +279,20 @@ export class CCharacter extends Component {
             console.log("播放动画", ani);
             this._animation.play(ani);
             this._currentActionKey = ani;
+
+            //除了站立动作外,需要响应播放完毕返回stand
+            if (ani != ACT_STAND) {
+                this._animation.on(Animation.EventType.FINISHED, () => {
+                    this.play(ACT_STAND);
+                }, this, true)
+            }
         }
     }
 
     playLand() {
         console.warn("playLand~！！！");
         if (this._animation) {
-            const ani = "land";
+            const ani = ACT_LAND;
             this._currentActionKey = ani;
             const landState = this._animation.getState(ani);
 
@@ -315,10 +337,10 @@ export class CCharacter extends Component {
     /** 结合动态权重，挑选并初始化下一个行为 */
     private switchRandomAction() {
         if (this.actionList.length === 0) return;
-        if (this._currentActionKey == 'land') return;
+        if (this._currentActionKey == ACT_LAND) return;
 
         // 【新规则拦截】如果刚才结束的动作是休息或者闲逛（不是work），表现完后它们的意愿值落地归零，重置整体环境
-        if (this._currentActionKey && this._currentActionKey !== 'work') {
+        if (this._currentActionKey && this._currentActionKey !== ACT_WORK) {
             this.resetWeights(this._currentActionKey);
         }
 
@@ -333,7 +355,7 @@ export class CCharacter extends Component {
         this._currentTimer = 0;
 
         // 3. 执行对应的动画分支
-        if (nextActionKey === 'run' || nextActionKey === 'walk') {
+        if (nextActionKey === ACT_RUN || nextActionKey === ACT_WALK) {
             // 日常闲逛状态：优先使用“走(walk)”动画
             const moveAction = this.playMoveAnimation(false);
             if (moveAction) {
@@ -356,9 +378,14 @@ export class CCharacter extends Component {
             this.aiBoostTime = 0;
         }
 
+        //如果在展台，不执行后面的行走
+        if (this.ePlace == eCharPlace.ecpShow) {
+            return;
+        }
+
         if (this._isReturningToRange) {
             this.handleReturnMovement(deltaTime);
-        } else if (this._currentActionKey === 'run' || this._currentActionKey == 'walk') {
+        } else if (this._currentActionKey === ACT_RUN || this._currentActionKey == ACT_WALK) {
             this.handleRunningMovement(deltaTime);
         }
     }
@@ -368,7 +395,7 @@ export class CCharacter extends Component {
         let pos = this.node.position.clone();
         let speed = this.runSpeed;
 
-        if (this._currentActionKey == 'walk') {
+        if (this._currentActionKey == ACT_WALK) {
             speed *= 0.5;
         }
 
@@ -402,7 +429,7 @@ export class CCharacter extends Component {
         let pos = this.node.position.clone();
         let speed = this.runSpeed;
 
-        if (this._currentActionKey == 'walk') {
+        if (this._currentActionKey == ACT_WALK) {
             speed *= 0.5;
         }
 

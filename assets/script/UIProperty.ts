@@ -64,6 +64,7 @@ export class CUIProperty extends Component {
 
     setCurValue(v: number) {
         this.curValue = v;
+        this.refreshShow();
     }
 
     start() {

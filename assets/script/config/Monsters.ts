@@ -39,6 +39,10 @@ export interface IMonsters {
     readonly Ability6: string;
     readonly Ability7: string;
     readonly Ability8: string;
+    readonly ReforgeCoin: number;
+    readonly ReforgeFood: number;
+    readonly ReforgeSoul: number;
+    readonly Race: number;
 }
 
 export const MonstersData: Record<string | number, IMonsters> = {
@@ -80,7 +84,11 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "Ability5": "1005,50",
         "Ability6": "1006,60",
         "Ability7": "1007,70",
-        "Ability8": "1008,80"
+        "Ability8": "1008,80",
+        "ReforgeCoin": 100,
+        "ReforgeFood": 100,
+        "ReforgeSoul": 10,
+        "Race": 6
     },
     2: {
         "ID": 2,
@@ -120,7 +128,11 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "Ability5": "1005,50",
         "Ability6": "1006,60",
         "Ability7": "1007,70",
-        "Ability8": "1008,80"
+        "Ability8": "1008,80",
+        "ReforgeCoin": 100,
+        "ReforgeFood": 100,
+        "ReforgeSoul": 10,
+        "Race": 8
     },
     3: {
         "ID": 3,
@@ -160,7 +172,11 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "Ability5": "1005,50",
         "Ability6": "1006,60",
         "Ability7": "1007,70",
-        "Ability8": "1008,80"
+        "Ability8": "1008,80",
+        "ReforgeCoin": 100,
+        "ReforgeFood": 100,
+        "ReforgeSoul": 10,
+        "Race": 2
     },
     4: {
         "ID": 4,
@@ -169,7 +185,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "Portraint": "undefined",
         "Prefab": "undefined",
         "HP": 2000,
-        "HPup": 300,
+        "HPup": 500,
         "MP": 100,
         "MPup": 9,
         "ATK": 100,
@@ -200,6 +216,10 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "Ability5": "1005,50",
         "Ability6": "1006,60",
         "Ability7": "1007,70",
-        "Ability8": "1008,80"
+        "Ability8": "1008,80",
+        "ReforgeCoin": 1000,
+        "ReforgeFood": 1000,
+        "ReforgeSoul": 50,
+        "Race": 5
     }
 };

@@ -49,6 +49,14 @@ export enum eWorkerType {
     ewtWood = 2,                //木匠
 }
 
+//角色在位置定义
+export enum eCharPlace {
+    ecpNone = 0,
+    ecpShow = 1,                    //在展台
+    ecpInRoom = 2,                  //在房间里
+}
+
+
 //角色属性定义
 export enum eProperty {
     eProNone = "None",
@@ -61,6 +69,7 @@ export enum eProperty {
     eProSPD = "SPD",
     eProLCA = "LCA",
 }
+
 
 
 ////////////////////////

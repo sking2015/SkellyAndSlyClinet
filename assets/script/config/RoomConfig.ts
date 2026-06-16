@@ -14,38 +14,38 @@ export const RoomConfigData: Record<string | number, IRoomConfig> = {
     },
     1: {
         "Index": 1,
-        "RoomType": 1,
-        "RoomName": "Lumber Mill"
+        "RoomType": 4,
+        "RoomName": "MAD Alchemy Lab"
     },
     2: {
         "Index": 2,
-        "RoomType": 2,
-        "RoomName": "Metal Workshop"
-    },
-    3: {
-        "Index": 3,
-        "RoomType": 3,
-        "RoomName": "Crystal Mine"
-    },
-    4: {
-        "Index": 4,
         "RoomType": 1,
         "RoomName": "Lumber Mill"
     },
-    5: {
-        "Index": 5,
+    3: {
+        "Index": 3,
         "RoomType": 2,
         "RoomName": "Metal Workshop"
     },
-    6: {
-        "Index": 6,
+    4: {
+        "Index": 4,
         "RoomType": 3,
         "RoomName": "Crystal Mine"
     },
+    5: {
+        "Index": 5,
+        "RoomType": 1,
+        "RoomName": "Lumber Mill"
+    },
+    6: {
+        "Index": 6,
+        "RoomType": 2,
+        "RoomName": "Metal Workshop"
+    },
     7: {
         "Index": 7,
-        "RoomType": 0,
-        "RoomName": "undefined"
+        "RoomType": 3,
+        "RoomName": "Crystal Mine"
     },
     8: {
         "Index": 8,
