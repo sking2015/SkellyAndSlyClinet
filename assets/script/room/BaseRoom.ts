@@ -1,5 +1,5 @@
-import { _decorator, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip } from 'cc';
-import { eRoomType } from '../BaseDef';
+import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab } from 'cc';
+import { eRoomType, eCCharacterID } from '../BaseDef';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CGlobalData } from '../GlobalData';
 import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinished, delay } from '../common/common';
@@ -8,6 +8,8 @@ import { CResManager } from '../ResManager';
 import { getI18nText } from '../i18nLan';
 import { gameStateMgr } from '../GameStateMgr';
 import { GameConfig, SessionResult, GameState, eWebAction } from '../GameConfig';
+import { CCharacter } from '../character/character';
+import { CCharactersManager } from '../CharacaterMannager';
 
 
 const { ccclass, property } = _decorator;
@@ -39,6 +41,10 @@ export class CBaseRoom extends Component {
 
     @property({ type: Node, tooltip: "扩展面板" })
     nodeExpandPanel: Node = null;
+
+
+    @property({ type: Node, tooltip: "角色显示层" })
+    nodeCharLayer: Node = null;
 
 
     roomType: eRoomType = eRoomType.ertNone; // 房间类型
@@ -170,6 +176,16 @@ export class CBaseRoom extends Component {
             this.nodeUpgradeEffect.active = false;
         });
 
+    }
+
+    addChar(eCharId: eCCharacterID): CCharacter {
+        CGlobalData.instance.setRoomOSTypeByIndex(this.index, eCharId);
+        let prefabOS: Prefab = CResManager.instance.getCharPrefab(eCharId);
+
+        const nodeOs = instantiate(prefabOS);
+        const comChar = nodeOs.getComponent(CCharacter);;
+
+        return comChar;
     }
 
     onUnlock() {

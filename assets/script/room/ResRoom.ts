@@ -11,6 +11,7 @@ import { LabelGradient } from '../common/LabelGradient';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { gameStateMgr } from '../GameStateMgr';
 import { SessionResult } from '../GameConfig';
+import { CCharactersManager } from '../CharacaterMannager';
 
 const { ccclass, property } = _decorator;
 
@@ -205,21 +206,21 @@ export class CResRoom extends CBaseRoom {
             //这里是监工动画部份。。。
             this.eCCharacterID = eOverseer;
             CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.eCCharacterID);
-            let prefabOS: Prefab = CResManager.instance.getCharPrefab(eOverseer);
 
-            const nodeOs = instantiate(prefabOS);
-            nodeOs.position = this.nodeOSBorn.position;
-            console.log("check position", nodeOs.position);
-            nodeOs.parent = this.nodeOSLayer;
+            const comOS: CCharacter = CCharactersManager.instance.CreateChacater4room(this.eCCharacterID, this.index);
+            const nodeOS = comOS.node;
+
+
+            nodeOS.position = this.nodeOSBorn.position;
+            console.log("check position", nodeOS.position);
+            nodeOS.parent = this.nodeOSLayer;
             // nodeOs.scale = math.v3(0.8, 0.8, 0.8);
 
-            //监工只能有一个，设置新的就要把老的释放掉
-            if (this.charOverseer && this.charOverseer.node) {
-                this.charOverseer.node.destroy();
-                this.charOverseer = null;
-            }
 
-            this.charOverseer = nodeOs.getComponent(CCharacter);
+            //监工只能有一个，设置新的就要把老的释放掉
+            CCharactersManager.instance.ReleaseChacater(this.charOverseer, this.index);
+
+            this.charOverseer = comOS;
             this.charOverseer.setActionRange(-250, 250);
             this.charOverseer.playLand();
 

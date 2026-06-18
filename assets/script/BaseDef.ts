@@ -70,6 +70,12 @@ export enum eProperty {
     eProLCA = "LCA",
 }
 
+//战斗单位的阵营
+export enum eBattleCamp {
+    ebcNone = 0,
+    ebcDemon = 1,               //魔王军
+    ebcHero = 2,                //勇者系
+}
 
 
 ////////////////////////

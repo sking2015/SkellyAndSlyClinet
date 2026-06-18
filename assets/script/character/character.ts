@@ -52,6 +52,24 @@ export class CCharacter extends Component {
 
     ePlace: eCharPlace = eCharPlace.ecpNone;
 
+    //全局唯一索引，方便定位查找
+    _index: number = -1;
+
+    set index(i: number) {
+        this._index = i;
+    }
+
+    get index(): number {
+        return this._index;
+    }
+
+    //释放自己
+    Release() {
+        this.index = -1;
+        this.node.destroy();
+        this.node = null;
+    }
+
     protected onLoad(): void {
         console.log("CCharacter onLoad", this.node.name);
 
