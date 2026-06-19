@@ -1,7 +1,8 @@
 import { CkeyValuePair } from '../KeyValuePair';
 import { _decorator, Component, Node, Animation, error, warn, math, Prefab } from 'cc';
-import { eCharPlace } from '../BaseDef';
+import { eCharPlace, eBattleCamp, eDirction } from '../BaseDef';
 import { fadeInOut } from '../common/common';
+import { CBaseRoom } from '../room/BaseRoom';
 const { ccclass, property } = _decorator;
 
 export const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
@@ -12,6 +13,7 @@ const ACT_RUN = 'run';
 const ACT_WALK = 'walk';
 const ACT_WORK = 'work';
 const ACT_LAND = 'land';
+const ACT_HITED = 'hit';
 
 @ccclass('CCharacter')
 export class CCharacter extends Component {
@@ -22,7 +24,7 @@ export class CCharacter extends Component {
     protected _currentActionKey: string = '';
     private _currentTimer: number = 0;       // 当前动作已持续时间
     private _targetDuration: number = 0;    // 当前动作目标持续时间（含波动）
-    private _moveDirection: number = 1;     // 1 为右，-1 为左
+    protected _moveDirection: eDirction = eDirction.edNone;     // 1 为右，-1 为左
 
     @property
     runSpeed: number = 100;
@@ -55,6 +57,13 @@ export class CCharacter extends Component {
     //全局唯一索引，方便定位查找
     _index: number = -1;
 
+    //所在房间
+    room: CBaseRoom = null;
+
+    nCamp: eBattleCamp = eBattleCamp.ebcNone;
+
+    bIsAlive: boolean = true;
+
     set index(i: number) {
         this._index = i;
     }
@@ -63,11 +72,50 @@ export class CCharacter extends Component {
         return this._index;
     }
 
+    //设置方向时一并改变朝向
+    set moveDirection(ed: eDirction) {
+        this._moveDirection = ed;
+
+        let scale = this.node.scale.clone();
+        scale.x = Math.abs(scale.x) * Number(this._moveDirection);
+        this.node.setScale(scale);
+    }
+
+    get moveDirection(): number {
+        return Number(this._moveDirection);
+    }
+
+
+    IsAlive(): boolean {
+        return this.bIsAlive;
+    }
+
+    getBattleCamp(): eBattleCamp {
+        return this.nCamp;
+    }
+
+    //取得位置，由于是横向游戏，并没有纵向坐标，直接返回x象素坐标
+    getPosition(): number {
+        return this.node.x;
+    }
+
+    getDistance(char: CCharacter): number {
+        return Math.abs(this.getPosition() - char.getPosition());
+    }
+
     //释放自己
     Release() {
         this.index = -1;
         this.node.destroy();
         this.node = null;
+    }
+
+    setRoom(room: CBaseRoom) {
+        this.room = room;
+    }
+
+    getRoom(): CBaseRoom {
+        return this.room;
     }
 
     protected onLoad(): void {
@@ -282,7 +330,7 @@ export class CCharacter extends Component {
                 return;
             }
 
-            this._moveDirection = this._returnTargetX > currentX ? 1 : -1;
+            this.moveDirection = this._returnTargetX > currentX ? eDirction.edRight : eDirction.edLeft;
             console.log(`[CCharacter] 外部刷新开启回归。目标点: ${this._returnTargetX.toFixed(1)}`);
         } else {
             this.switchRandomAction();
@@ -290,7 +338,7 @@ export class CCharacter extends Component {
     }
 
     /** 播放指定动画 */
-    play(ani: string) {
+    play(ani: string, cb?: Function) {
         if (this.bStone) return;
 
         if (this._animation && this._animation.getState(ani)) {
@@ -301,10 +349,19 @@ export class CCharacter extends Component {
             //除了站立动作外,需要响应播放完毕返回stand
             if (ani != ACT_STAND) {
                 this._animation.on(Animation.EventType.FINISHED, () => {
+                    cb ? cb() : null;
                     this.play(ACT_STAND);
                 }, this, true)
             }
         }
+    }
+
+    playStand() {
+        this.play(ACT_STAND);
+    }
+
+    playRun() {
+        this.play(ACT_RUN);
     }
 
     playLand() {
@@ -323,6 +380,22 @@ export class CCharacter extends Component {
             this._currentTimer = 0;
             this._animation.play(ani);
         }
+    }
+
+    playAttack() {
+        console.log("播放攻击动作")
+    }
+
+    playHited(cb?: Function) {
+        this.play(ACT_HITED, cb);
+    }
+
+    onHitedReady(caster: CCharacter) {
+        console.log("受击准备")
+    }
+
+    onHited() {
+        console.log("受击事件");
     }
 
     setRunSpeed(speed: number) {
@@ -377,7 +450,7 @@ export class CCharacter extends Component {
             // 日常闲逛状态：优先使用“走(walk)”动画
             const moveAction = this.playMoveAnimation(false);
             if (moveAction) {
-                this._moveDirection = Math.random() > 0.5 ? 1 : -1;
+                this.moveDirection = Math.random() > 0.5 ? eDirction.edRight : eDirction.edLeft;
             }
         } else {
             this.play(nextActionKey);
@@ -417,12 +490,12 @@ export class CCharacter extends Component {
             speed *= 0.5;
         }
 
-        pos.x += speed * this._moveDirection * dt;
+        pos.x += speed * this.moveDirection * dt;
 
         let isArrived = false;
-        if (this._moveDirection === 1 && pos.x >= this._returnTargetX) {
+        if (this.moveDirection === eDirction.edRight && pos.x >= this._returnTargetX) {
             isArrived = true;
-        } else if (this._moveDirection === -1 && pos.x <= this._returnTargetX) {
+        } else if (this.moveDirection === eDirction.edLeft && pos.x <= this._returnTargetX) {
             isArrived = true;
         }
 
@@ -436,9 +509,6 @@ export class CCharacter extends Component {
             this.switchRandomAction();
         } else {
             this.node.setPosition(pos);
-            let scale = this.node.scale.clone();
-            scale.x = Math.abs(scale.x) * this._moveDirection;
-            this.node.setScale(scale);
         }
     }
 
@@ -451,20 +521,16 @@ export class CCharacter extends Component {
             speed *= 0.5;
         }
 
-        pos.x += speed * this._moveDirection * dt;
+        pos.x += speed * this.moveDirection * dt;
 
         if (pos.x >= this.limitRight) {
             pos.x = this.limitRight;
-            this._moveDirection = -1;
+            this.moveDirection = eDirction.edLeft;
         } else if (pos.x <= this.limitLeft) {
             pos.x = this.limitLeft;
-            this._moveDirection = 1;
+            this.moveDirection = eDirction.edRight;
         }
 
         this.node.setPosition(pos);
-
-        let scale = this.node.scale.clone();
-        scale.x = Math.abs(scale.x) * this._moveDirection;
-        this.node.setScale(scale);
     }
 }

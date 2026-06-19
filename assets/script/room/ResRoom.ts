@@ -207,7 +207,7 @@ export class CResRoom extends CBaseRoom {
             this.eCCharacterID = eOverseer;
             CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.eCCharacterID);
 
-            const comOS: CCharacter = CCharactersManager.instance.CreateChacater4room(this.eCCharacterID, this.index);
+            const comOS: CCharacter = CCharactersManager.instance.CreateChacater4room(this.eCCharacterID, this);
             const nodeOS = comOS.node;
 
 
@@ -218,7 +218,7 @@ export class CResRoom extends CBaseRoom {
 
 
             //监工只能有一个，设置新的就要把老的释放掉
-            CCharactersManager.instance.ReleaseChacater(this.charOverseer, this.index);
+            CCharactersManager.instance.ReleaseChacater(this.charOverseer);
 
             this.charOverseer = comOS;
             this.charOverseer.setActionRange(-250, 250);

@@ -75,6 +75,23 @@ export enum eBattleCamp {
     ebcNone = 0,
     ebcDemon = 1,               //魔王军
     ebcHero = 2,                //勇者系
+    ebcAll = 3,                  //两边均满足，用于技能
+}
+
+//技能目标类型
+export enum eSkillTargetType {
+    estNone = 0,
+    estSelf = 1,                    //仅对自己生效
+    estAlly = 2,                    //对盟友生效
+    estEnemies = 3,                 //对敌人生效
+    estAll = 4,                     //对战场全体生效
+}
+
+//方向定义
+export enum eDirction {
+    edLeft = -1,                    //向左
+    edNone = 0,
+    edRight = 1,                    //向向
 }
 
 

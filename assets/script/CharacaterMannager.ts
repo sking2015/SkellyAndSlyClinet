@@ -1,7 +1,8 @@
 import { Prefab, instantiate } from 'cc';
 import { CCharacter } from './character/character';
 import { CResManager } from './ResManager';
-import { eCCharacterID } from './BaseDef';
+import { eCCharacterID, eBattleCamp } from './BaseDef';
+import { CBaseRoom } from './room/BaseRoom';
 
 
 //定义个角色容器，方便各处使用
@@ -14,6 +15,10 @@ class CCharacterContainer {
 
     del(index: number) {
         this.mapChars.delete(index);
+    }
+
+    getAllChars(): CCharacter[] {
+        return Array.from(this.mapChars.values());
     }
 }
 
@@ -47,29 +52,49 @@ export class CCharactersManager {
     }
 
     //为房间创建角色，主要是放入房间列表中
-    CreateChacater4room(eID: eCCharacterID, roomIdx: number): CCharacter {
+    CreateChacater4room(eID: eCCharacterID, room: CBaseRoom): CCharacter {
         const char: CCharacter = this.CreateChacater(eID);
         let chars: CCharacterContainer;
-        if (this.mapCharInRoom.has(roomIdx)) {
-            chars = this.mapCharInRoom.get(roomIdx);
+        const roomIndex = room.index;
+        if (this.mapCharInRoom.has(roomIndex)) {
+            chars = this.mapCharInRoom.get(roomIndex);
         } else {
             chars = new CCharacterContainer();
-            this.mapCharInRoom.set(roomIdx, chars);
+            this.mapCharInRoom.set(roomIndex, chars);
         }
 
+        char.setRoom(room);
         chars.add(char);
 
         return char;
     }
 
-    ReleaseChacater(char: CCharacter, roomIdx: number) {
+    ReleaseChacater(char: CCharacter) {
         this.allChars.del(char.index);
-        let chars: CCharacterContainer = this.mapCharInRoom.get(roomIdx);
+        let chars: CCharacterContainer = this.mapCharInRoom.get(char.getRoom().index);
         if (chars) {
             chars.del(char.index);
         }
 
         char.Release();
+    }
 
+    FindNearestChar(src: CCharacter, eCamp: eBattleCamp): CCharacter {
+        let container: CCharacterContainer = this.mapCharInRoom.get(src.getRoom().index);
+        let chars: CCharacter[] = container.getAllChars();
+        //找出最短距离
+        let nearest: number = 999;
+        let target: CCharacter = null;
+        for (let i = 0; i < chars.length; ++i) {
+            let char: CCharacter = chars[i];
+            if (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp) {
+                let distance = src.getDistance(char);
+                if (distance < nearest) {
+                    target = char;
+                }
+            }
+        }
+
+        return target;
     }
 }

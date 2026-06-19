@@ -124,7 +124,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 265,
+      "y": 0,
       "z": 0
     },
     "_lrot": {
@@ -2995,7 +2995,7 @@
         "__id__": 310
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 327
@@ -7793,7 +7793,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 670,
-      "height": 769
+      "height": 239
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -7880,6 +7880,7 @@
     "nodeExpandPanel": {
       "__id__": 131
     },
+    "nodeCharLayer": null,
     "_id": ""
   },
   {
