@@ -1,11 +1,12 @@
-import { _decorator, Component, EditBoxComponent, Node } from 'cc';
+import { _decorator, Enum, Component, EditBoxComponent, Node, bits, UITransform, Sprite } from 'cc';
 import { COverseer } from './overseer';
-import { eBattleCamp, eDirction } from '../BaseDef';
+import { eBattleCamp, eCCharacterID, eDirction } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
 import { CSkillBase } from '../skills/skillbase';
 import { CSkillOne } from '../skills/skillone';
 import { CCharacter } from './character';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
+import { resolve } from 'path';
 
 const { ccclass, property } = _decorator;
 
@@ -17,6 +18,12 @@ enum eBattleState {
     ebsRun = 2,     //奔跑
     ebsSkill = 3,   //使用技能
     ebsDead = 4,    //已经死亡
+}
+
+enum eFlyState {
+    efsNone = 0,
+    efsFly = 1,
+    efsFlyEnd = 2,
 }
 
 @ccclass('CBattleRole')
@@ -39,8 +46,39 @@ export class CBattleRole extends COverseer {
     //受击时的行为者，简单的说就是这次被谁打的
     hitedcaster: CCharacter = null;
 
+    //是否正在受击
+    bHited: boolean = false;
+
+    //是否正在放技能
+    bCasting: boolean = false;
+
+    bUninterruptible: boolean = false;
+
+    //飞行状态
+    eFlystate: eFlyState = eFlyState.efsNone;
+
     start() {
-        this.skills.push(new CSkillBase);
+
+
+        this.nHalfWidth = this.node.getComponent(UITransform).width / 2;
+    }
+
+    loadData() {
+        if (this.getBattleCamp() == eBattleCamp.ebcDemon) {
+            const skill = new CSkillOne(this);
+            skill.LoadData();
+            this.skills.push(skill);
+        }
+
+        if (this.eCharId == eCCharacterID.eciDragon) {
+            this.bUninterruptible = true;
+        }
+    }
+
+
+    setInBattle(bIn: boolean) {
+        console.log("进入战斗状态", bIn);
+        this.bInBattle = bIn;
     }
 
     searchTarget() {
@@ -69,7 +107,22 @@ export class CBattleRole extends COverseer {
     //如果攻击动作没配置关键帧，将在攻击动画完毕后调用这个函数
     onHited() {
         if (this.hitedcaster) {
-            this.playHited();
+            //正在放技能或霸体状态只闪红
+            if (this.eState == eBattleState.ebsSkill || this.bUninterruptible) {
+                this.blinkRed();
+                this.scheduleOnce(() => {
+                    this.blinkRestore();
+                }, 0.2)
+            } else {
+                //已经在放技能不能打断
+                this.bHited = true;
+                this.playHited(() => {
+                    this.bHited = false;
+                    return true;
+                });
+            }
+
+
             this.hitedcaster = null;
         }
 
@@ -86,10 +139,10 @@ export class CBattleRole extends COverseer {
 
     //选择一个技能
     onSelectSkill() {
-        if (!this.curSkill || this.curSkill.GetCD() > 0) {
+        if (!this.curSkill || !this.curSkill.IsCoolDown()) {
             for (let i = 0; i < this.skills.length; ++i) {
                 const skill = this.skills[i];
-                if (skill.GetCD() == 0) {
+                if (skill.IsCoolDown()) {
                     this.curSkill = skill;
                 }
             }
@@ -99,7 +152,7 @@ export class CBattleRole extends COverseer {
     //选择一个目标
     onSelectTarget() {
         //如果有技能，并且没有目标或目标已失效。要重新选择目标
-        if (this.curSkill && !this.curSkill.hasTarget() || !this.curSkill.IsValidTarget()) {
+        if (this.curSkill && (!this.curSkill.hasTarget() || !this.curSkill.IsValidTarget())) {
             this.curSkill.OnSelectTarget();
             this.charTar = this.curSkill.target;
             // this.charTar = this.curSkill.SearchNearestTarget();
@@ -107,7 +160,7 @@ export class CBattleRole extends COverseer {
     }
 
     //战斗AI
-    BattleAITick() {
+    async BattleAITick() {
         //选择技能
         this.onSelectSkill();
 
@@ -119,17 +172,62 @@ export class CBattleRole extends COverseer {
 
             //距离之内，向目标移动
             if (this.curSkill.IsCanCastByDistance()) {
-                this.eState = eBattleState.ebsSkill;
-                this.curSkill.doCast(() => {
-                    this.playStand();
-                });
+
+                //如果是飞行，先尝试结束飞行
+                if (this.eFlystate == eFlyState.efsFly) {
+                    await this.EndFly();
+                }
+
+                //要不在飞行状态才开始播技能
+                if (this.eFlystate == eFlyState.efsNone) {
+                    // console.log("准备放技能");
+                    if (this.eState != eBattleState.ebsSkill && this.curSkill.IsCoolDown()) {
+                        this.eState = eBattleState.ebsSkill;
+                        // console.log("释放技能");
+                        this.curSkill.doCast(() => {
+                            // console.log("技能释放完毕");
+                            this.playStand();
+                            this.eState = eBattleState.ebsStand;
+                        });
+                    }
+                }
+
+
             } else {
-                //如果是距离不够，要向目标移动                
-                this.eState = eBattleState.ebsRun;
+                //如果是距离不够，要向目标移动，随时调整朝响
                 this.onRunToTarget();
-                this.playRun();
+                if (this.eState != eBattleState.ebsRun) {
+                    this.eState = eBattleState.ebsRun;
+                    if (this.eCharId == eCCharacterID.eciDragon) {
+                        this.StartFly();
+                    } else {
+                        this.playRun();
+                    }
+
+                }
             }
         }
+    }
+
+    StartFly() {
+        this.eFlystate = eFlyState.efsFly;
+        this.play("flyStart", () => {
+            this.play("fly");
+            return false;
+        })
+    }
+
+
+
+    async EndFly(): Promise<void> {
+        this.eFlystate = eFlyState.efsFlyEnd;
+        return new Promise((resolve) => {
+            this.play("flyend", () => {
+                resolve(); // 核心：动画播放完毕后，通知外层的 await 继续执行
+                this.eFlystate = eFlyState.efsNone;
+                return true;
+            });
+        });
     }
 
     onRunToTarget() {
@@ -139,17 +237,19 @@ export class CBattleRole extends COverseer {
             } else {
                 this.moveDirection = eDirction.edLeft;
             }
-
-            this.eState = eBattleState.ebsRun;
         }
     }
 
     handleMove(dt: number) {
-        if (this.eState == eBattleState.ebsRun) {
-            let pos = this.node.position.clone();
+        if (this.eState == eBattleState.ebsRun && !this.curSkill.IsCanCastByDistance()) {
+            let pos = this.getPosition();
             let speed = this.runSpeed;
 
-            pos.x += speed * this.moveDirection * dt;
+            // console.log("移动关键参数", this.moveDirection, speed);
+            pos += speed * this.moveDirection * dt;
+
+            // console.log("重新设置pos坐标", pos);
+            this.setPosition(pos);
         }
     }
 
@@ -161,8 +261,16 @@ export class CBattleRole extends COverseer {
         }
     }
 
+
+    UpdateMove(deltaTime: number) {
+        this.handleMove(deltaTime);
+    }
+
     update(dt: number) {
-        this.handleMove(dt);
+        //在受击不执行其它任何操作
+        if (this.bHited) return;
+
+        super.update(dt);
     }
 }
 

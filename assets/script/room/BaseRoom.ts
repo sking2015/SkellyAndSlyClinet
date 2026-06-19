@@ -1,5 +1,5 @@
 import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab } from 'cc';
-import { eRoomType, eCCharacterID } from '../BaseDef';
+import { eRoomType, eCCharacterID, eBattleCamp } from '../BaseDef';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CGlobalData } from '../GlobalData';
 import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinished, delay } from '../common/common';
@@ -10,6 +10,7 @@ import { gameStateMgr } from '../GameStateMgr';
 import { GameConfig, SessionResult, GameState, eWebAction } from '../GameConfig';
 import { CCharacter } from '../character/character';
 import { CCharactersManager } from '../CharacaterMannager';
+
 
 
 const { ccclass, property } = _decorator;
@@ -79,8 +80,29 @@ export class CBaseRoom extends Component {
 
         this.labelRoomLevel.string = "";
         this.labelRoomName.string = "";
+
     }
 
+    testBattle() {
+        console.log("添加两个战斗角色看看");
+        this.addRole(eCCharacterID.eciDragon);
+        this.addRole(eCCharacterID.eciSoldierHM);
+    }
+
+    addRole(eId: eCCharacterID) {
+
+        const char: CCharacter = CCharactersManager.instance.CreateChacater4room(eId, this);
+
+        char.setInBattle(true);
+
+        char.node.parent = this.nodeCharLayer;
+        char.node.y = -100;
+        if (char.getBattleCamp() == eBattleCamp.ebcDemon) {
+            char.setPosition(250);
+        } else {
+            char.setPosition(-250);
+        }
+    }
 
     refreshRoomLockShow() {
         console.log("refreshRoomLockShow~~", this.index);
@@ -189,7 +211,8 @@ export class CBaseRoom extends Component {
     }
 
     onUnlock() {
-
+        console.log("房间解锁");
+        this.testBattle();
     }
 
     async onClickUnLock() {

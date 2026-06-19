@@ -47,6 +47,8 @@ export class CCharactersManager {
         const nodeChar = instantiate(prefabChar);
         const comChar: CCharacter = nodeChar.getComponent(CCharacter);
         comChar.index = this.nAutoCharIdx;
+        comChar.eCharId = eID;
+        comChar.loadData();
         this.allChars.add(comChar);
         return comChar;
     }

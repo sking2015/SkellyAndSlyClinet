@@ -24,7 +24,10 @@ export enum eCCharacterID {
     eciLich = 2,                  //巫妖
     eciOrc = 3,                      //兽人
     eciDragon = 4,                 //龙
-    eciMax = 5                      //最大数量
+    eciDemonMax = 5,                      //魔王军最大数量
+
+    eciSoldierHM = 101,        //人类男性战士
+    eciMageHF = 102,            //人类女性法师
 }
 
 //种族

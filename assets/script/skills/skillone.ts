@@ -1,5 +1,6 @@
 import { CCharacter } from "../character/character";
 import { CSkillBase } from "./skillbase";
+import { eSkillTargetType } from "../BaseDef";
 
 //单体类技能，只对一个目标生效
 export class CSkillOne extends CSkillBase {
@@ -7,7 +8,12 @@ export class CSkillOne extends CSkillBase {
     //技能动作
     act: string = ""
     Init() {
+    }
+
+    LoadData() {
         this.act = "attack";
+        this.eTarType = eSkillTargetType.estEnemies;
+        this.nSkillRange = 20;
     }
     //只检查是否还活着
     IsValidTarget(): boolean {
@@ -15,9 +21,13 @@ export class CSkillOne extends CSkillBase {
     }
 
     doCast(cb: Function) {
+        super.doCast(cb);
+        console.log("释放技能 CSkillOne");
         this.target.onHitedReady(this.caster);
         this.caster.play(this.act, () => {
+            console.log("技能播放完毕", this.caster);
             this.target.onHited();
+            cb();
         });
     }
 }

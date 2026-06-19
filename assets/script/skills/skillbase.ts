@@ -9,7 +9,9 @@ export class CSkillBase {
 
     caster: CBattleRole = null;
 
-    nCD: number = 0;
+    nCD: number = 3000;
+
+    nLastCastTime: number = 0;
 
     //技能范围
     nSkillRange: number = 0;
@@ -21,15 +23,19 @@ export class CSkillBase {
     bCastByDistance: boolean = false;
 
 
-    constructor() {
-        this.Init();
+    constructor(caster: CBattleRole) {
+        this.caster = caster;
     }
 
     Init() {
     }
 
-    GetCD(): number {
-        return this.nCD;
+    LoadData() {
+        this.nSkillRange = 30;
+    }
+
+    IsCoolDown(): boolean {
+        return Date.now() - this.nLastCastTime >= this.nCD;
     }
 
     setCaster(role: CBattleRole) {
@@ -74,8 +80,11 @@ export class CSkillBase {
 
 
     OnCheckTargetDistance() {
-        const distance = this.caster.getDistance(this.target);
-        this.bCastByDistance = distance < this.nSkillRange
+        if (this.target) {
+            const distance = this.caster.getDistance(this.target);
+            // console.log("看一下距离", distance, this.nSkillRange);
+            this.bCastByDistance = distance < this.nSkillRange;
+        }
     }
 
     IsCanCastByDistance(): boolean {
@@ -83,7 +92,8 @@ export class CSkillBase {
     }
 
     doCast(cb: Function) {
-        console.log("释放技能...");
+        this.nLastCastTime = Date.now();
+        // console.log("释放技能,开始冷却...");
     }
 
     IsValidTarget(): boolean {

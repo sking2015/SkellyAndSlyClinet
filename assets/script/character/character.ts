@@ -1,6 +1,6 @@
 import { CkeyValuePair } from '../KeyValuePair';
-import { _decorator, Component, Node, Animation, error, warn, math, Prefab } from 'cc';
-import { eCharPlace, eBattleCamp, eDirction } from '../BaseDef';
+import { _decorator, Component, UITransform, Node, Animation, error, warn, Enum, math, Prefab, Sprite, color, ColorKey } from 'cc';
+import { eCharPlace, eBattleCamp, eDirction, eCCharacterID } from '../BaseDef';
 import { fadeInOut } from '../common/common';
 import { CBaseRoom } from '../room/BaseRoom';
 const { ccclass, property } = _decorator;
@@ -20,6 +20,9 @@ export class CCharacter extends Component {
     @property(CkeyValuePair)
     actionList: CkeyValuePair[] = [];
 
+    @property({ type: Enum(eBattleCamp), tooltip: "角色阵营" })
+    nCamp: eBattleCamp = eBattleCamp.ebcNone;
+
     private _animation: Animation | null = null;
     protected _currentActionKey: string = '';
     private _currentTimer: number = 0;       // 当前动作已持续时间
@@ -36,6 +39,7 @@ export class CCharacter extends Component {
 
     //角色动画节点
     nodeChar: Node = null;
+    sprChar: Sprite = null;
 
     //角色灰度消像节点,用于一些特殊效果
     nodeGray: Node = null;
@@ -54,13 +58,13 @@ export class CCharacter extends Component {
 
     ePlace: eCharPlace = eCharPlace.ecpNone;
 
+    eCharId: eCCharacterID = eCCharacterID.eciNoe;
+
     //全局唯一索引，方便定位查找
     _index: number = -1;
 
     //所在房间
     room: CBaseRoom = null;
-
-    nCamp: eBattleCamp = eBattleCamp.ebcNone;
 
     bIsAlive: boolean = true;
 
@@ -74,9 +78,15 @@ export class CCharacter extends Component {
 
     //设置方向时一并改变朝向
     set moveDirection(ed: eDirction) {
+
         this._moveDirection = ed;
 
         let scale = this.node.scale.clone();
+
+        if (this.getBattleCamp() == eBattleCamp.ebcDemon) {
+            console.log("看一下朝向", scale)
+        }
+
         scale.x = Math.abs(scale.x) * Number(this._moveDirection);
         this.node.setScale(scale);
     }
@@ -85,13 +95,26 @@ export class CCharacter extends Component {
         return Number(this._moveDirection);
     }
 
+    loadData() {
+
+    }
+
 
     IsAlive(): boolean {
         return this.bIsAlive;
     }
 
+    setInBattle(bIn: boolean) {
+
+    }
+
     getBattleCamp(): eBattleCamp {
         return this.nCamp;
+    }
+
+    //设置位置，由于是横向游戏，并没有纵向坐标，直接返回x象素坐标
+    setPosition(pos: number) {
+        this.node.x = pos;
     }
 
     //取得位置，由于是横向游戏，并没有纵向坐标，直接返回x象素坐标
@@ -99,8 +122,15 @@ export class CCharacter extends Component {
         return this.node.x;
     }
 
+    nHalfWidth: number = 0;
+    getRoleHalfWidth(): number {
+        return this.nHalfWidth;
+    }
+
     getDistance(char: CCharacter): number {
-        return Math.abs(this.getPosition() - char.getPosition());
+        //需要减去两边一半的体型，不然容易走来沾到一起
+        // console.log("取得和目标距离先看四个关键参数", this.getPosition(), char.getPosition(), this.nHalfWidth, char.getRoleHalfWidth());
+        return Math.abs(this.getPosition() - char.getPosition()) - this.nHalfWidth - char.getRoleHalfWidth();
     }
 
     //释放自己
@@ -126,11 +156,16 @@ export class CCharacter extends Component {
             console.error("can't find node char for character", this.node.name);
         }
 
+        this.sprChar = this.nodeChar.getComponent(Sprite);
+
         this.nodeGray = this.node.getChildByName('gray');
 
         this.nodeEffect = this.node.getChildByName('effect')
 
-        this.nodeGray.active = false;
+        if (this.nodeGray) {
+            this.nodeGray.active = false;
+        }
+
 
         this.nodeEffect.active = false;
 
@@ -207,6 +242,8 @@ export class CCharacter extends Component {
                 item.value = "2";
             }
         });
+
+        this.nHalfWidth = this.node.getComponent(UITransform).width / 2;
 
         // 初始化权重环境
         this.resetWeightsToRoute();
@@ -341,6 +378,8 @@ export class CCharacter extends Component {
     play(ani: string, cb?: Function) {
         if (this.bStone) return;
 
+        console.log("准备播放动画", ani);
+
         if (this._animation && this._animation.getState(ani)) {
             console.log("播放动画", ani);
             this._animation.play(ani);
@@ -349,8 +388,15 @@ export class CCharacter extends Component {
             //除了站立动作外,需要响应播放完毕返回stand
             if (ani != ACT_STAND) {
                 this._animation.on(Animation.EventType.FINISHED, () => {
-                    cb ? cb() : null;
-                    this.play(ACT_STAND);
+                    console.log("动画播放完毕...", ani);
+                    if (cb) {
+                        if (cb()) {
+                            this.play(ACT_STAND);
+                        }
+                    } else {
+                        this.play(ACT_STAND);
+                    }
+
                 }, this, true)
             }
         }
@@ -386,8 +432,25 @@ export class CCharacter extends Component {
         console.log("播放攻击动作")
     }
 
+    blinkRed() {
+        this.sprChar.color = color(255, 0, 0, 255);
+    }
+
+    blinkRestore() {
+        this.sprChar.color = color(255, 255, 255, 255);
+    }
+
     playHited(cb?: Function) {
-        this.play(ACT_HITED, cb);
+        this.blinkRed();
+        this.play(ACT_HITED, () => {
+            this.blinkRestore();
+            if (cb) {
+                return cb();
+            } else {
+                return true;
+            }
+
+        });
     }
 
     onHitedReady(caster: CCharacter) {
@@ -459,8 +522,17 @@ export class CCharacter extends Component {
         //console.log(`[AI 决策] 抽中动作: ${nextActionKey}，计划持续: ${this._targetDuration.toFixed(1)}s。当前权重快照 ->`, Object.fromEntries(this._currentWeights));
     }
 
+    UpdateMove(deltaTime: number) {
+        if (this._isReturningToRange) {
+            this.handleReturnMovement(deltaTime);
+        } else if (this._currentActionKey === ACT_RUN || this._currentActionKey == ACT_WALK) {
+            this.handleRunningMovement(deltaTime);
+        }
+    }
+
     aiBoostTime = 0;
     update(deltaTime: number) {
+
         if (this.bStone) return;
 
         this.aiBoostTime += deltaTime;
@@ -474,11 +546,7 @@ export class CCharacter extends Component {
             return;
         }
 
-        if (this._isReturningToRange) {
-            this.handleReturnMovement(deltaTime);
-        } else if (this._currentActionKey === ACT_RUN || this._currentActionKey == ACT_WALK) {
-            this.handleRunningMovement(deltaTime);
-        }
+        this.UpdateMove(deltaTime);
     }
 
     /** 处理回归安全区间的位移 */

@@ -68,7 +68,7 @@ export class CGlobalData {
 
     //监工目前只有有限种类,所以eotWizard后面的lv都设为0
     initMonstersData() {
-        for (let eID = eCCharacterID.eciEyetyarnt; eID != eCCharacterID.eciMax; ++eID) {
+        for (let eID = eCCharacterID.eciEyetyarnt; eID != eCCharacterID.eciDemonMax; ++eID) {
             const char: CCharData = CCharactersData.instance.GetCharData(eID, 99);
             this.mapMonsters.set(eID, char);
         }
