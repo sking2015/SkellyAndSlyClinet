@@ -185,9 +185,9 @@ export class CCharacter extends Component {
         const aniEffect = this.nodeEffect.getComponent(Animation);
         if (aniEffect) {
             const ani = aniEffect.clips[0].name;
-            aniEffect.on(Animation.EventType.FINISHED, () => {
+            aniEffect.once(Animation.EventType.FINISHED, () => {
                 this.nodeEffect.active = false;
-            }, this, true)
+            }, this)
 
             aniEffect.play(ani);
         }

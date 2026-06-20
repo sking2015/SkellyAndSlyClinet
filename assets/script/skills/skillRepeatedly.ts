@@ -20,6 +20,7 @@ export class CSkillRepeatedly extends CSkillBase {
         this.eTarType = eSkillTargetType.estEnemies;
         this.nSkillRange = 20;
         this.nStrikeNum = 10;
+        this.nCD = 10000;
         this.bIsUltimate = true;
     }
     //只检查是否还活着
@@ -42,7 +43,7 @@ export class CSkillRepeatedly extends CSkillBase {
         this.nLeftStrikeNum = this.nStrikeNum;
         this.cbSkillEnd = cb;
 
-        console.log("释放技能 CSkillOne");
+        console.log("释放技能 CSkillRepeatedly");
         this.caster.play(this.act, () => {
             console.log("技能播放完毕", this.caster);
             this.caster.playSkillEffect();
@@ -67,6 +68,7 @@ export class CSkillRepeatedly extends CSkillBase {
                     this.bInStrike = false;
                     this.caster.SwitchToStand();
                     if (this.cbSkillEnd) {
+                        console.log("调用技能结束回调");
                         this.cbSkillEnd();
                     }
                 }

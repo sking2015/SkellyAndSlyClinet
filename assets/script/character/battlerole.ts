@@ -130,7 +130,7 @@ export class CBattleRole extends COverseer {
     playFlash(cb: Function) {
         if (this.aniFlash) {
             this.aniFlash.play(this.aniFlash.clips[0].name);
-            this.aniFlash.on(Animation.EventType.FINISHED, () => {
+            this.aniFlash.once(Animation.EventType.FINISHED, () => {
                 cb();
             })
         }
@@ -410,6 +410,9 @@ export class CBattleRole extends COverseer {
     }
 
     AITick() {
+        if (this.eCharId == eCCharacterID.eciSoldierHM) {
+            console.log(this.eCharId, '父节点', this.node.parent.name);
+        }
         if (this.bInBattle) {
             this.BattleAITick();
         } else {

@@ -86,7 +86,7 @@ export class CMissile extends Component {
                 const ani = this.nodeExplode.getComponent(Animation);
                 if (ani) {
                     ani.play(ani.clips[0].name);
-                    ani.on(Animation.EventType.FINISHED, () => {
+                    ani.once(Animation.EventType.FINISHED, () => {
                         //表现全部完成。。。
                         this.bFinishe = true;
                     })
