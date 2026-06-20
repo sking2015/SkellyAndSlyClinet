@@ -2,6 +2,7 @@ import { eSkillTargetType, eBattleCamp } from "../BaseDef";
 import { CBattleRole } from "../character/battlerole";
 import { CCharactersManager } from "../CharacaterMannager";
 import { CCharacter } from "../character/character";
+import { ExecFileOptionsWithBufferEncoding } from "child_process";
 
 //技能基类,所有技能从此派生
 export class CSkillBase {
@@ -21,6 +22,9 @@ export class CSkillBase {
 
     //距离上是否可以释放
     bCastByDistance: boolean = false;
+
+    //是否为大招，大招就是要表现一下
+    bIsUltimate: boolean = false;
 
 
     constructor(caster: CBattleRole) {

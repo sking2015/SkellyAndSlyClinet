@@ -392,9 +392,28 @@ export class CCharacter extends Component {
         }
     }
 
+    bPause: boolean = false;
+    doPause() {
+        console.log("暂停表现", this.eCharId);
+        this.bPause = true;
+        this._animation.pause();
+    }
+
+    doResuem() {
+        console.log("恢复表现", this.eCharId);
+        this.bPause = false;
+        this._animation.resume()
+    }
+
+    playFlash(cb: Function) {
+
+    }
+
     /** 播放指定动画 */
     play(ani: string, cb?: Function) {
         if (this.bStone) return;
+
+
 
         console.log("准备播放动画", ani);
 
@@ -405,7 +424,7 @@ export class CCharacter extends Component {
 
             //除了站立动作外,需要响应播放完毕返回stand
             if (ani != ACT_STAND) {
-                this._animation.on(Animation.EventType.FINISHED, () => {
+                this._animation.once(Animation.EventType.FINISHED, () => {
                     console.log("动画播放完毕...", ani);
                     if (cb) {
                         if (cb()) {
@@ -415,7 +434,7 @@ export class CCharacter extends Component {
                         this.play(ACT_STAND);
                     }
 
-                }, this, true)
+                }, this)
             }
         }
     }
@@ -559,6 +578,8 @@ export class CCharacter extends Component {
     update(deltaTime: number) {
 
         if (this.bStone) return;
+
+        if (this.bPause) return;
 
         this.aiBoostTime += deltaTime;
         if (this.aiBoostTime > AI_INTERVAL) {

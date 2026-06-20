@@ -99,4 +99,27 @@ export class CCharactersManager {
 
         return target;
     }
+
+
+    PauseChars4Room(excepts: number[], roomIdx: number) {
+        let container: CCharacterContainer = this.mapCharInRoom.get(roomIdx);
+        let chars: CCharacter[] = container.getAllChars();
+        for (let i = 0; i < chars.length; ++i) {
+            let char: CCharacter = chars[i];
+            if (!excepts.includes(char.index)) {
+                char.doPause();
+            }
+        }
+    }
+
+    ResumeChars4Room(excepts: number[], roomIdx: number) {
+        let container: CCharacterContainer = this.mapCharInRoom.get(roomIdx);
+        let chars: CCharacter[] = container.getAllChars();
+        for (let i = 0; i < chars.length; ++i) {
+            let char: CCharacter = chars[i];
+            if (!excepts.includes(char.index)) {
+                char.doResuem();
+            }
+        }
+    }
 }

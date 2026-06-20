@@ -101,7 +101,7 @@ export class CMissile extends Component {
      */
     private onBeginContact(selfCollider: Collider2D, otherCollider: Collider2D, contact: IPhysics2DContact | null) {
         // 获取被击中节点的标签或名字，或者获取其身上的组件
-        console.log("开始碰撞~!!");
+        // console.log("开始碰撞~!!");
 
         let otherNode = otherCollider.node;
         const role: CBattleRole = otherNode.getComponent(CBattleRole);

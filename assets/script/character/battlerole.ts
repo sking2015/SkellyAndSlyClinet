@@ -5,11 +5,13 @@ import { CCharactersManager } from '../CharacaterMannager';
 import { CSkillBase } from '../skills/skillbase';
 import { CSkillOne } from '../skills/skillone';
 import { CSkillLanche } from '../skills/skillLanche';
+import { waitFadeInout } from '../common/common';
 import { CSkillRepeatedly } from '../skills/skillRepeatedly';
 import { CCharacter } from './character';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CResManager } from '../ResManager';
 import { CMissile } from '../skills/missile';
+import { resolve } from 'path';
 
 
 
@@ -46,6 +48,9 @@ export class CBattleRole extends COverseer {
 
     @property({ type: Animation, tooltip: "技能附加效果动画" })
     aniSkillCast: Animation = null;
+
+    @property({ type: Animation, tooltip: "大招闪光" })
+    aniFlash: Animation = null
 
     //是否在战斗状态，对于魔王军来说，有可能是在房间巡逻或监工
     bInBattle: boolean = false;
@@ -122,6 +127,16 @@ export class CBattleRole extends COverseer {
         }
     }
 
+    playFlash(cb: Function) {
+        if (this.aniFlash) {
+            this.aniFlash.play(this.aniFlash.clips[0].name);
+            this.aniFlash.on(Animation.EventType.FINISHED, () => {
+                cb();
+            })
+        }
+
+    }
+
     playCastEffect() {
         if (this.nodeCastEffect) {
             const ani: Animation = this.nodeCastEffect.getComponent(Animation);
@@ -189,7 +204,7 @@ export class CBattleRole extends COverseer {
     //如果攻击动作没配置关键帧，将在攻击动画完毕后调用这个函数
     onHited() {
         if (this.hitedcaster) {
-            console.log("受击", this.hitedcaster);
+            // console.log("受击", this.hitedcaster);
 
             //正在放技能或霸体状态只闪红
             if (this.eState == eBattleState.ebsSkill || this.bUninterruptible) {
@@ -269,6 +284,22 @@ export class CBattleRole extends COverseer {
         this.eState = eBattleState.ebsStand;
     }
 
+    doPause() {
+
+    }
+
+    async CastUltimateSkill() {
+        this.room.ShowRoleAction([this, this.charTar], () => {
+            return new Promise((resolve) => {
+                this.playFlash(() => {
+                    this.curSkill.doCast(() => {
+                        resolve(true);
+                    });
+                });
+            });
+        })
+    }
+
     async CastSkill() {
         //如果是飞行，先尝试结束飞行
         if (this.eFlystate == eFlyState.efsFly) {
@@ -280,8 +311,13 @@ export class CBattleRole extends COverseer {
             // console.log("准备放技能");
             if (this.eState != eBattleState.ebsSkill && this.curSkill.IsCoolDown()) {
                 this.eState = eBattleState.ebsSkill;
+                if (this.curSkill.bIsUltimate) {
+                    this.CastUltimateSkill();
+                } else {
+                    this.curSkill.doCast();
+                }
                 // console.log("释放技能");
-                this.curSkill.doCast();
+
             }
         }
     }

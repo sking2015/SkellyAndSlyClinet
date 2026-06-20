@@ -20,6 +20,7 @@ export class CSkillRepeatedly extends CSkillBase {
         this.eTarType = eSkillTargetType.estEnemies;
         this.nSkillRange = 20;
         this.nStrikeNum = 10;
+        this.bIsUltimate = true;
     }
     //只检查是否还活着
     IsValidTarget(): boolean {

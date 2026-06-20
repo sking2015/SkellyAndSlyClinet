@@ -50,6 +50,8 @@ export class CBaseRoom extends Component {
     @property({ type: Node, tooltip: "各种战斗相关表现层，主要是子弹，爆炸特效等，要放在角色之上" })
     nodeBattleShowLayer: Node = null;
 
+    @property({ type: Node, tooltip: "房间黑色遮罩" })
+    nodeDBMask: Node = null;
 
     roomType: eRoomType = eRoomType.ertNone; // 房间类型
     roomLevel: number = 0;
@@ -133,6 +135,8 @@ export class CBaseRoom extends Component {
     start() {
         this.nodeLockLabel = this.nodeLocked.getChildByName("Label");
         this.refreshRoomLockShow();
+
+        this.nodeDBMask.active = false;
     }
 
 
@@ -274,6 +278,30 @@ export class CBaseRoom extends Component {
 
         // console.log("先用来测试一下设置监工");
         // this.setOverseer(eCCharacterID.eciEyetyarnt);
+    }
+
+    async ShowRoleAction(roles: CCharacter[], cb: Function) {
+        this.nodeDBMask.active = true;
+        let excepts: number[] = [];
+
+        for (let i = 0; i < roles.length; ++i) {
+            roles[i].node.parent = this.nodeDBMask;
+            excepts.push(roles[i].index);
+        }
+
+        console.log("房间变黑~~~", Date());
+        await waitFadeInout(this.nodeDBMask, 0.3, true);
+        CCharactersManager.instance.PauseChars4Room(excepts, this.index);
+        await cb();
+
+        console.log("房间恢复~~~", Date());
+        await waitFadeInout(this.nodeDBMask, 0.3, false);
+
+        for (let i = 0; i < roles.length; ++i) {
+            roles[i].node.parent = this.nodeCharLayer;
+        }
+        this.nodeDBMask.active = false;
+        CCharactersManager.instance.ResumeChars4Room(excepts, this.index);
     }
 
     async onUpgrade() {
