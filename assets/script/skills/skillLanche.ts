@@ -37,7 +37,7 @@ export class CSkillLanche extends CSkillBase {
         }
     }
 
-    doCast(cb: Function) {
+    doCast(cb?: Function) {
         super.doCast(cb);
         console.log("释放技能 CSkillOne");
         this.bReadyLaunche = true;
@@ -46,7 +46,8 @@ export class CSkillLanche extends CSkillBase {
         this.caster.play(this.act, () => {
             console.log("技能播放完毕", this.caster);
             this.LauncheMissile();
-            cb();
+            this.caster.SwitchToStand();
+            cb ? cb() : null;
         });
     }
 }

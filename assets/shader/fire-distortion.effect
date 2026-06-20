@@ -1,0 +1,88 @@
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: sprite-vs:vert
+      frag: sprite-fs:frag
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      properties:
+        noiseTexture:       { value: white }
+        distortionStrength: { value: 0.05, editor: { slide: true, step: 0.001, range: [0.0, 0.2] } }
+        noiseSpeed:         { value: [1.0, 0.0] }
+        u_time:             { value: 0.0 }
+        debugMode:          { value: 0.0, editor: { slide: true, step: 1.0, range: [0.0, 2.0] } } 
+}%
+
+CCProgram sprite-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+
+  out vec2 v_uv;
+  out vec4 v_color;
+
+  vec4 vert () {
+    vec4 pos = vec4(a_position, 1.0);
+    pos = cc_matViewProj * pos;
+    v_uv = a_texCoord;
+    v_color = a_color;
+    return pos;
+  }
+}%
+
+CCProgram sprite-fs %{
+  precision highp float;
+
+  in vec2 v_uv;
+  in vec4 v_color;
+
+  // 1. 严格将自定义 Uniform 块声明在最前方，确保完全兼容 WebGL1 的老旧编译器
+  uniform Constants {
+    vec2 noiseSpeed;
+    float distortionStrength;
+    float u_time;
+    float debugMode;
+  };
+
+  // 2. 紧跟内置和自定义采样器声明
+  #pragma builtin(local)
+  uniform sampler2D cc_spriteTexture;
+  uniform sampler2D noiseTexture;
+
+  vec4 frag () {
+    // Debug 1: 检测顶点数据链路
+    if (debugMode == 1.0) {
+      return vec4(v_uv.x, v_uv.y, 0.0, 1.0);
+    }
+
+    // 计算流动的噪声图
+    vec2 noiseUV = v_uv + noiseSpeed * u_time;
+    float noiseValue = texture(noiseTexture, noiseUV).r;
+
+    // Debug 2: 检测噪声图本身流动
+    if (debugMode == 2.0) {
+      return vec4(noiseValue, noiseValue, noiseValue, 1.0);
+    }
+
+    // 核心扭曲计算
+    float offset = (noiseValue - 0.5) * distortionStrength;
+    vec2 distortedUV = vec2(v_uv.x + offset, v_uv.y + offset);
+    distortedUV = clamp(distortedUV, 0.001, 0.999);
+
+    // 采样主图片数据并合并节点透明度
+    vec4 o = texture(cc_spriteTexture, distortedUV);
+    o *= v_color;
+    
+    return o;
+  }
+}%

@@ -420,6 +420,9 @@ export class CCharacter extends Component {
         }
     }
 
+    SwitchToStand() {
+    }
+
     playStand() {
         this.play(ACT_STAND);
     }
@@ -459,6 +462,11 @@ export class CCharacter extends Component {
     }
 
     playHited(cb?: Function) {
+
+        // if (this.eCharId == eCCharacterID.eciDragon) {
+        //     console.log("为什么龙会执行到这里?");
+        // }
+
         this.blinkRed();
         this.play(ACT_HITED, () => {
             this.blinkRestore();
@@ -467,7 +475,6 @@ export class CCharacter extends Component {
             } else {
                 return true;
             }
-
         });
     }
 

@@ -5,6 +5,7 @@ import { CCharactersManager } from '../CharacaterMannager';
 import { CSkillBase } from '../skills/skillbase';
 import { CSkillOne } from '../skills/skillone';
 import { CSkillLanche } from '../skills/skillLanche';
+import { CSkillRepeatedly } from '../skills/skillRepeatedly';
 import { CCharacter } from './character';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CResManager } from '../ResManager';
@@ -39,6 +40,13 @@ const { ccclass, property } = _decorator;
 
 @ccclass('CBattleRole')
 export class CBattleRole extends COverseer {
+
+    @property({ type: Node, tooltip: "技能附加效果" })
+    nodeSkillCast: Node = null;
+
+    @property({ type: Animation, tooltip: "技能附加效果动画" })
+    aniSkillCast: Animation = null;
+
     //是否在战斗状态，对于魔王军来说，有可能是在房间巡逻或监工
     bInBattle: boolean = false;
 
@@ -86,14 +94,18 @@ export class CBattleRole extends COverseer {
         this.nodeLaunchePos = this.node.getChildByName('lanchepos');
 
         this.nodeCastEffect = this.node.getChildByName("cast_effect");
+
+        if (this.nodeSkillCast) {
+            this.nodeSkillCast.active = false;
+        }
     }
 
     loadData() {
-        //if (this.getBattleCamp() == eBattleCamp.ebcHero) {
-        const skill = new CSkillOne(this);
-        skill.LoadData();
-        this.skills.push(skill);
-        //}
+        if (this.getBattleCamp() == eBattleCamp.ebcHero) {
+            const skill = new CSkillOne(this);
+            skill.LoadData();
+            this.skills.push(skill);
+        }
 
         if (this.eCharId == eCCharacterID.eciMageHF) {
             const skill = new CSkillLanche(this);
@@ -103,6 +115,10 @@ export class CBattleRole extends COverseer {
 
         if (this.eCharId == eCCharacterID.eciDragon) {
             this.bUninterruptible = true;
+            const skill = new CSkillRepeatedly(this);
+
+            skill.LoadData();
+            this.skills.push(skill);
         }
     }
 
@@ -173,6 +189,8 @@ export class CBattleRole extends COverseer {
     //如果攻击动作没配置关键帧，将在攻击动画完毕后调用这个函数
     onHited() {
         if (this.hitedcaster) {
+            console.log("受击", this.hitedcaster);
+
             //正在放技能或霸体状态只闪红
             if (this.eState == eBattleState.ebsSkill || this.bUninterruptible) {
                 this.blinkRed();
@@ -180,7 +198,7 @@ export class CBattleRole extends COverseer {
                     this.blinkRestore();
                 }, 0.2)
             } else {
-                //已经在放技能不能打断
+                this.stopSkillEffect();
                 this.bHited = true;
                 this.playHited(() => {
                     this.bHited = false;
@@ -230,6 +248,58 @@ export class CBattleRole extends COverseer {
         }
     }
 
+    playSkillEffect() {
+        if (this.nodeSkillCast && this.aniSkillCast) {
+            this.node.setSiblingIndex(-1);
+            this.nodeSkillCast.active = true;
+            this.aniSkillCast.play(this.aniSkillCast.clips[0].name);
+        }
+    }
+
+    stopSkillEffect() {
+        if (this.nodeSkillCast && this.aniSkillCast) {
+            this.aniSkillCast.stop();
+            this.nodeSkillCast.active = false;
+        }
+    }
+
+    SwitchToStand() {
+        this.stopSkillEffect();
+        this.playStand();
+        this.eState = eBattleState.ebsStand;
+    }
+
+    async CastSkill() {
+        //如果是飞行，先尝试结束飞行
+        if (this.eFlystate == eFlyState.efsFly) {
+            await this.EndFly();
+        }
+
+        //要不在飞行状态才开始播技能
+        if (this.eFlystate == eFlyState.efsNone) {
+            // console.log("准备放技能");
+            if (this.eState != eBattleState.ebsSkill && this.curSkill.IsCoolDown()) {
+                this.eState = eBattleState.ebsSkill;
+                // console.log("释放技能");
+                this.curSkill.doCast();
+            }
+        }
+    }
+
+    CloseToTarget() {
+        //随时调整朝向
+        this.onRunToTarget();
+        if (this.eState != eBattleState.ebsRun) {
+            this.eState = eBattleState.ebsRun;
+            //this.playRun();
+            if (this.eCharId == eCCharacterID.eciDragon) {
+                this.StartFly();
+            } else {
+                this.playRun();
+            }
+        }
+    }
+
     //战斗AI
     async BattleAITick() {
         //选择技能
@@ -239,43 +309,21 @@ export class CBattleRole extends COverseer {
         this.onSelectTarget();
 
         if (this.curSkill) {
-            this.curSkill.OnCheckTargetDistance();
-
-            //距离之内，向目标移动
-            if (this.curSkill.IsCanCastByDistance()) {
-
-                //如果是飞行，先尝试结束飞行
-                if (this.eFlystate == eFlyState.efsFly) {
-                    await this.EndFly();
-                }
-
-                //要不在飞行状态才开始播技能
-                if (this.eFlystate == eFlyState.efsNone) {
-                    // console.log("准备放技能");
-                    if (this.eState != eBattleState.ebsSkill && this.curSkill.IsCoolDown()) {
-                        this.eState = eBattleState.ebsSkill;
-                        // console.log("释放技能");
-                        this.curSkill.doCast(() => {
-                            // console.log("技能释放完毕");
-                            this.playStand();
-                            this.eState = eBattleState.ebsStand;
-                        });
-                    }
-                }
 
 
+            if (this.curSkill.NeedTick()) {
+                //如果技能正在生效，执行技能tick
+                this.curSkill.Tick()
             } else {
-                //如果是距离不够，要向目标移动，随时调整朝响
-                this.onRunToTarget();
-                if (this.eState != eBattleState.ebsRun) {
-                    this.eState = eBattleState.ebsRun;
-                    //this.playRun();
-                    if (this.eCharId == eCCharacterID.eciDragon) {
-                        this.StartFly();
-                    } else {
-                        this.playRun();
-                    }
+                //否则走索敌流程
+                this.curSkill.OnCheckTargetDistance();
 
+                //距离之内，向目标移动
+                if (this.curSkill.IsCanCastByDistance()) {
+                    this.CastSkill();
+                } else {
+                    //如果是距离不够，要向目标靠近
+                    this.CloseToTarget();
                 }
             }
         }

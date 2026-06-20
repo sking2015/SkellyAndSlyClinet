@@ -20,14 +20,15 @@ export class CSkillOne extends CSkillBase {
         return this.target.IsAlive();
     }
 
-    doCast(cb: Function) {
+    doCast(cb?: Function) {
         super.doCast(cb);
         console.log("释放技能 CSkillOne");
         this.target.onHitedReady(this.caster);
         this.caster.play(this.act, () => {
             console.log("技能播放完毕", this.caster);
             this.target.onHited();
-            cb();
+            this.caster.SwitchToStand();
+            cb ? cb() : null;
         });
     }
 }

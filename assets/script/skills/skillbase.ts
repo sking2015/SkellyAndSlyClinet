@@ -91,7 +91,7 @@ export class CSkillBase {
         return this.bCastByDistance;
     }
 
-    doCast(cb: Function) {
+    doCast(cb?: Function) {
         this.nLastCastTime = Date.now();
         // console.log("释放技能,开始冷却...");
     }
@@ -102,5 +102,14 @@ export class CSkillBase {
 
     IsValidTarget(): boolean {
         return true;
+    }
+
+    //是否需要技能施放者执行技能tick
+    NeedTick(): boolean {
+        return false;
+    }
+
+    Tick() {
+
     }
 }
