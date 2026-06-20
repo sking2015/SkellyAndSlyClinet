@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, ScrollView, Prefab, Label, UITransform } from 'cc';
+import { _decorator, Component, Node, ScrollView, Prefab, Label, UITransform, PhysicsSystem2D, EPhysics2DDrawFlags } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import OSSelectPanel from './OSSelectPanel';
 import CRoomUpgradePanel from './RoomUpgradePanel';
@@ -196,6 +196,14 @@ export class main extends Component {
 
         this.comMALPanel.Show(false);
         this.comMDPanel.Close();
+
+        PhysicsSystem2D.instance.enable = true;
+
+        // // 运行游戏后如果能看到绿色框，说明碰撞体大小和位置是对的
+        // PhysicsSystem2D.instance.debugDrawFlags = EPhysics2DDrawFlags.Aabb |
+        //     EPhysics2DDrawFlags.Pair |
+        //     EPhysics2DDrawFlags.CenterOfMass |
+        //     EPhysics2DDrawFlags.Shape;
     }
 
     update(deltaTime: number) {

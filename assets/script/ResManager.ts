@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, Prefab, SpriteFrame, assetManager, AssetManager, isValid } from 'cc';
-import { CCharacterCfg, CRoomType2Data, CProperty2Spriteframe, CRace2Spriteframe } from './KeyValuePair';
-import { eCCharacterID, eProperty, eRoomType, eRace } from './BaseDef';
+import { CCharacterCfg, CRoomType2Data, CProperty2Spriteframe, CRace2Spriteframe, CMissileId2Prefab } from './KeyValuePair';
+import { eCCharacterID, eProperty, eRoomType, eRace, eMissileId } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 @ccclass('CResManager')
@@ -19,6 +19,9 @@ export class CResManager extends Component {
     @property({ type: CRace2Spriteframe, tooltip: "所有种族图标定义" })
     raceSFCfg: CRace2Spriteframe[] = [];
 
+    @property({ type: CMissileId2Prefab, tooltip: "所有飞行物定义" })
+    missilePfb: CMissileId2Prefab[] = [];
+
 
     private mapMonsters: Map<eCCharacterID, CCharacterCfg> = new Map();
 
@@ -28,6 +31,8 @@ export class CResManager extends Component {
 
 
     private mapSkillsIcon: Map<string, SpriteFrame> = new Map();
+
+    private mapMissilePrefab: Map<eMissileId, Prefab> = new Map();
 
     // 静态实例变量
     private static _instance: CResManager = null!;
@@ -125,7 +130,17 @@ export class CResManager extends Component {
             this.mapRace.set(data.key, data.value);
         }
 
+        for (const data of this.missilePfb) {
+            if (!data) continue;
+
+            this.mapMissilePrefab.set(data.emId, data.pfbMissile);
+        }
+
         this._dynLoadSkillsIcon();
+    }
+
+    getMissilePrefab(id: eMissileId) {
+        return this.mapMissilePrefab.get(id);
     }
 
     getRaceIcon(e: eRace): SpriteFrame {

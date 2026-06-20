@@ -47,6 +47,9 @@ export class CBaseRoom extends Component {
     @property({ type: Node, tooltip: "角色显示层" })
     nodeCharLayer: Node = null;
 
+    @property({ type: Node, tooltip: "各种战斗相关表现层，主要是子弹，爆炸特效等，要放在角色之上" })
+    nodeBattleShowLayer: Node = null;
+
 
     roomType: eRoomType = eRoomType.ertNone; // 房间类型
     roomLevel: number = 0;
@@ -86,6 +89,7 @@ export class CBaseRoom extends Component {
     testBattle() {
         console.log("添加两个战斗角色看看");
         this.addRole(eCCharacterID.eciDragon);
+        this.addRole(eCCharacterID.eciMageHF);
         this.addRole(eCCharacterID.eciSoldierHM);
     }
 
@@ -198,6 +202,10 @@ export class CBaseRoom extends Component {
             this.nodeUpgradeEffect.active = false;
         });
 
+    }
+
+    addMissile(nodeMissile: Node) {
+        nodeMissile.parent = this.nodeBattleShowLayer;
     }
 
     addChar(eCharId: eCCharacterID): CCharacter {

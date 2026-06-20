@@ -13,7 +13,7 @@ export class CSkillOne extends CSkillBase {
     LoadData() {
         this.act = "attack";
         this.eTarType = eSkillTargetType.estEnemies;
-        this.nSkillRange = 20;
+        this.nSkillRange = 5;
     }
     //只检查是否还活着
     IsValidTarget(): boolean {

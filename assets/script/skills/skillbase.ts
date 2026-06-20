@@ -82,7 +82,7 @@ export class CSkillBase {
     OnCheckTargetDistance() {
         if (this.target) {
             const distance = this.caster.getDistance(this.target);
-            // console.log("看一下距离", distance, this.nSkillRange);
+            // console.log("看一下距离", distance, this, this.nSkillRange);
             this.bCastByDistance = distance < this.nSkillRange;
         }
     }
@@ -94,6 +94,10 @@ export class CSkillBase {
     doCast(cb: Function) {
         this.nLastCastTime = Date.now();
         // console.log("释放技能,开始冷却...");
+    }
+
+    LauncheMissile() {
+
     }
 
     IsValidTarget(): boolean {

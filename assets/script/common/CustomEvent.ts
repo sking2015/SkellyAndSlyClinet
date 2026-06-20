@@ -26,4 +26,5 @@ export enum UniEvent {
     on_close_room_panel = "onCloseRoomFunPanel",                //关闭房间功能面板
     on_click_char_ui = "onClickCharUI",                         //点击角色按钮
     on_ani_key = "onAniKeyFrame",                               //触发动画关键帧
+    on_launche_missile = "onLauncheMissile",                    //发射飞行物
 }

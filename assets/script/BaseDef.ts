@@ -97,6 +97,13 @@ export enum eDirction {
     edRight = 1,                    //向向
 }
 
+//所有飞行物定义
+export enum eMissileId {
+    emiNone = 0,
+    emiFireball = 1,                //火球
+    emiArrow = 2                    //箭矢
+}
+
 
 ////////////////////////
 //网络交换数据定义

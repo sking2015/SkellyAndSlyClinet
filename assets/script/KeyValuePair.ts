@@ -1,5 +1,5 @@
 import { _decorator, Prefab, SpriteFrame, Enum } from 'cc';
-import { eRoomType, eCCharacterID, eProperty, eRace } from './BaseDef';
+import { eRoomType, eCCharacterID, eProperty, eRace, eMissileId } from './BaseDef';
 const { ccclass, property } = _decorator;
 
 //用于序列化展示的键值对
@@ -95,4 +95,12 @@ export class CRoomType2Data {
     sfResCapIcon: SpriteFrame = null;
 }
 
+@ccclass('CMissileId2Prefab')
+export class CMissileId2Prefab {
+    @property({ type: Enum(eMissileId), tooltip: '飞行物ID' })
+    emId: eMissileId = eMissileId.emiNone;
+
+    @property({ type: Prefab, tooltip: '飞行物预制件' })
+    pfbMissile: Prefab = null;
+}
 

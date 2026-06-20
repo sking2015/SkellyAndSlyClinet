@@ -5,5 +5,22 @@
       "width": 768,
       "height": 1280
     }
+  },
+  "physics": {
+    "collisionGroups": [
+      {
+        "index": 1,
+        "name": "Missile"
+      },
+      {
+        "index": 2,
+        "name": "Role"
+      }
+    ],
+    "collisionMatrix": {
+      "0": 1,
+      "1": 4,
+      "2": 2
+    }
   }
 }

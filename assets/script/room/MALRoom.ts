@@ -22,9 +22,9 @@ export class CMALRoom extends CBaseRoom {
 
     }
 
-    update(deltaTime: number) {
+    // update(deltaTime: number) {
 
-    }
+    // }
 }
 
 

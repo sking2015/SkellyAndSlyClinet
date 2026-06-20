@@ -341,6 +341,24 @@ export class CCharacter extends Component {
         }
     }
 
+    //取得中心点，避免子弹打脚底
+    getCenterPosByWorld(): math.Vec3 {
+        let posWorld = this.node.worldPosition.clone();
+        let uiTransform = this.node.getComponent(UITransform);
+
+        if (uiTransform) {
+            // 3. 计算怪物在世界坐标下的【实际缩放高度】
+            // uiTransform.contentSize.height 是美术资源的原始高度
+            // Math.abs(targetEnemyNode.worldScale.y) 是为了防止怪物翻转时缩放变成负数
+            let realHeight = uiTransform.contentSize.height * Math.abs(this.node.worldScale.y);
+
+            // 4. 将 Y 坐标向上修正高度的一半，精准指向怪物的胸口/中心
+            posWorld.y += (realHeight / 2);
+        }
+
+        return posWorld;
+    }
+
     /** 检查位置并决定是否开启回归模式 */
     private checkInitialPosition() {
         const currentX = this.node.position.x;

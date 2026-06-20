@@ -1,14 +1,18 @@
-import { _decorator, Enum, Component, EditBoxComponent, Node, bits, UITransform, Sprite } from 'cc';
+import { _decorator, Vec3, Enum, Component, Animation, Node, bits, UITransform, Sprite, Prefab, instantiate } from 'cc';
 import { COverseer } from './overseer';
-import { eBattleCamp, eCCharacterID, eDirction } from '../BaseDef';
+import { eBattleCamp, eCCharacterID, eDirction, eMissileId } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
 import { CSkillBase } from '../skills/skillbase';
 import { CSkillOne } from '../skills/skillone';
+import { CSkillLanche } from '../skills/skillLanche';
 import { CCharacter } from './character';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
-import { resolve } from 'path';
+import { CResManager } from '../ResManager';
+import { CMissile } from '../skills/missile';
 
-const { ccclass, property } = _decorator;
+
+
+
 
 
 //战斗状态
@@ -25,6 +29,13 @@ enum eFlyState {
     efsFly = 1,
     efsFlyEnd = 2,
 }
+
+enum eKeyFrameEvent {
+    ekeHited = "hit",       //击打关键帧,需要直接调用被攻击目标onhited
+    ekeLaunche = "launche", //发射关键帧，需要调用自己的launchemissile
+}
+
+const { ccclass, property } = _decorator;
 
 @ccclass('CBattleRole')
 export class CBattleRole extends COverseer {
@@ -57,15 +68,35 @@ export class CBattleRole extends COverseer {
     //飞行状态
     eFlystate: eFlyState = eFlyState.efsNone;
 
+    //跳跃状态
+    bJumpstate: boolean = false;
+
+
+    //发射子弹节点
+    nodeLaunchePos: Node = null;
+
+    //吟唱特效节点
+    nodeCastEffect: Node = null;
+
     start() {
 
 
         this.nHalfWidth = this.node.getComponent(UITransform).width / 2;
+
+        this.nodeLaunchePos = this.node.getChildByName('lanchepos');
+
+        this.nodeCastEffect = this.node.getChildByName("cast_effect");
     }
 
     loadData() {
-        if (this.getBattleCamp() == eBattleCamp.ebcDemon) {
-            const skill = new CSkillOne(this);
+        //if (this.getBattleCamp() == eBattleCamp.ebcHero) {
+        const skill = new CSkillOne(this);
+        skill.LoadData();
+        this.skills.push(skill);
+        //}
+
+        if (this.eCharId == eCCharacterID.eciMageHF) {
+            const skill = new CSkillLanche(this);
             skill.LoadData();
             this.skills.push(skill);
         }
@@ -75,6 +106,14 @@ export class CBattleRole extends COverseer {
         }
     }
 
+    playCastEffect() {
+        if (this.nodeCastEffect) {
+            const ani: Animation = this.nodeCastEffect.getComponent(Animation);
+            if (ani) {
+                ani.play(ani.clips[0].name);
+            }
+        }
+    }
 
     setInBattle(bIn: boolean) {
         console.log("进入战斗状态", bIn);
@@ -94,9 +133,36 @@ export class CBattleRole extends COverseer {
         this.node.off(UniEvent.on_ani_key, this.onAniKeyFrame, this);
     }
 
+
+    LauncheMissile(id: eMissileId) {
+        const prefabMissile: Prefab = CResManager.instance.getMissilePrefab(id);
+        const nodeMissile: Node = instantiate(prefabMissile);
+        //const posMissile = this.node.position.clone().add(this.nodeLaunchePos.position);
+        const posLaunche = this.nodeLaunchePos.worldPosition;
+        let posMissileLocal = new Vec3();
+        this.room.nodeBattleShowLayer.inverseTransformPoint(posMissileLocal, posLaunche);
+        nodeMissile.setPosition(posMissileLocal);
+        this.room.addMissile(nodeMissile);
+        const comMissile: CMissile = nodeMissile.getComponent(CMissile);
+        comMissile.setCaster(this);
+        comMissile.LauncheWithTarget(posLaunche, this.charTar.getCenterPosByWorld());
+    }
+
+    onLauncheMissile() {
+        this.curSkill.LauncheMissile();
+    }
+
     onAniKeyFrame(event: CustomEvent) {
         console.log("关键帧事件触发:", event.detail)
-        this.charTar.onHited();
+        switch (event.detail.para) {
+            case eKeyFrameEvent.ekeHited:
+                this.charTar.onHited();
+                break;
+            case eKeyFrameEvent.ekeLaunche:
+                this.onLauncheMissile();
+                break;
+        }
+
     }
 
     onHitedReady(caster: CCharacter) {
@@ -137,16 +203,21 @@ export class CBattleRole extends COverseer {
     }
 
 
+    maxSkillRange: number = 0;
     //选择一个技能
     onSelectSkill() {
-        if (!this.curSkill || !this.curSkill.IsCoolDown()) {
-            for (let i = 0; i < this.skills.length; ++i) {
-                const skill = this.skills[i];
+        //角色现在优先使用技能范围最远的距离，以后再来细调AI，如果有敌人在附近，切换使用近程技能        
+        for (let i = 0; i < this.skills.length; ++i) {
+            const skill = this.skills[i];
+            if (skill.nSkillRange > this.maxSkillRange) {
                 if (skill.IsCoolDown()) {
+                    console.log("设置技能", skill);
                     this.curSkill = skill;
+                    this.maxSkillRange = skill.nSkillRange;
                 }
             }
         }
+
     }
 
     //选择一个目标
@@ -164,7 +235,7 @@ export class CBattleRole extends COverseer {
         //选择技能
         this.onSelectSkill();
 
-        //选择技能
+        //选择目标
         this.onSelectTarget();
 
         if (this.curSkill) {
@@ -198,6 +269,7 @@ export class CBattleRole extends COverseer {
                 this.onRunToTarget();
                 if (this.eState != eBattleState.ebsRun) {
                     this.eState = eBattleState.ebsRun;
+                    //this.playRun();
                     if (this.eCharId == eCCharacterID.eciDragon) {
                         this.StartFly();
                     } else {
