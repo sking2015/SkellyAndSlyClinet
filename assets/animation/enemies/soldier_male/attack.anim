@@ -7,11 +7,11 @@
       "embeddedPlayerGroups": []
     },
     "_native": "",
-    "sample": 2,
+    "sample": 10,
     "speed": 1,
     "wrapMode": 1,
     "enableTrsBlending": false,
-    "_duration": 1,
+    "_duration": 0.6,
     "_hash": 500763545,
     "_tracks": [
       {
@@ -19,7 +19,20 @@
       }
     ],
     "_exoticAnimation": null,
-    "_events": [],
+    "_events": [
+      {
+        "frame": 0.3,
+        "func": "",
+        "params": []
+      },
+      {
+        "frame": 0.3,
+        "func": "onKeyFrame",
+        "params": [
+          "hit"
+        ]
+      }
+    ],
     "_embeddedPlayers": [],
     "_additiveSettings": {
       "__id__": 6
@@ -62,6 +75,9 @@
     "__type__": "cc.ObjectCurve",
     "_times": [
       0,
+      0.1,
+      0.2,
+      0.3,
       0.5
     ],
     "_values": [
@@ -70,7 +86,19 @@
         "__expectedType__": "cc.SpriteFrame"
       },
       {
+        "__uuid__": "30fd2eb4-c6cc-46f0-9ea9-ef224d217e17@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
         "__uuid__": "f1f9f1a0-1e4a-447a-b8e4-e632f4086eb2@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "238f35da-59df-40eb-8d5c-193b0e2bad2e@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "5ee80502-fcf7-40b7-9c3b-f32b090326ed@f9941",
         "__expectedType__": "cc.SpriteFrame"
       }
     ]

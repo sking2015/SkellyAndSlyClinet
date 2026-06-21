@@ -15,7 +15,7 @@ export class CAnikeyframeTrigger extends Component {
     }
 
     onKeyFrame(sPara: string) {
-        console.log("关键帧触发", sPara);
+        // console.log("关键帧触发", sPara);
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_ani_key, true, { para: sPara }));
     }
 }

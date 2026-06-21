@@ -119,7 +119,7 @@ export class CBattleRole extends COverseer {
         }
 
         if (this.eCharId == eCCharacterID.eciDragon) {
-            this.bUninterruptible = true;
+            // this.bUninterruptible = true;
             const skill = new CSkillRepeatedly(this);
 
             skill.LoadData();
@@ -184,7 +184,7 @@ export class CBattleRole extends COverseer {
     }
 
     onAniKeyFrame(event: CustomEvent) {
-        console.log("关键帧事件触发:", event.detail)
+        // console.log("关键帧事件触发:", event.detail)
         switch (event.detail.para) {
             case eKeyFrameEvent.ekeHited:
                 this.charTar.onHited();
@@ -204,10 +204,10 @@ export class CBattleRole extends COverseer {
     //如果攻击动作没配置关键帧，将在攻击动画完毕后调用这个函数
     onHited() {
         if (this.hitedcaster) {
-            // console.log("受击", this.hitedcaster);
+            // console.log(this.eCharId, "受击", this.hitedcaster);
 
-            //正在放技能或霸体状态只闪红
-            if (this.eState == eBattleState.ebsSkill || this.bUninterruptible) {
+            //非站立状态或霸体状态只闪红
+            if (this.eState != eBattleState.ebsStand || this.bUninterruptible) {
                 this.blinkRed();
                 this.scheduleOnce(() => {
                     this.blinkRestore();
@@ -244,7 +244,7 @@ export class CBattleRole extends COverseer {
             const skill = this.skills[i];
             if (skill.nSkillRange > this.maxSkillRange) {
                 if (skill.IsCoolDown()) {
-                    console.log("设置技能", skill);
+                    // console.log("设置技能", skill);
                     this.curSkill = skill;
                     this.maxSkillRange = skill.nSkillRange;
                 }
@@ -284,9 +284,6 @@ export class CBattleRole extends COverseer {
         this.eState = eBattleState.ebsStand;
     }
 
-    doPause() {
-
-    }
 
     async CastUltimateSkill() {
         this.room.ShowRoleAction([this, this.charTar], () => {
@@ -410,9 +407,6 @@ export class CBattleRole extends COverseer {
     }
 
     AITick() {
-        if (this.eCharId == eCCharacterID.eciSoldierHM) {
-            console.log(this.eCharId, '父节点', this.node.parent.name);
-        }
         if (this.bInBattle) {
             this.BattleAITick();
         } else {

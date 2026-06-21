@@ -83,9 +83,6 @@ export class CCharacter extends Component {
 
         let scale = this.node.scale.clone();
 
-        if (this.getBattleCamp() == eBattleCamp.ebcDemon) {
-            console.log("看一下朝向", scale)
-        }
 
         scale.x = Math.abs(scale.x) * Number(this._moveDirection);
         this.node.setScale(scale);
@@ -415,17 +412,17 @@ export class CCharacter extends Component {
 
 
 
-        console.log("准备播放动画", ani);
+        // console.log("准备播放动画", ani);
 
         if (this._animation && this._animation.getState(ani)) {
-            console.log("播放动画", ani);
+            // console.log("播放动画", ani);
             this._animation.play(ani);
             this._currentActionKey = ani;
 
             //除了站立动作外,需要响应播放完毕返回stand
             if (ani != ACT_STAND) {
                 this._animation.once(Animation.EventType.FINISHED, () => {
-                    console.log("动画播放完毕...", ani);
+                    // console.log("动画播放完毕...", ani);
                     if (cb) {
                         if (cb()) {
                             this.play(ACT_STAND);

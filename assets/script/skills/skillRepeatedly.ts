@@ -6,7 +6,9 @@ import { eSkillTargetType } from "../BaseDef";
 export class CSkillRepeatedly extends CSkillBase {
 
     //技能动作
-    act: string = ""
+    actStart: string = ""
+    actLoop: string = ""
+    actEnd: string = ""
     Init() {
     }
 
@@ -16,7 +18,10 @@ export class CSkillRepeatedly extends CSkillBase {
     //打击次数
     nStrikeNum: number = 0;
     LoadData() {
-        this.act = "skill";
+        this.actStart = "skillstart";
+        this.actLoop = "skillloop";
+        this.actEnd = "skillend";
+
         this.eTarType = eSkillTargetType.estEnemies;
         this.nSkillRange = 20;
         this.nStrikeNum = 10;
@@ -43,12 +48,24 @@ export class CSkillRepeatedly extends CSkillBase {
         this.nLeftStrikeNum = this.nStrikeNum;
         this.cbSkillEnd = cb;
 
-        console.log("释放技能 CSkillRepeatedly");
-        this.caster.play(this.act, () => {
-            console.log("技能播放完毕", this.caster);
+        // console.log("释放技能 CSkillRepeatedly");
+        this.caster.play(this.actStart, () => {
+            // console.log("技能播放完毕", this.caster);
+            this.caster.play(this.actLoop);
             this.caster.playSkillEffect();
             this.bInStrike = true;
         });
+    }
+
+    doEnd() {
+        this.bInStrike = false;
+        this.caster.play(this.actEnd, () => {
+            this.caster.SwitchToStand();
+            if (this.cbSkillEnd) {
+                // console.log("调用技能结束回调");
+                this.cbSkillEnd();
+            }
+        })
     }
 
     NeedTick(): boolean {
@@ -65,12 +82,7 @@ export class CSkillRepeatedly extends CSkillBase {
                 this.StrikeOnce()
                 --this.nLeftStrikeNum;
                 if (this.nLeftStrikeNum <= 0) {
-                    this.bInStrike = false;
-                    this.caster.SwitchToStand();
-                    if (this.cbSkillEnd) {
-                        console.log("调用技能结束回调");
-                        this.cbSkillEnd();
-                    }
+                    this.doEnd();
                 }
                 this.nInterval = 4;
             }

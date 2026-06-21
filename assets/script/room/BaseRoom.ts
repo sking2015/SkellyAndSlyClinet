@@ -284,7 +284,7 @@ export class CBaseRoom extends Component {
         this.nodeDBMask.active = true;
         let excepts: number[] = [];
 
-        console.log("看一下传入的角色列表", roles);
+        // console.log("看一下传入的角色列表", roles);
 
         for (let i = 0; i < roles.length; ++i) {
             roles[i].node.parent = this.nodeDBMask;
@@ -298,11 +298,11 @@ export class CBaseRoom extends Component {
 
         for (let i = 0; i < roles.length; ++i) {
             const role = roles[i];
-            console.log("重新设", role, "回nodeCharLayer层");
+            // console.log("重新设", role, "回nodeCharLayer层");
             role.node.parent = this.nodeCharLayer;
 
-            console.log(role.eCharId, "父节点", role.node.parent.name);
-            console.log("看下此时role的状态", role);
+            // console.log(role.eCharId, "父节点", role.node.parent.name);
+            // console.log("看下此时role的状态", role);
         }
 
 

@@ -39,12 +39,12 @@ export class CSkillLanche extends CSkillBase {
 
     doCast(cb?: Function) {
         super.doCast(cb);
-        console.log("释放技能 CSkillOne");
+        // console.log("释放技能 CSkillLanuche");
         this.bReadyLaunche = true;
 
         this.caster.playCastEffect();
         this.caster.play(this.act, () => {
-            console.log("技能播放完毕", this.caster);
+            // console.log("技能播放完毕", this.caster);
             this.LauncheMissile();
             this.caster.SwitchToStand();
             cb ? cb() : null;
