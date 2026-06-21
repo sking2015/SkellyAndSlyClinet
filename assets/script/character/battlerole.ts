@@ -12,10 +12,7 @@ import { CCharacter } from './character';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CResManager } from '../ResManager';
 import { CMissile } from '../skills/missile';
-import { resolve } from 'path';
-
-
-
+import { CPopInfo } from '../PopInfo';
 
 
 
@@ -208,6 +205,22 @@ export class CBattleRole extends COverseer {
 
     }
 
+    onDamage() {
+        const nodePopInfo = instantiate(CResManager.instance.popInfo);
+        const comPopInfo = nodePopInfo.getComponent(CPopInfo);
+        comPopInfo.setText("-999");
+
+        nodePopInfo.position = this.node.position;
+        nodePopInfo.parent = this.node.parent;
+
+        let posY = this.node.getComponent(UITransform).height * 0.5;
+
+        //初始高度不超过120
+        posY = posY > 120 ? 120 : posY;
+
+        nodePopInfo.y += posY;
+    }
+
     onHitedReady(caster: CCharacter) {
         this.hitedcaster = caster;
     }
@@ -232,7 +245,7 @@ export class CBattleRole extends COverseer {
                     return true;
                 });
             }
-
+            this.onDamage();
 
             this.hitedcaster = null;
         }

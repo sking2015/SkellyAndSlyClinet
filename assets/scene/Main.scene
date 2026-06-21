@@ -7679,6 +7679,10 @@
         "__id__": 364
       }
     ],
+    "popInfo": {
+      "__uuid__": "71e73561-40a0-4014-9dcc-84eec0551fb0",
+      "__expectedType__": "cc.Prefab"
+    },
     "_id": "ecAMR6lY1PHpXg6+8vL+kg"
   },
   {

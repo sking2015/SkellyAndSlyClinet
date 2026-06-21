@@ -22,6 +22,9 @@ export class CResManager extends Component {
     @property({ type: CMissileId2Prefab, tooltip: "所有飞行物定义" })
     missilePfb: CMissileId2Prefab[] = [];
 
+    @property({ type: Prefab, tooltip: "弹出信息，主要是伤害" })
+    popInfo: Prefab = null;
+
 
     private mapMonsters: Map<eCCharacterID, CCharacterCfg> = new Map();
 
