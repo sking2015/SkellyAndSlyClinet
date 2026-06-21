@@ -23,7 +23,7 @@ export class CSkillRepeatedly extends CSkillBase {
         this.actEnd = "skillend";
 
         this.eTarType = eSkillTargetType.estEnemies;
-        this.nSkillRange = 20;
+        this.nSkillRange = 330;
         this.nStrikeNum = 10;
         this.nCD = 10000;
         this.bIsUltimate = true;

@@ -26,6 +26,11 @@ export class CSkillBase {
     //是否为大招，大招就是要表现一下
     bIsUltimate: boolean = false;
 
+    //技能允许伤害目标上限,一个的话就是单体技能
+    nTargetsLimit: number = 1;
+
+    arrTargets: CCharacter[] = [];
+
 
     constructor(caster: CBattleRole) {
         this.caster = caster;
@@ -36,6 +41,11 @@ export class CSkillBase {
 
     LoadData() {
         this.nSkillRange = 30;
+    }
+
+    //是否范围生效
+    IsRangeAffect(): boolean {
+        return this.nTargetsLimit > 1;
     }
 
     IsCoolDown(): boolean {
@@ -71,6 +81,12 @@ export class CSkillBase {
         }
 
         return eRet;
+    }
+
+    //如果是范围内伤害，确认范围内有无目标
+    onConfirmTargets() {
+        const eTarCamp: eBattleCamp = eBattleCamp.ebcNone;
+        this.arrTargets = CCharactersManager.instance.GetCharsByRange(this.caster, this.getTargetCamp(), this.nSkillRange);
     }
 
     OnSelectTarget() {

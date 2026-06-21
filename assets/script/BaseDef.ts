@@ -104,6 +104,14 @@ export enum eMissileId {
     emiArrow = 2                    //箭矢
 }
 
+//生命状态
+export enum eLifeState {
+    elsNone = 0,
+    elsFull = 1,                //满血
+    elsHurt = 2,                //受伤(考虑主要给回血用，HP至少减少20%以上吧)
+    elsDead = 3,                //死亡
+    elsAny = 4                  //任意，也许有些技能不看状态全部都要选中
+}
 
 ////////////////////////
 //网络交换数据定义

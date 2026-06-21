@@ -81,6 +81,44 @@ export class CCharactersManager {
         char.Release();
     }
 
+    //取得距src范围内的合法目标个数
+    GetCharsByRange(src: CCharacter, eCamp: eBattleCamp, nRange: number): CCharacter[] {
+        let container: CCharacterContainer = this.mapCharInRoom.get(src.getRoom().index);
+        let chars: CCharacter[] = container.getAllChars();
+        let targets: CCharacter[] = [];
+        const posSrc: number = src.getPosition();
+
+        //范围判断要分一下左右
+        if (src.IsToDirRight()) {
+
+            const posLimit: number = src.getPosition() + nRange;
+            for (let i = 0; i < chars.length; ++i) {
+                let char: CCharacter = chars[i];
+                if (char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
+                    const posTar: number = char.getPosition();
+                    //在源角色位置和目标位之间
+                    if (posTar > posSrc && posTar < posLimit) {
+                        targets.push(char);
+                    }
+                }
+            }
+        } else {
+            const posLimit: number = src.getPosition() - nRange;
+            for (let i = 0; i < chars.length; ++i) {
+                let char: CCharacter = chars[i];
+                if (char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
+                    const posTar: number = char.getPosition();
+                    //在源角色位置和目标位之间
+                    if (posTar < posSrc && posTar > posLimit) {
+                        targets.push(char);
+                    }
+                }
+            }
+        }
+
+        return targets;
+    }
+
     FindNearestChar(src: CCharacter, eCamp: eBattleCamp): CCharacter {
         let container: CCharacterContainer = this.mapCharInRoom.get(src.getRoom().index);
         let chars: CCharacter[] = container.getAllChars();

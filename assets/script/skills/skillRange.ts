@@ -3,7 +3,7 @@ import { CSkillBase } from "./skillbase";
 import { eSkillTargetType } from "../BaseDef";
 
 //单体类技能，只对一个目标生效
-export class CSkillOne extends CSkillBase {
+export class CSkillOnce extends CSkillBase {
 
     //技能动作
     act: string = ""

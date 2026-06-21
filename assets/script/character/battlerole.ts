@@ -3,10 +3,11 @@ import { COverseer } from './overseer';
 import { eBattleCamp, eCCharacterID, eDirction, eMissileId } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
 import { CSkillBase } from '../skills/skillbase';
-import { CSkillOne } from '../skills/skillone';
+import { CSkillOnce } from '../skills/skillonce';
 import { CSkillLanche } from '../skills/skillLanche';
 import { waitFadeInout } from '../common/common';
 import { CSkillRepeatedly } from '../skills/skillRepeatedly';
+import { CSkillRepeatRange } from '../skills/skillRepeatRange';
 import { CCharacter } from './character';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CResManager } from '../ResManager';
@@ -60,6 +61,9 @@ export class CBattleRole extends COverseer {
 
     charTar: CCharacter = null;
 
+    //多个目标放在这里
+    arrTargets: CCharacter[] = [];
+
     skills: CSkillBase[] = [];
 
     //当前技能，先选取CD为零，然后是否有合法目标
@@ -107,7 +111,7 @@ export class CBattleRole extends COverseer {
 
     loadData() {
         if (this.getBattleCamp() == eBattleCamp.ebcHero) {
-            const skill = new CSkillOne(this);
+            const skill = new CSkillOnce(this);
             skill.LoadData();
             this.skills.push(skill);
         }
@@ -120,7 +124,7 @@ export class CBattleRole extends COverseer {
 
         if (this.eCharId == eCCharacterID.eciDragon) {
             // this.bUninterruptible = true;
-            const skill = new CSkillRepeatedly(this);
+            const skill = new CSkillRepeatRange(this);
 
             skill.LoadData();
             this.skills.push(skill);
@@ -183,11 +187,19 @@ export class CBattleRole extends COverseer {
         this.curSkill.LauncheMissile();
     }
 
+    onStrikeTargets() {
+        for (let i = 0; i < this.arrTargets.length; ++i) {
+            const char = this.arrTargets[i];
+            char.onHited();
+        }
+    }
+
     onAniKeyFrame(event: CustomEvent) {
         // console.log("关键帧事件触发:", event.detail)
         switch (event.detail.para) {
             case eKeyFrameEvent.ekeHited:
-                this.charTar.onHited();
+                // this.charTar.onHited();
+                this.onStrikeTargets();
                 break;
             case eKeyFrameEvent.ekeLaunche:
                 this.onLauncheMissile();
@@ -256,12 +268,28 @@ export class CBattleRole extends COverseer {
     //选择一个目标
     onSelectTarget() {
         //如果有技能，并且没有目标或目标已失效。要重新选择目标
-        if (this.curSkill && (!this.curSkill.hasTarget() || !this.curSkill.IsValidTarget())) {
-            this.curSkill.OnSelectTarget();
-            this.charTar = this.curSkill.target;
-            // this.charTar = this.curSkill.SearchNearestTarget();
+        if (this.curSkill) {
+            if (this.curSkill.IsRangeAffect()) {
+                //范围内只有cd到了才确认目标，并且稍后马上施放技能
+                if (this.curSkill.IsCoolDown()) {
+                    this.curSkill.onConfirmTargets();
+                    this.arrTargets = this.curSkill.arrTargets;
+                    //还是要个最近的目标好持续接近
+                    this.charTar = this.curSkill.SearchNearestTarget();
+                }
+            } else {
+                if (!this.curSkill.hasTarget() || !this.curSkill.IsValidTarget()) {
+                    this.curSkill.OnSelectTarget();
+                    this.arrTargets = [];
+                    this.charTar = this.curSkill.target;
+                    this.arrTargets.push(this.curSkill.target);
+
+                }
+            }
         }
+        // this.charTar = this.curSkill.SearchNearestTarget();
     }
+
 
     playSkillEffect() {
         if (this.nodeSkillCast && this.aniSkillCast) {
@@ -286,7 +314,9 @@ export class CBattleRole extends COverseer {
 
 
     async CastUltimateSkill() {
-        this.room.ShowRoleAction([this, this.charTar], () => {
+        let affectChars = this.arrTargets;
+        affectChars.push(this);
+        this.room.ShowRoleAction(affectChars, () => {
             return new Promise((resolve) => {
                 this.playFlash(() => {
                     this.curSkill.doCast(() => {
@@ -348,15 +378,27 @@ export class CBattleRole extends COverseer {
                 //如果技能正在生效，执行技能tick
                 this.curSkill.Tick()
             } else {
-                //否则走索敌流程
-                this.curSkill.OnCheckTargetDistance();
-
-                //距离之内，向目标移动
-                if (this.curSkill.IsCanCastByDistance()) {
-                    this.CastSkill();
+                //范围技能和单体技能走不同流程
+                if (this.curSkill.IsRangeAffect()) {
+                    //范围技能至少要有两个目标才释放
+                    console.log("看一下现在的目标组", this.arrTargets)
+                    if (this.arrTargets.length > 1) {
+                        this.CastSkill()
+                    } else {
+                        //否则继续向目标靠近
+                        this.CloseToTarget();
+                    }
                 } else {
-                    //如果是距离不够，要向目标靠近
-                    this.CloseToTarget();
+                    //否则走索敌流程
+                    this.curSkill.OnCheckTargetDistance();
+
+                    //距离之内，向目标移动
+                    if (this.curSkill.IsCanCastByDistance()) {
+                        this.CastSkill();
+                    } else {
+                        //如果是距离不够，要向目标靠近
+                        this.CloseToTarget();
+                    }
                 }
             }
         }
@@ -394,7 +436,8 @@ export class CBattleRole extends COverseer {
     }
 
     handleMove(dt: number) {
-        if (this.eState == eBattleState.ebsRun && !this.curSkill.IsCanCastByDistance()) {
+        //最后加个距离判断，避免和目标叠在一起
+        if (this.eState == eBattleState.ebsRun && !this.curSkill.IsCanCastByDistance() && this.getDistance(this.charTar) > 5) {
             let pos = this.getPosition();
             let speed = this.runSpeed;
 

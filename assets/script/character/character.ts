@@ -92,6 +92,10 @@ export class CCharacter extends Component {
         return Number(this._moveDirection);
     }
 
+    IsToDirRight(): boolean {
+        return this._moveDirection == eDirction.edRight;
+    }
+
     loadData() {
 
     }
