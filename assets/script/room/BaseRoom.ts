@@ -89,25 +89,23 @@ export class CBaseRoom extends Component {
     }
 
     testBattle() {
-        console.log("添加两个战斗角色看看");
-        this.addRole(eCCharacterID.eciDragon);
-        this.addRole(eCCharacterID.eciMageHF);
-        this.addRole(eCCharacterID.eciSoldierHM);
+        console.log("添加几个战斗角色看看");
+        this.addRole(eCCharacterID.eciDragon, 250);
+        this.addRole(eCCharacterID.eciMageHF, -250);
+        this.addRole(eCCharacterID.eciSoldierHM, -250);
+        this.addRole(eCCharacterID.eciArcherEM, -200);
+        this.addRole(eCCharacterID.eciPriestHF, -150);
     }
 
-    addRole(eId: eCCharacterID) {
+    addRole(eId: eCCharacterID, pos: number) {
 
         const char: CCharacter = CCharactersManager.instance.CreateChacater4room(eId, this);
 
         char.setInBattle(true);
 
         char.node.parent = this.nodeCharLayer;
-        char.node.y = -100;
-        if (char.getBattleCamp() == eBattleCamp.ebcDemon) {
-            char.setPosition(250);
-        } else {
-            char.setPosition(-250);
-        }
+        char.node.y = -95;
+        char.setPosition(pos);
     }
 
     refreshRoomLockShow() {

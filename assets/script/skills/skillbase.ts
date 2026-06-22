@@ -94,8 +94,11 @@ export class CSkillBase {
     }
 
     SearchNearestTarget(): CCharacter {
-        const eTarCamp: eBattleCamp = eBattleCamp.ebcNone;
         return CCharactersManager.instance.FindNearestChar(this.caster, this.getTargetCamp());
+    }
+
+    SearchLowestHPTarget(): CCharacter {
+        return CCharactersManager.instance.FindLowestHPChar(this.caster, this.getTargetCamp());
     }
 
 

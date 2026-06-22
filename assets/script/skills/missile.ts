@@ -5,8 +5,11 @@ const { ccclass, property } = _decorator;
 @ccclass('CMissile')
 export class CMissile extends Component {
 
+    @property({ tooltip: "飞行物的速度" })
+    speed: number = 600;
+
     //飞行动画，如果有配置需要在飞行期间播放飞行动画
-    @property({ type: Node, tooltip: "飞行动画节点，如果朋动画需要配置自动加载播放，需要在到达目标点后删除隐藏" })
+    @property({ type: Node, tooltip: "飞行动画节点，如果动画需要配置自动加载播放，需要在到达目标点后删除隐藏" })
     nodeFly: Node = null;
 
     //如果有配置会在飞行到目标位后播放爆炸动画
@@ -18,15 +21,16 @@ export class CMissile extends Component {
 
     private _isMoving: boolean = false;
 
-    public speed: number = 600;
-
     caster: CBattleRole = null;
 
     bFinishe: boolean = false;
 
     start() {
         //打开飞行节点，隐藏爆炸节点
-        this.nodeFly.active = true;
+        if (this.nodeFly) {
+            this.nodeFly.active = true;
+        }
+
         if (this.nodeExplode) {
             this.nodeExplode.active = false;
         }
@@ -78,6 +82,11 @@ export class CMissile extends Component {
         this.caster = role;
     }
 
+    onFinished() {
+        this.bFinishe = true;
+        this.caster.onMissileFinished();
+    }
+
     doExplode() {
         tween(this.nodeFly).to(0.1, { scale: new Vec3(0.1, 0.1, 0.1) }).call(() => {
             this.nodeFly.active = false;
@@ -88,7 +97,7 @@ export class CMissile extends Component {
                     ani.play(ani.clips[0].name);
                     ani.once(Animation.EventType.FINISHED, () => {
                         //表现全部完成。。。
-                        this.bFinishe = true;
+                        this.onFinished();
                     })
                 }
             }
@@ -108,7 +117,13 @@ export class CMissile extends Component {
 
         // 判断字弹是还在移动，是否不同阵营，当然，以后如果是子弹加血，就反过来
         if (this._isMoving && role.getBattleCamp() != this.caster.getBattleCamp()) {
-            this.doExplode();
+            if (this.nodeExplode) {
+                this.doExplode();
+            } else {
+                //没有爆炸效果的可以直接完成稍后删除了
+                console.log("命中~！");
+                this.onFinished();
+            }
 
             role.onHitedReady(this.caster);
             role.onHited();
@@ -146,23 +161,25 @@ export class CMissile extends Component {
     // }
 
     update(deltaTime: number) {
-        if (!this._isMoving) return;
+        if (this._isMoving) {
+            // 每帧沿着方向向量移动：当前坐标 + 方向 * 速度 * 时间
+            let currentPos = this.node.position;
 
-        // 每帧沿着方向向量移动：当前坐标 + 方向 * 速度 * 时间
-        let currentPos = this.node.position;
+            let moveX = currentPos.x + this._direction.x * this.speed * deltaTime;
+            let moveY = currentPos.y + this._direction.y * this.speed * deltaTime;
 
-        let moveX = currentPos.x + this._direction.x * this.speed * deltaTime;
-        let moveY = currentPos.y + this._direction.y * this.speed * deltaTime;
+            this.node.setPosition(moveX, moveY, currentPos.z);
 
-        this.node.setPosition(moveX, moveY, currentPos.z);
-
-        // 飞出太远自动销毁
-        if (Math.abs(this.node.position.x) > 1000 || Math.abs(this.node.position.y) > 500) {
-            this.node.destroy();
+            // 飞出太远自动销毁
+            if (Math.abs(this.node.position.x) > 1000 || Math.abs(this.node.position.y) > 500) {
+                this.node.destroy();
+            }
         }
 
+
         if (this.bFinishe) {
-            this.node.destroy();
+            console.log("生命周期完成~!删除子弹")
+            this.node.removeFromParent();
         }
     }
 }

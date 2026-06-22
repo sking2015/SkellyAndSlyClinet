@@ -5,6 +5,7 @@ import { CCharactersManager } from '../CharacaterMannager';
 import { CSkillBase } from '../skills/skillbase';
 import { CSkillOnce } from '../skills/skillonce';
 import { CSkillLanche } from '../skills/skillLanche';
+import { CSkillCure } from '../skills/skillcure';
 import { waitFadeInout } from '../common/common';
 import { CSkillRepeatedly } from '../skills/skillRepeatedly';
 import { CSkillRepeatRange } from '../skills/skillRepeatRange';
@@ -106,22 +107,61 @@ export class CBattleRole extends COverseer {
         }
     }
 
+    _HP: number = 0;
+    _MaxHP: number = 0;
+
+    getHP(): number {
+        return this._HP;
+    }
+
+    setHP(hp: number) {
+        this._HP = hp;
+    }
+
+    setMaxHP(max: number) {
+        this._MaxHP = max;
+    }
+
+    getHPPer(): number {
+        return this._HP / this._MaxHP;
+    }
+
     loadData() {
         if (this.getBattleCamp() == eBattleCamp.ebcHero) {
             const skill = new CSkillOnce(this);
             skill.LoadData();
             this.skills.push(skill);
+
+            this.setMaxHP(200000);
+            this.setHP(200000);
         }
 
         if (this.eCharId == eCCharacterID.eciMageHF) {
             const skill = new CSkillLanche(this);
             skill.LoadData();
+            skill.eMissile = eMissileId.emiFireball;
+            this.skills.push(skill);
+        }
+
+        if (this.eCharId == eCCharacterID.eciArcherEM) {
+            const skill = new CSkillLanche(this);
+            skill.LoadData();
+            skill.eMissile = eMissileId.emiArrow;
+            skill.nCD = 2000;
+            this.skills.push(skill);
+        }
+
+        if (this.eCharId == eCCharacterID.eciPriestHF) {
+            const skill = new CSkillCure(this);
+            skill.LoadData();
+            skill.nCD = 5000;
             this.skills.push(skill);
         }
 
         if (this.eCharId == eCCharacterID.eciDragon) {
             // this.bUninterruptible = true;
-            const skill = new CSkillRepeatRange(this);
+            //const skill = new CSkillRepeatRange(this);
+            const skill = new CSkillOnce(this);
 
             skill.LoadData();
             this.skills.push(skill);
@@ -165,6 +205,9 @@ export class CBattleRole extends COverseer {
         this.node.off(UniEvent.on_ani_key, this.onAniKeyFrame, this);
     }
 
+    onMissileFinished() {
+        console.log("发射物完全命中目标，生命周期结束");
+    }
 
     LauncheMissile(id: eMissileId) {
         const prefabMissile: Prefab = CResManager.instance.getMissilePrefab(id);
@@ -202,13 +245,12 @@ export class CBattleRole extends COverseer {
                 this.onLauncheMissile();
                 break;
         }
-
     }
 
-    onDamage() {
+    popDamage(damage: number) {
         const nodePopInfo = instantiate(CResManager.instance.popInfo);
         const comPopInfo = nodePopInfo.getComponent(CPopInfo);
-        comPopInfo.setText("-999");
+        comPopInfo.setText("-" + damage.toString());
 
         nodePopInfo.position = this.node.position;
         nodePopInfo.parent = this.node.parent;
@@ -219,6 +261,12 @@ export class CBattleRole extends COverseer {
         posY = posY > 120 ? 120 : posY;
 
         nodePopInfo.y += posY;
+    }
+
+    onDamage() {
+        let damage: number = 999;
+        this._HP -= damage;
+        this.popDamage(damage)
     }
 
     onHitedReady(caster: CCharacter) {
@@ -278,6 +326,13 @@ export class CBattleRole extends COverseer {
 
     }
 
+    //检查自身跟前是否有敌对目标，不能穿过敌对目标
+    onCheckFaceTarget() {
+        if (this.IsToDirRight()) {
+
+        }
+    }
+
     //选择一个目标
     onSelectTarget() {
         //如果有技能，并且没有目标或目标已失效。要重新选择目标
@@ -291,13 +346,12 @@ export class CBattleRole extends COverseer {
                     this.charTar = this.curSkill.SearchNearestTarget();
                 }
             } else {
-                if (!this.curSkill.hasTarget() || !this.curSkill.IsValidTarget()) {
-                    this.curSkill.OnSelectTarget();
-                    this.arrTargets = [];
-                    this.charTar = this.curSkill.target;
-                    this.arrTargets.push(this.curSkill.target);
-
-                }
+                //if (!this.curSkill.hasTarget() || !this.curSkill.IsValidTarget()) {
+                this.curSkill.OnSelectTarget();
+                this.arrTargets = [];
+                this.charTar = this.curSkill.target;
+                this.arrTargets.push(this.curSkill.target);
+                //}
             }
         }
         // this.charTar = this.curSkill.SearchNearestTarget();
@@ -320,9 +374,11 @@ export class CBattleRole extends COverseer {
     }
 
     SwitchToStand() {
-        this.stopSkillEffect();
-        this.playStand();
-        this.eState = eBattleState.ebsStand;
+        if (this.eState != eBattleState.ebsStand) {
+            this.stopSkillEffect();
+            this.playStand();
+            this.eState = eBattleState.ebsStand;
+        }
     }
 
 
@@ -472,7 +528,11 @@ export class CBattleRole extends COverseer {
 
 
     UpdateMove(deltaTime: number) {
-        this.handleMove(deltaTime);
+        if (this.charTar) {
+            this.handleMove(deltaTime);
+        } else {
+            this.SwitchToStand();
+        }
     }
 
     update(dt: number) {

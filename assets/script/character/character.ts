@@ -96,6 +96,21 @@ export class CCharacter extends Component {
         return this._moveDirection == eDirction.edRight;
     }
 
+    getHP(): number {
+        return 0;
+    }
+
+    setHP(hp: number) {
+    }
+
+    setMaxHP(max: number) {
+
+    }
+
+    getHPPer(): number {
+        return 0;
+    }
+
     loadData() {
 
     }
@@ -168,7 +183,10 @@ export class CCharacter extends Component {
         }
 
 
-        this.nodeEffect.active = false;
+        if (this.nodeEffect) {
+            this.nodeEffect.active = false;
+        }
+
 
         this._animation = this.nodeChar.getComponent(Animation);
         if (!this._animation) {
@@ -407,6 +425,21 @@ export class CCharacter extends Component {
     }
 
     playFlash(cb: Function) {
+
+    }
+
+    //在施放技能之前执行
+    onBeforeCastSkill() {
+
+    }
+
+    //在技能动作之后执行
+    onAfterCastSkill() {
+
+    }
+
+    //技能作用目标身上
+    onCastSkillToTarget(char: CCharacter) {
 
     }
 

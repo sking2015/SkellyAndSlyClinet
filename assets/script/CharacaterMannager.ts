@@ -125,12 +125,42 @@ export class CCharactersManager {
         //找出最短距离
         let nearest: number = 999;
         let target: CCharacter = null;
+
+
         for (let i = 0; i < chars.length; ++i) {
             let char: CCharacter = chars[i];
             if (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp) {
+
                 let distance = src.getDistance(char);
+
                 if (distance < nearest) {
                     target = char;
+                    nearest = distance;
+                }
+            }
+        }
+
+        return target;
+    }
+
+    FindLowestHPChar(src: CCharacter, eCamp: eBattleCamp): CCharacter {
+        console.log("寻找血量百分比最低单位...");
+        let container: CCharacterContainer = this.mapCharInRoom.get(src.getRoom().index);
+        let chars: CCharacter[] = container.getAllChars();
+        //找出最短距离
+        let lowestHPPer: number = 1;
+        let target: CCharacter = null;
+
+
+        for (let i = 0; i < chars.length; ++i) {
+            let char: CCharacter = chars[i];
+            if (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp) {
+
+                const per = char.getHPPer()
+
+                if (per < lowestHPPer) {
+                    target = char;
+                    lowestHPPer = per;
                 }
             }
         }

@@ -28,6 +28,8 @@ export enum eCCharacterID {
 
     eciSoldierHM = 101,        //人类男性战士
     eciMageHF = 102,            //人类女性法师
+    eciArcherEM = 103,          //精灵男性弓手
+    eciPriestHF = 104,          //人类女性牧师
 }
 
 //种族
