@@ -33,6 +33,7 @@ export class CPriest extends CBattleRole {
         ani.play(ani.clips[0].name);
         ani.once(Animation.EventType.FINISHED, () => {
             this.nodeCureEffect.parent = this.node;
+            this.nodeCureEffect.active = false;
         })
     }
 
