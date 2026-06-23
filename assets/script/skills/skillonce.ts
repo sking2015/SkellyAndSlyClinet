@@ -15,10 +15,7 @@ export class CSkillOnce extends CSkillBase {
         this.eTarType = eSkillTargetType.estEnemies;
         this.nSkillRange = 5;
     }
-    //只检查是否还活着
-    IsValidTarget(): boolean {
-        return this.target.IsAlive();
-    }
+
 
     doCast(cb?: Function) {
         super.doCast(cb);

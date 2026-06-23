@@ -18,7 +18,7 @@ export class CSkillRepeatRange extends CSkillRepeatedly {
         this.nTargetsLimit = 999;           //最多作用目标999，就是没上限，范围内全部可以打击
     }
 
-    IsValidTarget(): boolean {
+    hasValidTarget(): boolean {
         return this.arrTargets.length > 0
     }
 

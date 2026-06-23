@@ -111,6 +111,10 @@ export class CCharacter extends Component {
         return 0;
     }
 
+    init() {
+
+    }
+
     loadData() {
 
     }
@@ -449,9 +453,15 @@ export class CCharacter extends Component {
 
 
 
-        // console.log("准备播放动画", ani);
+        if (this.eCharId == eCCharacterID.eciPriestHF) {
+            console.log("####准备播放动画", ani);
+        }
+
 
         if (this._animation && this._animation.getState(ani)) {
+            if (this.eCharId == eCCharacterID.eciPriestHF) {
+                console.warn("###播放动画", ani);
+            }
             // console.log("播放动画", ani);            
             this._animation.play(ani);
             this._currentActionKey = ani;

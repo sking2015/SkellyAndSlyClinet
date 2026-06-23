@@ -14,6 +14,7 @@ import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CResManager } from '../ResManager';
 import { CMissile } from '../skills/missile';
 import { CPopInfo } from '../PopInfo';
+import { CStatuBar } from '../StatuBar';
 
 
 
@@ -93,6 +94,8 @@ export class CBattleRole extends COverseer {
     //吟唱特效节点
     nodeCastEffect: Node = null;
 
+    comStatuBar: CStatuBar = null;
+
     start() {
 
 
@@ -116,14 +119,58 @@ export class CBattleRole extends COverseer {
 
     setHP(hp: number) {
         this._HP = hp;
+        if (this.comStatuBar) {
+            this.comStatuBar.setHP(this._HP);
+        }
     }
 
     setMaxHP(max: number) {
+        console.log("设置最大HP");
         this._MaxHP = max;
+        if (this.comStatuBar) {
+            console.log("究竟哪有问题~！");
+            this.comStatuBar.setMaxHP(this._MaxHP);
+            this.comStatuBar.setHP(this._HP);
+        }
     }
 
     getHPPer(): number {
         return this._HP / this._MaxHP;
+    }
+
+    _MP: number = 0;
+    _MaxMP: number = 0;
+
+    getMP(): number {
+        return this._MP;
+    }
+
+    setMP(mp: number) {
+        this._MP = mp;
+        if (this.comStatuBar) {
+            this.comStatuBar.setMP(this._MP);
+        }
+    }
+
+    setMaxMP(max: number) {
+        this._MaxMP = max;
+        if (this.comStatuBar) {
+            this.comStatuBar.setMaxMP(this._MaxMP);
+            this.comStatuBar.setMP(this._MP);
+        }
+    }
+
+    getMPPer(): number {
+        return this._MP / this._MaxMP;
+    }
+
+    init() {
+        const nodeStatuBar = this.node.getChildByName("statuBar");
+        if (nodeStatuBar) {
+
+            this.comStatuBar = nodeStatuBar.getComponent(CStatuBar);
+            console.log("有statuBar条吗", this.comStatuBar);
+        }
     }
 
     loadData() {
@@ -132,8 +179,10 @@ export class CBattleRole extends COverseer {
             skill.LoadData();
             this.skills.push(skill);
 
-            this.setMaxHP(200000);
-            this.setHP(200000);
+            this.setMaxHP(20000);
+            this.setHP(20000);
+            this.setMaxMP(1000);
+            this.setMP(1000);
         }
 
         if (this.eCharId == eCCharacterID.eciMageHF) {
@@ -171,6 +220,8 @@ export class CBattleRole extends COverseer {
             // this.bUninterruptible = true;
             //const skill = new CSkillRepeatRange(this);
             const skill = new CSkillOnce(this);
+            this.setMaxHP(50000);
+            this.setHP(50000);
 
             skill.LoadData();
             this.skills.push(skill);
@@ -179,6 +230,9 @@ export class CBattleRole extends COverseer {
         if (this.eCharId == eCCharacterID.eciSkullSoldier) {
             // this.bUninterruptible = true;
             //const skill = new CSkillRepeatRange(this);
+            this.setMaxHP(10000);
+            this.setHP(10000);
+
             const skill = new CSkillOnce(this);
 
             skill.LoadData();
@@ -186,6 +240,8 @@ export class CBattleRole extends COverseer {
         }
 
         if (this.eCharId == eCCharacterID.eciSkullArcher) {
+            this.setMaxHP(5000);
+            this.setHP(5000);
             // this.bUninterruptible = true;
             //const skill = new CSkillRepeatRange(this);
             const skill = new CSkillLanche(this);
@@ -398,7 +454,7 @@ export class CBattleRole extends COverseer {
                     this.charTar = this.curSkill.SearchNearestTarget();
                 }
             } else {
-                //if (!this.curSkill.hasTarget() || !this.curSkill.IsValidTarget()) {
+                //if (!this.curSkill.hasTarget() || !this.curSkill.hasValidTarget()) {
                 this.curSkill.OnSelectTarget();
                 this.arrTargets = [];
                 this.charTar = this.curSkill.target;
@@ -510,16 +566,22 @@ export class CBattleRole extends COverseer {
                         this.CloseToTarget();
                     }
                 } else {
-                    //否则走索敌流程
-                    this.curSkill.OnCheckTargetDistance();
+                    //否则检查有无目标，有目标走索敌流程
+                    if (this.curSkill.hasTarget()) {
+                        this.curSkill.OnCheckTargetDistance();
 
-                    //距离之内，向目标移动
-                    if (this.curSkill.IsCanCastByDistance()) {
-                        this.CastSkill();
+                        //距离之内，向目标移动
+                        if (this.curSkill.IsCanCastByDistance()) {
+                            this.CastSkill();
+                        } else {
+                            //如果是距离不够，要向目标靠近
+                            this.CloseToTarget();
+                        }
                     } else {
-                        //如果是距离不够，要向目标靠近
-                        this.CloseToTarget();
+                        //没有目标就站着不动吧
+                        this.SwitchToStand();
                     }
+
                 }
             }
         }

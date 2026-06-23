@@ -123,8 +123,8 @@ export class CSkillBase {
 
     }
 
-    IsValidTarget(): boolean {
-        return true;
+    hasValidTarget(): boolean {
+        return this.target && this.target.IsAlive();
     }
 
     //是否需要技能施放者执行技能tick

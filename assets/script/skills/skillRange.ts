@@ -16,8 +16,8 @@ export class CSkillOnce extends CSkillBase {
         this.nSkillRange = 5;
     }
     //只检查是否还活着
-    IsValidTarget(): boolean {
-        return this.target.IsAlive();
+    hasValidTarget(): boolean {
+        return this.arrTargets.length > 0;
     }
 
     doCast(cb?: Function) {

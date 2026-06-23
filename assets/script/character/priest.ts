@@ -28,6 +28,7 @@ export class CPriest extends CBattleRole {
         this.nodeCureEffect.x = 0;
         this.nodeCureEffect.y = 0;
 
+
         this.nodeCureEffect.active = true;
         const ani = this.nodeCureEffect.getComponent(Animation);
         ani.play(ani.clips[0].name);

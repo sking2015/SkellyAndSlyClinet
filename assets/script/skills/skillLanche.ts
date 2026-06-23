@@ -23,10 +23,7 @@ export class CSkillLanche extends CSkillBase {
 
         this.eMissile = eMissileId.emiFireball;
     }
-    //只检查是否还活着
-    IsValidTarget(): boolean {
-        return this.target.IsAlive();
-    }
+
 
     //发射飞行物
     LauncheMissile() {

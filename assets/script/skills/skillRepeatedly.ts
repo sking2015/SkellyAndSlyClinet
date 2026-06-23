@@ -28,10 +28,7 @@ export class CSkillRepeatedly extends CSkillBase {
         this.nCD = 10000;
         this.bIsUltimate = true;
     }
-    //只检查是否还活着
-    IsValidTarget(): boolean {
-        return this.target.IsAlive();
-    }
+
 
     StrikeOnce() {
         this.target.onHitedReady(this.caster);
