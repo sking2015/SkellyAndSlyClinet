@@ -116,12 +116,12 @@ export class CMissile extends Component {
         const role: CBattleRole = otherNode.getComponent(CBattleRole);
 
         // 判断字弹是还在移动，是否不同阵营，当然，以后如果是子弹加血，就反过来
-        if (this._isMoving && role.getBattleCamp() != this.caster.getBattleCamp()) {
+        if (this._isMoving && role.getBattleCamp() != this.caster.getBattleCamp() && role.IsAlive()) {
             if (this.nodeExplode) {
                 this.doExplode();
             } else {
                 //没有爆炸效果的可以直接完成稍后删除了
-                console.log("命中~！");
+                // console.log("命中~！");
                 this.onFinished();
             }
 
@@ -178,7 +178,7 @@ export class CMissile extends Component {
 
 
         if (this.bFinishe) {
-            console.log("生命周期完成~!删除子弹")
+            // console.log("生命周期完成~!删除子弹")
             this.node.removeFromParent();
         }
     }

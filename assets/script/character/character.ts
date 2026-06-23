@@ -3,6 +3,7 @@ import { _decorator, Component, UITransform, Node, Animation, error, warn, Enum,
 import { eCharPlace, eBattleCamp, eDirction, eCCharacterID } from '../BaseDef';
 import { fadeInOut } from '../common/common';
 import { CBaseRoom } from '../room/BaseRoom';
+import { CCharactersManager } from '../CharacaterMannager';
 const { ccclass, property } = _decorator;
 
 export const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
@@ -14,6 +15,7 @@ const ACT_WALK = 'walk';
 const ACT_WORK = 'work';
 const ACT_LAND = 'land';
 const ACT_HITED = 'hit';
+const ACT_DEAD = "dead";
 
 @ccclass('CCharacter')
 export class CCharacter extends Component {
@@ -68,6 +70,10 @@ export class CCharacter extends Component {
 
     bIsAlive: boolean = true;
 
+    //是否需要删除
+    bDelete: boolean = false;
+    nDeleteTime: number = 0;
+
     set index(i: number) {
         this._index = i;
     }
@@ -90,6 +96,11 @@ export class CCharacter extends Component {
 
     get moveDirection(): number {
         return Number(this._moveDirection);
+    }
+
+    deleteSelf() {
+        this.bDelete = true;
+        this.nDeleteTime = Date.now();
     }
 
     IsToDirRight(): boolean {
@@ -156,8 +167,10 @@ export class CCharacter extends Component {
     //释放自己
     Release() {
         this.index = -1;
-        this.node.destroy();
-        this.node = null;
+        if (this.node) {
+            this.node.removeFromParent();
+            this.node = null;
+        }
     }
 
     setRoom(room: CBaseRoom) {
@@ -452,30 +465,24 @@ export class CCharacter extends Component {
         if (this.bStone) return;
 
 
-
-        if (this.eCharId == eCCharacterID.eciPriestHF) {
-            console.log("####准备播放动画", ani);
-        }
-
-
         if (this._animation && this._animation.getState(ani)) {
-            if (this.eCharId == eCCharacterID.eciPriestHF) {
-                console.warn("###播放动画", ani);
-            }
+
             // console.log("播放动画", ani);            
             this._animation.play(ani);
             this._currentActionKey = ani;
 
-            //除了站立动作外,需要响应播放完毕返回stand
+            //除了站立动作死亡动作外,需要响应播放完毕返回stand
             if (ani != ACT_STAND) {
                 this._animation.once(Animation.EventType.FINISHED, () => {
                     // console.log("动画播放完毕...", ani);
                     if (cb) {
                         if (cb()) {
-                            this.play(ACT_STAND);
+                            // console.log("从", ani, "切换回标准站立...");
+                            this.SwitchToStand();
                         }
                     } else {
-                        this.play(ACT_STAND);
+                        // console.log("从", ani, "切换回标准站立...");
+                        this.SwitchToStand();
                     }
 
                 }, this)
@@ -484,6 +491,7 @@ export class CCharacter extends Component {
     }
 
     SwitchToStand() {
+        this.playStand();
     }
 
     playStand() {
@@ -492,6 +500,10 @@ export class CCharacter extends Component {
 
     playRun() {
         this.play(ACT_RUN);
+    }
+
+    playDead(cb: Function) {
+        this.play(ACT_DEAD, cb);
     }
 
     playLand() {
@@ -624,6 +636,14 @@ export class CCharacter extends Component {
 
     aiBoostTime = 0;
     update(deltaTime: number) {
+        if (this.bDelete) {
+            if (this.nDeleteTime + 3000 > Date.now()) {
+                //三秒后删除自己
+                console.log("##时间已到，删除自己");
+                CCharactersManager.instance.ReleaseChacater(this);
+            }
+            return;
+        }
 
         if (this.bStone) return;
 

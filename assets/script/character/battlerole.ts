@@ -1,4 +1,4 @@
-import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, Sprite, Prefab, instantiate } from 'cc';
+import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, Sprite, Prefab, instantiate, tween } from 'cc';
 import { COverseer } from './overseer';
 import { eBattleCamp, eCCharacterID, eDirction, eMissileId } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
@@ -6,7 +6,7 @@ import { CSkillBase } from '../skills/skillbase';
 import { CSkillOnce } from '../skills/skillonce';
 import { CSkillLanche } from '../skills/skillLanche';
 import { CSkillCure } from '../skills/skillcure';
-import { waitFadeInout } from '../common/common';
+import { fadeInOut, waitFadeInout } from '../common/common';
 import { CSkillRepeatedly } from '../skills/skillRepeatedly';
 import { CSkillRepeatRange } from '../skills/skillRepeatRange';
 import { CCharacter } from './character';
@@ -23,8 +23,9 @@ enum eBattleState {
     ebsNone = 0,
     ebsStand = 1,   //普通站立
     ebsRun = 2,     //奔跑
-    ebsSkill = 3,   //使用技能
-    ebsDead = 4,    //已经死亡
+    ebsSkill = 3,   //使用技能    
+    ebsHited = 4,   //受击硬直中
+    ebsDead = 5,    //已经死亡
 }
 
 enum eFlyState {
@@ -348,10 +349,32 @@ export class CBattleRole extends COverseer {
         nodePopInfo.y += posY;
     }
 
+    onDead() {
+        if (this.eState != eBattleState.ebsDead) {
+            this.eState = eBattleState.ebsDead;
+            this.bIsAlive = false;
+            this.playDead(() => {
+                fadeInOut(this.node, 0.5, false, () => {
+                    this.deleteSelf();
+                })
+            });
+        }
+
+    }
+
     onDamage() {
         let damage: number = 999;
         this._HP -= damage;
-        this.popDamage(damage)
+        this.popDamage(damage);
+        if (this._HP <= 0) {
+            this._HP = 0;
+            this.onDead();
+        }
+        this.refreshHPBar();
+    }
+
+    refreshHPBar() {
+        this.comStatuBar.setHP(this._HP);
     }
 
     popHealPoint(hp: number) {
@@ -396,8 +419,10 @@ export class CBattleRole extends COverseer {
             } else {
                 this.stopSkillEffect();
                 this.bHited = true;
+                this.eState = eBattleState.ebsHited;
                 this.playHited(() => {
                     this.bHited = false;
+                    // this.eState = eBattleState.ebsStand;
                     return true;
                 });
             }
@@ -482,7 +507,9 @@ export class CBattleRole extends COverseer {
     }
 
     SwitchToStand() {
-        if (this.eState != eBattleState.ebsStand) {
+        // console.log("准备切换回标准站立", this.eState);
+        if (this.eState != eBattleState.ebsStand && this.eState != eBattleState.ebsDead) {
+            // console.log("切换回标准站立");
             this.stopSkillEffect();
             this.playStand();
             this.eState = eBattleState.ebsStand;
@@ -548,7 +575,8 @@ export class CBattleRole extends COverseer {
         //选择目标
         this.onSelectTarget();
 
-        if (this.curSkill) {
+        //如果有技能，又没有在释放技能，开始走索敌流程
+        if (this.curSkill && this.eState != eBattleState.ebsSkill) {
 
 
             if (this.curSkill.NeedTick()) {
@@ -567,7 +595,7 @@ export class CBattleRole extends COverseer {
                     }
                 } else {
                     //否则检查有无目标，有目标走索敌流程
-                    if (this.curSkill.hasTarget()) {
+                    if (this.curSkill.hasValidTarget()) {
                         this.curSkill.OnCheckTargetDistance();
 
                         //距离之内，向目标移动
@@ -633,11 +661,14 @@ export class CBattleRole extends COverseer {
     }
 
     AITick() {
-        if (this.bInBattle) {
-            this.BattleAITick();
-        } else {
-            super.AITick();
+        if (this.IsAlive()) {
+            if (this.bInBattle) {
+                this.BattleAITick();
+            } else {
+                super.AITick();
+            }
         }
+
     }
 
 

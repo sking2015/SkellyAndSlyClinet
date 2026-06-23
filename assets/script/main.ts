@@ -7,6 +7,7 @@ import { ResourceShowArea } from './ResourceShowArea';
 import { fadeInOut, initGlobalButtonCooldown } from './common/common';
 import { CMALPanel } from './MALPanel';
 import { CMonsterDetailPanel } from './MonsterDetailPanel';
+import { CCharactersManager } from './CharacaterMannager';
 
 
 
@@ -198,6 +199,8 @@ export class main extends Component {
         this.comMDPanel.Close();
 
         PhysicsSystem2D.instance.enable = true;
+
+        CCharactersManager.instance.Init();
 
         // // 运行游戏后如果能看到绿色框，说明碰撞体大小和位置是对的
         // PhysicsSystem2D.instance.debugDrawFlags = EPhysics2DDrawFlags.Aabb |

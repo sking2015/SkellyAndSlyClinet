@@ -42,12 +42,22 @@ export class CStatuBar extends Component {
         } else if (per <= 0.2) {
             color = { r: 255, g: 0, b: 0 };
         } else {
-            // 计算在 0.2 到 0.8 区间内的相对比例 t
-            let t = (per - 0.2) / (0.8 - 0.2);
+
+            let r: number, g: number;
+
+            if (per >= 0.5) {
+                // 0.5 ~ 0.8: 绿色满，红色变大
+                g = 255;
+                let t = (0.8 - per) / 0.3;
+                r = Math.round(255 * t);
+            } else {
+                // 0.2 ~ 0.5: 红色满，绿色变小
+                r = 255;
+                let t = (per - 0.2) / 0.3;
+                g = Math.round(255 * t);
+            }
 
             // 线性插值计算颜色值并取整
-            let g = Math.round(255 * t);
-            let r = Math.round(255 * (1 - t));
             color = { r: r, g: g, b: 0 };
         }
 
@@ -55,7 +65,7 @@ export class CStatuBar extends Component {
     }
 
     refreshHP() {
-        console.log("看下当下hp情况", this.curHP, this.maxHP);
+        // console.log("看下当下hp情况", this.curHP, this.maxHP);
         if (this.curHP != this.maxHP) {
             this.hpBar.node.active = true;
             const per = this.curHP / this.maxHP;

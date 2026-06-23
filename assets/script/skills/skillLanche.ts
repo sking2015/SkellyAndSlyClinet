@@ -35,22 +35,24 @@ export class CSkillLanche extends CSkillBase {
     }
 
     doCast(cb?: Function) {
-        super.doCast(cb);
-        // console.log("释放技能 CSkillLanuche");
-        this.bReadyLaunche = true;
+        if (this.hasValidTarget()) {
+            super.doCast(cb);
+            // console.log("释放技能 CSkillLanuche");
+            this.bReadyLaunche = true;
 
-        if (this.target.getPosition() < this.caster.getPosition()) {
-            this.caster.moveDirection = eDirction.edLeft;
-        } else {
-            this.caster.moveDirection = eDirction.edRight;
+            if (this.target.getPosition() < this.caster.getPosition()) {
+                this.caster.moveDirection = eDirction.edLeft;
+            } else {
+                this.caster.moveDirection = eDirction.edRight;
+            }
+
+            this.caster.playCastEffect();
+            this.caster.play(this.act, () => {
+                // console.log("技能播放完毕", this.caster);
+                this.LauncheMissile();
+                this.caster.SwitchToStand();
+                cb ? cb() : null;
+            });
         }
-
-        this.caster.playCastEffect();
-        this.caster.play(this.act, () => {
-            // console.log("技能播放完毕", this.caster);
-            this.LauncheMissile();
-            this.caster.SwitchToStand();
-            cb ? cb() : null;
-        });
     }
 }

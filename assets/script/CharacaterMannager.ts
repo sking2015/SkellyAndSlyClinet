@@ -17,6 +17,10 @@ class CCharacterContainer {
         this.mapChars.delete(index);
     }
 
+    clear() {
+        this.mapChars.clear();
+    }
+
     getAllChars(): CCharacter[] {
         return Array.from(this.mapChars.values());
     }
@@ -35,10 +39,43 @@ export class CCharactersManager {
 
     allChars: CCharacterContainer = new CCharacterContainer();
 
+    delChars: CCharacterContainer = new CCharacterContainer();
+
+    poolChars: CCharacterContainer = new CCharacterContainer();
+
     mapCharInRoom: Map<number, CCharacterContainer> = new Map();
 
     //角色自增索引，方便角色定位
     nAutoCharIdx: number = 0;
+
+
+
+
+    AutoRelease() {
+        const all = this.delChars.getAllChars();
+        for (let i = 0; i < all.length; ++i) {
+            this.DeleteCharater(all[i]);
+            this.poolChars.add(all[i]);
+        }
+
+        this.delChars.clear();
+    }
+
+    Tick() {
+        console.log("角色管理器tick", Date());
+        this.AutoRelease();
+    }
+
+
+    Init() {
+        setInterval(() => {
+            this.Tick()
+        }, 3000);
+    }
+
+
+
+
 
 
     CreateChacater(eID: eCCharacterID): CCharacter {
@@ -72,7 +109,7 @@ export class CCharactersManager {
         return char;
     }
 
-    ReleaseChacater(char: CCharacter) {
+    DeleteCharater(char: CCharacter) {
         this.allChars.del(char.index);
         let chars: CCharacterContainer = this.mapCharInRoom.get(char.getRoom().index);
         if (chars) {
@@ -80,6 +117,11 @@ export class CCharactersManager {
         }
 
         char.Release();
+    }
+
+    ReleaseChacater(char: CCharacter) {
+        char.node.active = false;
+        this.delChars.add(char);
     }
 
     //取得距src范围内的合法目标个数
@@ -130,7 +172,7 @@ export class CCharactersManager {
 
         for (let i = 0; i < chars.length; ++i) {
             let char: CCharacter = chars[i];
-            if (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp) {
+            if (char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
 
                 let distance = src.getDistance(char);
 
