@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, Animation } from 'cc';
+import { _decorator, Component, Label, Node, Animation, Color } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('CPopInfo')
@@ -18,6 +18,10 @@ export class CPopInfo extends Component {
 
     setText(text: string) {
         this.text.string = text;
+    }
+
+    setColor(c: Color) {
+        this.text.color = c;
     }
 
     update(deltaTime: number) {

@@ -1,13 +1,13 @@
 [
   {
     "__type__": "cc.AnimationClip",
-    "_name": "attack",
+    "_name": "hit",
     "_objFlags": 0,
     "__editorExtras__": {
       "embeddedPlayerGroups": []
     },
     "_native": "",
-    "sample": 8,
+    "sample": 4,
     "speed": 1,
     "wrapMode": 1,
     "enableTrsBlending": false,
@@ -62,25 +62,15 @@
     "__type__": "cc.ObjectCurve",
     "_times": [
       0,
-      0.125,
-      0.25,
-      0.375
+      0.25
     ],
     "_values": [
       {
-        "__uuid__": "a1fe5b95-0811-4b08-93e5-117e97534fc3@f9941",
+        "__uuid__": "a9ab394c-c087-475d-8c79-d469bea65cf3@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "182b232a-dae7-417b-ae8b-d7b1f8777b80@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "71f2f963-b425-4435-98df-bb735b3e0e87@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "18db73b9-29a4-4a2e-ba10-1c72516ade3a@f9941",
+        "__uuid__": "a9ab394c-c087-475d-8c79-d469bea65cf3@f9941",
         "__expectedType__": "cc.SpriteFrame"
       }
     ]

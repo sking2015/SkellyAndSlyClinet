@@ -90,9 +90,14 @@ export class CBaseRoom extends Component {
 
     testBattle() {
         console.log("添加几个战斗角色看看");
-        this.addRole(eCCharacterID.eciDragon, 250);
-        this.addRole(eCCharacterID.eciMageHF, -250);
+        //this.addRole(eCCharacterID.eciDragon, 250);
+        this.addRole(eCCharacterID.eciEyetyarnt, 250);
+        this.addRole(eCCharacterID.eciSkullSoldier, 250);
+        this.addRole(eCCharacterID.eciSkullArcher, 250);
+
+
         this.addRole(eCCharacterID.eciSoldierHM, -250);
+        this.addRole(eCCharacterID.eciMageHF, -250);
         this.addRole(eCCharacterID.eciArcherEM, -200);
         this.addRole(eCCharacterID.eciPriestHF, -150);
     }

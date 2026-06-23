@@ -1,7 +1,7 @@
 [
   {
     "__type__": "cc.AnimationClip",
-    "_name": "attack",
+    "_name": "dead",
     "_objFlags": 0,
     "__editorExtras__": {
       "embeddedPlayerGroups": []
@@ -68,19 +68,19 @@
     ],
     "_values": [
       {
-        "__uuid__": "a1fe5b95-0811-4b08-93e5-117e97534fc3@f9941",
+        "__uuid__": "3b22eabf-4d6f-41fc-8b89-c00322224e2b@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "182b232a-dae7-417b-ae8b-d7b1f8777b80@f9941",
+        "__uuid__": "5252822f-52f4-45e0-99c3-806fb7477d79@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "71f2f963-b425-4435-98df-bb735b3e0e87@f9941",
+        "__uuid__": "eefd050a-01d1-45f0-83df-38e33c2dc822@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "18db73b9-29a4-4a2e-ba10-1c72516ade3a@f9941",
+        "__uuid__": "19537154-6522-4a8b-a161-7a0a1295f57a@f9941",
         "__expectedType__": "cc.SpriteFrame"
       }
     ]

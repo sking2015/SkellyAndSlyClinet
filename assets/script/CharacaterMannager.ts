@@ -144,7 +144,7 @@ export class CCharactersManager {
     }
 
     FindLowestHPChar(src: CCharacter, eCamp: eBattleCamp): CCharacter {
-        console.log("寻找血量百分比最低单位...");
+        // console.log("寻找血量百分比最低单位...");
         let container: CCharacterContainer = this.mapCharInRoom.get(src.getRoom().index);
         let chars: CCharacter[] = container.getAllChars();
         //找出最短距离

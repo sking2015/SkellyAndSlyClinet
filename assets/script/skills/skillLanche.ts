@@ -1,6 +1,6 @@
 import { CCharacter } from "../character/character";
 import { CSkillBase } from "./skillbase";
-import { eSkillTargetType, eMissileId } from "../BaseDef";
+import { eSkillTargetType, eMissileId, eDirction } from "../BaseDef";
 
 //发射类技能，技能会发射飞行子弹脱手打击敌对目标
 export class CSkillLanche extends CSkillBase {
@@ -41,6 +41,12 @@ export class CSkillLanche extends CSkillBase {
         super.doCast(cb);
         // console.log("释放技能 CSkillLanuche");
         this.bReadyLaunche = true;
+
+        if (this.target.getPosition() < this.caster.getPosition()) {
+            this.caster.moveDirection = eDirction.edLeft;
+        } else {
+            this.caster.moveDirection = eDirction.edRight;
+        }
 
         this.caster.playCastEffect();
         this.caster.play(this.act, () => {

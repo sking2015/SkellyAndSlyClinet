@@ -452,7 +452,7 @@ export class CCharacter extends Component {
         // console.log("准备播放动画", ani);
 
         if (this._animation && this._animation.getState(ani)) {
-            // console.log("播放动画", ani);
+            // console.log("播放动画", ani);            
             this._animation.play(ani);
             this._currentActionKey = ani;
 
@@ -533,6 +533,10 @@ export class CCharacter extends Component {
 
     onHitedReady(caster: CCharacter) {
         console.log("受击准备")
+    }
+
+    onHeal() {
+
     }
 
     onHited() {

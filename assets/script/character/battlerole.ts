@@ -1,4 +1,4 @@
-import { _decorator, Vec3, Enum, Component, Animation, Node, bits, UITransform, Sprite, Prefab, instantiate } from 'cc';
+import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, Sprite, Prefab, instantiate } from 'cc';
 import { COverseer } from './overseer';
 import { eBattleCamp, eCCharacterID, eDirction, eMissileId } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
@@ -166,6 +166,35 @@ export class CBattleRole extends COverseer {
             skill.LoadData();
             this.skills.push(skill);
         }
+
+        if (this.eCharId == eCCharacterID.eciEyetyarnt) {
+            // this.bUninterruptible = true;
+            //const skill = new CSkillRepeatRange(this);
+            const skill = new CSkillOnce(this);
+
+            skill.LoadData();
+            this.skills.push(skill);
+        }
+
+        if (this.eCharId == eCCharacterID.eciSkullSoldier) {
+            // this.bUninterruptible = true;
+            //const skill = new CSkillRepeatRange(this);
+            const skill = new CSkillOnce(this);
+
+            skill.LoadData();
+            this.skills.push(skill);
+        }
+
+        if (this.eCharId == eCCharacterID.eciSkullArcher) {
+            // this.bUninterruptible = true;
+            //const skill = new CSkillRepeatRange(this);
+            const skill = new CSkillLanche(this);
+
+            skill.LoadData();
+            skill.eMissile = eMissileId.emiArrowSkull;
+            skill.nCD = 2000;
+            this.skills.push(skill);
+        }
     }
 
     playFlash(cb: Function) {
@@ -267,6 +296,29 @@ export class CBattleRole extends COverseer {
         let damage: number = 999;
         this._HP -= damage;
         this.popDamage(damage)
+    }
+
+    popHealPoint(hp: number) {
+        const nodePopInfo = instantiate(CResManager.instance.popInfo);
+        const comPopInfo = nodePopInfo.getComponent(CPopInfo);
+        comPopInfo.setText("+" + hp.toString());
+        comPopInfo.setColor(new Color(0, 255, 0, 255));
+
+        nodePopInfo.position = this.node.position;
+        nodePopInfo.parent = this.node.parent;
+
+        let posY = this.node.getComponent(UITransform).height * 0.5;
+
+        //初始高度不超过120
+        posY = posY > 120 ? 120 : posY;
+
+        nodePopInfo.y += posY;
+    }
+
+    onHeal() {
+        let cure = 999;
+        this._HP += cure;
+        this.popHealPoint(cure);
     }
 
     onHitedReady(caster: CCharacter) {

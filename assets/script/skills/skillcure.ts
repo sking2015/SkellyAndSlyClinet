@@ -30,6 +30,7 @@ export class CSkillCure extends CSkillBase {
         // console.log("释放技能 CSkillOne");
         this.caster.onBeforeCastSkill();
         this.caster.onCastSkillToTarget(this.target);
+        this.target.onHeal();
         this.caster.play(this.act, () => {
             // console.log("技能播放完毕", this.caster);
             this.caster.onAfterCastSkill();
