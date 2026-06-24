@@ -1,4 +1,4 @@
-import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, Sprite, Prefab, instantiate, tween } from 'cc';
+import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, director, Prefab, instantiate, tween, Tween, Canvas } from 'cc';
 import { COverseer } from './overseer';
 import { eBattleCamp, eCCharacterID, eDirction, eMissileId } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
@@ -53,7 +53,7 @@ export class CBattleRole extends COverseer {
     @property({ type: Animation, tooltip: "大招闪光" })
     aniFlash: Animation = null
 
-    //是否在战斗状态，对于魔王军来说，有可能是在房间巡逻或监工
+    //是否在战斗状态，对于魔王军来说，有可能是在房间巡逻或监工或者只是展示
     bInBattle: boolean = false;
 
     //当前目标
@@ -97,6 +97,8 @@ export class CBattleRole extends COverseer {
 
     comStatuBar: CStatuBar = null;
 
+    nodeImpact: Node = null;
+
     start() {
 
 
@@ -105,6 +107,8 @@ export class CBattleRole extends COverseer {
         this.nodeLaunchePos = this.node.getChildByName('lanchepos');
 
         this.nodeCastEffect = this.node.getChildByName("cast_effect");
+
+        this.nodeImpact = this.node.getChildByName("impact");
 
         if (this.nodeSkillCast) {
             this.nodeSkillCast.active = false;
@@ -180,78 +184,98 @@ export class CBattleRole extends COverseer {
             skill.LoadData();
             this.skills.push(skill);
 
-            this.setMaxHP(20000);
-            this.setHP(20000);
+            this.setMaxHP(10000);
+            this.setHP(10000);
             this.setMaxMP(1000);
             this.setMP(1000);
         }
 
-        if (this.eCharId == eCCharacterID.eciMageHF) {
-            const skill = new CSkillLanche(this);
-            skill.LoadData();
-            skill.eMissile = eMissileId.emiFireball;
-            this.skills.push(skill);
+
+        switch (this.eCharId) {
+            case eCCharacterID.eciMageHF:
+                {
+                    const skill = new CSkillLanche(this);
+                    skill.LoadData();
+                    skill.eMissile = eMissileId.emiFireball;
+                    this.skills.push(skill);
+                }
+
+                break;
+            case eCCharacterID.eciArcherEM:
+                {
+                    const skill = new CSkillLanche(this);
+                    skill.LoadData();
+                    skill.eMissile = eMissileId.emiArrow;
+                    skill.nCD = 2000;
+                    this.skills.push(skill);
+                }
+                break;
+            case eCCharacterID.eciPriestHF:
+                {
+                    const skill = new CSkillCure(this);
+                    skill.LoadData();
+                    skill.nCD = 5000;
+                    this.skills.push(skill);
+                }
+                break;
+            case eCCharacterID.eciDragon:
+                {
+                    // this.bUninterruptible = true;
+                    //const skill = new CSkillRepeatRange(this);
+                    const skill = new CSkillOnce(this);
+
+                    skill.LoadData();
+                    this.skills.push(skill);
+                }
+                break;
+            case eCCharacterID.eciEyetyarnt:
+                {
+                    const skill = new CSkillOnce(this);
+                    this.setMaxHP(10000);
+                    this.setHP(10000);
+
+                    skill.LoadData();
+                    this.skills.push(skill);
+                }
+                break;
+            case eCCharacterID.eciSkullSoldier:
+                {
+                    this.setMaxHP(10000);
+                    this.setHP(10000);
+
+                    const skill = new CSkillOnce(this);
+
+                    skill.LoadData();
+                    this.skills.push(skill);
+                }
+                break;
+            case eCCharacterID.eciSkullArcher:
+                {
+                    this.setMaxHP(5000);
+                    this.setHP(5000);
+                    // this.bUninterruptible = true;
+                    //const skill = new CSkillRepeatRange(this);
+                    const skill = new CSkillLanche(this);
+
+                    skill.LoadData();
+                    skill.eMissile = eMissileId.emiArrowSkull;
+                    skill.nCD = 2000;
+                    this.skills.push(skill);
+                }
+                break;
+            case eCCharacterID.eciTauren:
+                {
+                    this.setMaxHP(20000);
+                    this.setHP(20000);
+
+                    const skill = new CSkillOnce(this);
+
+                    skill.LoadData();
+                    this.skills.push(skill);
+                }
+                break;
         }
 
-        if (this.eCharId == eCCharacterID.eciArcherEM) {
-            const skill = new CSkillLanche(this);
-            skill.LoadData();
-            skill.eMissile = eMissileId.emiArrow;
-            skill.nCD = 2000;
-            this.skills.push(skill);
-        }
-
-        if (this.eCharId == eCCharacterID.eciPriestHF) {
-            const skill = new CSkillCure(this);
-            skill.LoadData();
-            skill.nCD = 5000;
-            this.skills.push(skill);
-        }
-
-        if (this.eCharId == eCCharacterID.eciDragon) {
-            // this.bUninterruptible = true;
-            //const skill = new CSkillRepeatRange(this);
-            const skill = new CSkillOnce(this);
-
-            skill.LoadData();
-            this.skills.push(skill);
-        }
-
-        if (this.eCharId == eCCharacterID.eciEyetyarnt) {
-            // this.bUninterruptible = true;
-            //const skill = new CSkillRepeatRange(this);
-            const skill = new CSkillOnce(this);
-            this.setMaxHP(50000);
-            this.setHP(50000);
-
-            skill.LoadData();
-            this.skills.push(skill);
-        }
-
-        if (this.eCharId == eCCharacterID.eciSkullSoldier) {
-            // this.bUninterruptible = true;
-            //const skill = new CSkillRepeatRange(this);
-            this.setMaxHP(10000);
-            this.setHP(10000);
-
-            const skill = new CSkillOnce(this);
-
-            skill.LoadData();
-            this.skills.push(skill);
-        }
-
-        if (this.eCharId == eCCharacterID.eciSkullArcher) {
-            this.setMaxHP(5000);
-            this.setHP(5000);
-            // this.bUninterruptible = true;
-            //const skill = new CSkillRepeatRange(this);
-            const skill = new CSkillLanche(this);
-
-            skill.LoadData();
-            skill.eMissile = eMissileId.emiArrowSkull;
-            skill.nCD = 2000;
-            this.skills.push(skill);
-        }
     }
 
     playFlash(cb: Function) {
@@ -273,6 +297,10 @@ export class CBattleRole extends COverseer {
         }
     }
 
+    getInBattle(): boolean {
+        return this.bInBattle;
+    }
+
     setInBattle(bIn: boolean) {
         console.log("进入战斗状态", bIn);
         this.bInBattle = bIn;
@@ -292,7 +320,7 @@ export class CBattleRole extends COverseer {
     }
 
     onMissileFinished() {
-        console.log("发射物完全命中目标，生命周期结束");
+        // console.log("发射物完全命中目标，生命周期结束");
     }
 
     LauncheMissile(id: eMissileId) {
@@ -349,15 +377,80 @@ export class CBattleRole extends COverseer {
         nodePopInfo.y += posY;
     }
 
+
+    //播放死亡击飞出屏幕动画
+    public playDeathFlyOut() {
+        // 1. 清理该节点上可能存在的其他缓动
+        Tween.stopAllByTarget(this.node);
+
+        const canvas = director.getScene().getComponentInChildren(Canvas);
+        this.node.setParent(canvas.node, true);
+
+        // 2. 确定飞出方向
+        // 面朝右则向左后方飞（X减少），面朝左则向右后方飞（X增加）
+        const flyDirX = this.IsToDirRight() ? -1 : 1;
+
+        // 3. 设置飞出距离和高度（直接给大数值，确保飞出屏幕）
+        const startPos = this.node.position.clone();
+        const flyDistanceX = 1500 * flyDirX; // 水平飞出 1500 像素
+        const flyHeightY = 600;              // 抛物线最高点相对起点增高 600 像素
+        const targetPosX = startPos.x + flyDistanceX;
+
+        // 4. 动画时长
+        const duration = 5; // 0.8秒飞出屏幕，时间越短速度越快
+
+        // 5. 位移动画：X轴和Y轴拆开处理，完美控制45度弹飞与弧度
+        tween(this.node)
+            .to(duration, { position: new Vec3(targetPosX, startPos.y, 0) }, {
+                easing: 'quadOut', // 瞬间弹出，随后在水平方向略微减速
+                onUpdate: (target: any, ratio: number) => {
+                    // 使用正弦函数模拟 Y 轴的抛物线 (0 -> 1 -> 0)
+                    // 如果希望飞出屏幕上方不掉下来，可以调整曲线或直接加上线性上升
+                    let currentY = startPos.y + Math.sin(ratio * Math.PI) * flyHeightY;
+
+                    // 保持 X 轴由 Tween 计算的结果，仅动态修改 Y 轴
+                    let currentPos = this.node.position.clone();
+                    currentPos.y = currentY;
+                    this.node.position = currentPos;
+                }
+            }).call(() => {
+                //表现完毕删除自己
+                this.deleteSelf();
+            })
+            .start();
+
+        // 6. 幽默感自转动画：在飞出过程中疯狂 360 度旋转
+        // 根据飞出方向决定顺时针还是逆时针旋转
+        const rotateDirection = this.IsToDirRight() ? 1 : -1;
+        const rotateSpeed = 0.1;         // 转一圈（360度）的时间，越小转得越疯狂
+
+        tween(this.node)
+            .by(rotateSpeed, { angle: 360 * rotateDirection }) // 根据方向决定顺/逆时针
+            .repeatForever() // 没被销毁前一直转
+            .start();
+    }
+
+
     onDead() {
         if (this.eState != eBattleState.ebsDead) {
             this.eState = eBattleState.ebsDead;
             this.bIsAlive = false;
-            this.playDead(() => {
-                fadeInOut(this.node, 0.5, false, () => {
-                    this.deleteSelf();
+
+
+            if (this.nodeImpact) {
+                const ani = this.nodeImpact.getComponent(Animation);
+                ani.play(ani.clips[0].name);
+                ani.once(Animation.EventType.FINISHED, () => {
+                    this.playDeathFlyOut();
                 })
-            });
+
+            } else {
+                this.playDead(() => {
+                    fadeInOut(this.node, 0.5, false, () => {
+                        this.deleteSelf();
+                    })
+                });
+            }
         }
 
     }
@@ -398,6 +491,7 @@ export class CBattleRole extends COverseer {
         let cure = 999;
         this._HP += cure;
         this.popHealPoint(cure);
+        this.refreshHPBar();
     }
 
     onHitedReady(caster: CCharacter) {

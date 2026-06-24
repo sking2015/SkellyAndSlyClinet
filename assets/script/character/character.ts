@@ -139,6 +139,11 @@ export class CCharacter extends Component {
 
     }
 
+    getInBattle(): boolean {
+        return false;
+    }
+
+
     getBattleCamp(): eBattleCamp {
         return this.nCamp;
     }
@@ -168,6 +173,7 @@ export class CCharacter extends Component {
     Release() {
         this.index = -1;
         if (this.node) {
+            console.log("删除自身");
             this.node.removeFromParent();
             this.node = null;
         }

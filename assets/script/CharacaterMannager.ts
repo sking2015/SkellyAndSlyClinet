@@ -55,14 +55,14 @@ export class CCharactersManager {
         const all = this.delChars.getAllChars();
         for (let i = 0; i < all.length; ++i) {
             this.DeleteCharater(all[i]);
-            this.poolChars.add(all[i]);
+            // this.poolChars.add(all[i]);
         }
 
         this.delChars.clear();
     }
 
     Tick() {
-        console.log("角色管理器tick", Date());
+        // console.log("角色管理器tick", Date());
         this.AutoRelease();
     }
 
@@ -187,7 +187,7 @@ export class CCharactersManager {
     }
 
     FindLowestHPChar(src: CCharacter, eCamp: eBattleCamp): CCharacter {
-        console.log("寻找血量百分比最低单位...");
+
         let container: CCharacterContainer = this.mapCharInRoom.get(src.getRoom().index);
         let chars: CCharacter[] = container.getAllChars();
         //找出最短距离
@@ -208,6 +208,7 @@ export class CCharactersManager {
             }
         }
 
+        console.log("寻找血量百分比最低单位为...", target.eCharId);
         return target;
     }
 

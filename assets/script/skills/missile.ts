@@ -116,7 +116,7 @@ export class CMissile extends Component {
         const role: CBattleRole = otherNode.getComponent(CBattleRole);
 
         // 判断字弹是还在移动，是否不同阵营，当然，以后如果是子弹加血，就反过来
-        if (this._isMoving && role.getBattleCamp() != this.caster.getBattleCamp() && role.IsAlive()) {
+        if (this._isMoving && role.getBattleCamp() != this.caster.getBattleCamp() && role.IsAlive() && role.getInBattle()) {
             if (this.nodeExplode) {
                 this.doExplode();
             } else {

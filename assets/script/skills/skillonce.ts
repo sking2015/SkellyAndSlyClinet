@@ -23,7 +23,12 @@ export class CSkillOnce extends CSkillBase {
         this.target.onHitedReady(this.caster);
         this.caster.play(this.act, () => {
             // console.log("技能播放完毕", this.caster);
-            this.target.onHited();
+
+            //有可能已经在其它地方释放了，先挡一下
+            if (this.target) {
+                this.target.onHited();
+            }
+
             this.caster.SwitchToStand();
             cb ? cb() : null;
         });

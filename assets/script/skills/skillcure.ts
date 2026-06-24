@@ -18,7 +18,7 @@ export class CSkillCure extends CSkillBase {
 
     OnSelectTarget() {
 
-        if (this.hasTarget()) return;
+        if (this.hasValidTarget()) return;
 
         const tar = this.SearchLowestHPTarget();
 
