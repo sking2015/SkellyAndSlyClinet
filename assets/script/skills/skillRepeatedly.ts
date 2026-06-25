@@ -45,11 +45,11 @@ export class CSkillRepeatedly extends CSkillBase {
         this.nLeftStrikeNum = this.nStrikeNum;
         this.cbSkillEnd = cb;
 
-        // console.log("释放技能 CSkillRepeatedly");
+        console.log("释放技能 CSkillRepeatedly", this.nLeftStrikeNum);
+        this.caster.playSkillEffect();
         this.caster.play(this.actStart, () => {
-            // console.log("技能播放完毕", this.caster);
+            console.log("技能播放完毕", this.caster);
             this.caster.play(this.actLoop);
-            this.caster.playSkillEffect();
             this.bInStrike = true;
         });
     }
@@ -74,6 +74,7 @@ export class CSkillRepeatedly extends CSkillBase {
     //每4个tick才发挥一次作用
     Tick() {
         if (this.nLeftStrikeNum > 0) {
+            console.log("技能持续打击次数", this.nLeftStrikeNum);
 
             if (this.nInterval <= 0) {
                 this.StrikeOnce()

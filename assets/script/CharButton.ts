@@ -67,7 +67,7 @@ export class CCharButton extends Component {
 
     private refreshShow() {
         this.lblName.string = this.data.Name;
-        this.sprHead.spriteFrame = CResManager.instance.getCharHead(this.eCharID);
+        this.sprHead.spriteFrame = CResManager.instance.getImg(this.data.Head);
 
         const nShowLevel = this.level > 0 ? this.level : 1;
         this.lblLevel.string = "LV " + nShowLevel;

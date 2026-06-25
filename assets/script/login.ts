@@ -31,6 +31,8 @@ export class login extends cc.Component {
             this.nodeLoadingText.active = false;
         }
 
+        //马上开始预加载
+        this.preloadMain();
         // // 绑定按钮点击事件，这个在外面绑定了，这里就不绑定了
         // if (this.nodeStart) {
         //     const btn = this.nodeStart.getComponent(Button);
@@ -149,29 +151,82 @@ export class login extends cc.Component {
         });
     }
 
+    //为了完美显示当前加载进度，保存当前已经加载的资源
+    nProgress: number = 0;
+    bPreloaded: boolean = false;
+
+    preloadMain() {
+        const am = cc.assetManager;
+        cc.director.preloadScene('Main',     // 1. 进度回调 (当前完成数, 总数, 当前条目)
+            (completedCount: number, totalCount: number, item: cc.AssetManager.RequestItem) => {
+                const progress = completedCount / totalCount;
+                this.nProgress = progress > this.nProgress ? progress : this.nProgress;
+                console.log("实际加载进度", this.nProgress.toFixed(2));
+                console.log("加载资原", completedCount, totalCount, item.url, item.uuid);
+
+
+                // 2. 尝试从全局资源缓存中抓取已经解析好的资产名字
+                let cachedAsset: cc.Asset = cc.assetManager.assets.get(item.uuid);
+                let assetRealName = cachedAsset ? cachedAsset.name : "未解析完成";
+                let assetType = cachedAsset ? cachedAsset.constructor.name : "未知类型";
+
+                console.log(`[加载中 ${completedCount}/${totalCount}]`);
+                console.log(`-> UUID: ${item.uuid}`);
+                console.log(`-> 临时URL: ${item.url}`);
+                console.log(`-> 资产:`, cachedAsset);
+                console.log(`-> 内存资产名: %c${assetRealName}%c | 类型: %c${assetType}`, "color:green;font-weight:bold;", "", "color:blue;");
+
+                // 3. 如果能拿到具体对象，还能直接看它的关联关系（例如 SpriteFrame 会挂载 texture）
+                if (cachedAsset && cachedAsset.name) {
+                    console.log(`   -> 属于纹理: ${cachedAsset.name}`);
+                }
+            },
+            // 2. 完成回调
+            (error: Error | null) => {
+                if (error) {
+                    console.error("场景预加载失败:", error);
+                    return;
+                }
+                this.bPreloaded = true;
+                console.log("场景预加载完成！现在可以安全切换场景了。");
+            });
+    }
+
+
+    bStartLoading: boolean = false;
+    nTimingProgress: number = 0;
+
     loadMainScene() {
-        // 模拟加载进度：2秒内平滑走完进度条
-        const totalTime = 2.0; // 2秒
-        let elapsedTime = 0;
+        this.bStartLoading = true;
+        this.nTimingProgress = 0;
+        // 加载进度条修正：2秒内平滑走完进度条
+        //如果预加载已经加载到这里了，用实际进度，如果预加载还没加载完，显示实际进度条
+        //也就是说，进度条至少会显示两秒
 
-        // 使用 update 回调来模拟进度条动画
-        const progressCallback = (dt: number) => {
-            elapsedTime += dt;
-            const progress = Math.min(elapsedTime / totalTime, 1.0);
+        // const totalTime = 2.0; // 2秒
+        // let elapsedTime = 0;
 
-            if (this.progressBar) {
-                this.progressBar.progress = progress;
-            }
+        // // 使用 update 回调来模拟进度条动画
+        // const progressCallback = (dt: number) => {
+        //     elapsedTime += dt;
+        //     let progress = Math.min(elapsedTime / totalTime, 1.0);
+        //     console.log("时间进度", progress.toFixed(2));
+        //     progress = progress < this.nProgress ? progress : this.nProgress;
+        //     console.log("最终显示进度", progress.toFixed(2));
 
-            if (elapsedTime >= totalTime) {
-                // 移除 update 回调
-                this.unschedule(progressCallback);
-                // 加载 Main 场景
-                this.doLoadMainScene();
-            }
-        };
+        //     if (this.progressBar) {
+        //         this.progressBar.progress = progress;
+        //     }
 
-        this.schedule(progressCallback);
+        //     if (elapsedTime >= totalTime) {
+        //         // 移除 update 回调
+        //         this.unschedule(progressCallback);
+        //         // 加载 Main 场景
+        //         this.doLoadMainScene();
+        //     }
+        // };
+
+        // this.schedule(progressCallback);
     }
 
     loadRandomBgImage() {
@@ -213,7 +268,17 @@ export class login extends cc.Component {
     }
 
     update(deltaTime: number) {
+        if (this.bStartLoading) {
+            this.nTimingProgress += deltaTime;
+            let progress = this.nTimingProgress < this.nProgress ? this.nTimingProgress : this.nProgress;
+            if (this.progressBar) {
+                this.progressBar.progress = progress;
+            }
 
+            if (progress >= 1 && this.bPreloaded) {
+                this.doLoadMainScene();
+            }
+        }
     }
 }
 

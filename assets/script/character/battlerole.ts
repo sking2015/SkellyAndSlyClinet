@@ -1,4 +1,4 @@
-import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, director, Prefab, instantiate, tween, Tween, Canvas } from 'cc';
+import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, director, Prefab, instantiate, tween, Tween, Canvas, ParticleSystem2D } from 'cc';
 import { COverseer } from './overseer';
 import { eBattleCamp, eCCharacterID, eDirction, eMissileId } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
@@ -221,8 +221,10 @@ export class CBattleRole extends COverseer {
             case eCCharacterID.eciDragon:
                 {
                     // this.bUninterruptible = true;
-                    //const skill = new CSkillRepeatRange(this);
-                    const skill = new CSkillOnce(this);
+                    const skill = new CSkillRepeatRange(this);
+                    // const skill = new CSkillOnce(this);
+                    this.setMaxHP(50000);
+                    this.setHP(50000);
 
                     skill.LoadData();
                     this.skills.push(skill);
@@ -586,17 +588,25 @@ export class CBattleRole extends COverseer {
 
 
     playSkillEffect() {
-        if (this.nodeSkillCast && this.aniSkillCast) {
+        if (this.nodeSkillCast) {
             this.node.setSiblingIndex(-1);
             this.nodeSkillCast.active = true;
-            this.aniSkillCast.play(this.aniSkillCast.clips[0].name);
+            // this.nodeSkillCast.children[0].getComponent(ParticleSystem2D).resetSystem();
+            if (this.aniSkillCast) {
+                this.aniSkillCast.play(this.aniSkillCast.clips[0].name);
+            }
+
         }
     }
 
     stopSkillEffect() {
-        if (this.nodeSkillCast && this.aniSkillCast) {
-            this.aniSkillCast.stop();
+        if (this.nodeSkillCast) {
             this.nodeSkillCast.active = false;
+
+            if (this.aniSkillCast) {
+                this.aniSkillCast.stop();
+            }
+
         }
     }
 
@@ -662,21 +672,25 @@ export class CBattleRole extends COverseer {
     }
 
     //战斗AI
-    async BattleAITick() {
+    BattleAITick() {
         //选择技能
         this.onSelectSkill();
 
         //选择目标
         this.onSelectTarget();
 
+        if (this.eCharId == eCCharacterID.eciDragon) {
+            console.log("看下龙的AI");
+        }
+
         //如果有技能，又没有在释放技能，开始走索敌流程
-        if (this.curSkill && this.eState != eBattleState.ebsSkill) {
+        if (this.curSkill) {
 
 
             if (this.curSkill.NeedTick()) {
                 //如果技能正在生效，执行技能tick
                 this.curSkill.Tick()
-            } else {
+            } else if (this.eState != eBattleState.ebsSkill) {
                 //范围技能和单体技能走不同流程
                 if (this.curSkill.IsRangeAffect()) {
                     //范围技能至少要有两个目标才释放

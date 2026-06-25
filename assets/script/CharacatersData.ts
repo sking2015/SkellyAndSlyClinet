@@ -1,9 +1,12 @@
+import { Prefab } from 'cc';
 import { eCCharacterID, eProperty } from './BaseDef';
 import { IMonsters, MonstersData } from './config/Monsters';
-
+import { IHeros, HerosData } from './config/Heros';
 export class CCharData {
     ID: number = 0;
     Name: string = "";
+    Head: string = "";
+    Prefab: string = "";
     Level: number = 0;
     Race: number = 0;
     HP: number = 0;
@@ -71,6 +74,8 @@ export class CCharData {
 
         this.Name = data.Name;
         this.Race = data.Race;
+        this.Head = data.Head;
+        this.Prefab = data.Prefab;
 
         //基础数据全部用基础数据加上等级乘以每级增量
         this.HP = data.HP + data.HPup * lv;
@@ -137,5 +142,24 @@ export class CCharactersData {
 
         let dataChar: CCharData = new CCharData(eID, nLevel);
         return dataChar;
+    }
+
+    //根据id取得对应prefabpath
+    GetCharPrefabPath(nID: number, bHero: boolean = false): string {
+
+        if (bHero) {
+            const cfg: IHeros = HerosData[nID];
+            if (cfg) {
+                return cfg.Prefab;
+            }
+        } else {
+            const cfg: IMonsters = MonstersData[nID];
+            if (cfg) {
+                return cfg.Prefab;
+            }
+        }
+
+
+        return "";
     }
 }

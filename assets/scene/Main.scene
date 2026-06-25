@@ -7697,6 +7697,28 @@
         "__id__": 370
       }
     ],
+    "sfAllImg": [
+      {
+        "__uuid__": "f5f9e609-212f-40e0-ac87-40a3ec488d29@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "90775cfd-fc0c-4f47-b16f-d18c0c543f3f@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "3d1a436b-dabe-481f-94a2-4a6f790aaebb@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "7e27d495-494c-4670-8486-05c523d5621f@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "c82279e8-895d-4591-af1c-633bfdf2df15@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      }
+    ],
     "popInfo": {
       "__uuid__": "71e73561-40a0-4014-9dcc-84eec0551fb0",
       "__expectedType__": "cc.Prefab"

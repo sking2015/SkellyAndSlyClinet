@@ -1,4 +1,4 @@
-import { _decorator, Component, instantiate, Label, Node, Sprite } from 'cc';
+import { _decorator, Component, instantiate, Label, Node, Prefab, Sprite } from 'cc';
 import { CUIProperty } from './UIProperty';
 import { CUISkillInfo } from './UISkillInfo';
 import { CUIElement } from './UIElement';
@@ -7,7 +7,7 @@ import { CResManager } from './ResManager';
 import { CCharacter } from './character/character';
 import { CGlobalData } from './GlobalData';
 import { formatCompactNumber } from './common/common';
-import { CCharData } from './CharacatersData';
+import { CCharData, CCharactersData } from './CharacatersData';
 
 
 const { ccclass, property } = _decorator;
@@ -113,17 +113,20 @@ export class CMonsterDetailPanel extends Component {
     refreshRole() {
         this.nodeRoleBase.removeAllChildren();
 
-        const prefabRole = CResManager.instance.getCharPrefab(this.eCharId);
-        const nodeRole = instantiate(prefabRole);
-        nodeRole.parent = this.nodeRoleBase;
-        this.charRole = nodeRole.getComponent(CCharacter);
 
-        this.charRole.SetPlace(eCharPlace.ecpShow);
-        if (this.nLevel == 0) {
-            this.charRole.ToStone();
-        } else {
-            this.charRole.ResumeFromStone();
-        }
+        CResManager.instance.dynLoadMonster(CCharactersData.instance.GetCharPrefabPath(this.eCharId), (prefab: Prefab) => {
+            const nodeRole = instantiate(prefab);
+            nodeRole.parent = this.nodeRoleBase;
+            this.charRole = nodeRole.getComponent(CCharacter);
+
+            this.charRole.SetPlace(eCharPlace.ecpShow);
+            if (this.nLevel == 0) {
+                this.charRole.ToStone();
+            } else {
+                this.charRole.ResumeFromStone();
+            }
+        })
+
     }
 
     refresShow() {

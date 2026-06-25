@@ -1,13 +1,23 @@
 import { _decorator, Component, Node, Prefab, SpriteFrame, assetManager, AssetManager, isValid } from 'cc';
 import { CCharacterCfg, CRoomType2Data, CProperty2Spriteframe, CRace2Spriteframe, CMissileId2Prefab } from './KeyValuePair';
 import { eCCharacterID, eProperty, eRoomType, eRace, eMissileId } from './BaseDef';
+import { CCharactersData } from './CharacatersData';
+import { promises } from 'dns';
+
 const { ccclass, property } = _decorator;
+
+
+//魔物分包，由于魔物是己方单位，可能有很多基本常驻，不能一起释放。
+const MONSTER_BUNDLE = "monsters";
+//勇者系分包，一般战斗发生时才会出现，当战斗结束后可以将此分包内的内容一起释放
+const HEROS_BUNDLE = "heros";
+
 
 @ccclass('CResManager')
 export class CResManager extends Component {
 
-    @property({ type: CCharacterCfg, tooltip: "所有角色定义" })
-    characterCfg: CCharacterCfg[] = [];
+    // @property({ type: CCharacterCfg, tooltip: "所有角色定义" })
+    // characterCfg: CCharacterCfg[] = [];
 
 
     @property({ type: CRoomType2Data, tooltip: "所有房间数据定义" })
@@ -21,6 +31,10 @@ export class CResManager extends Component {
 
     @property({ type: CMissileId2Prefab, tooltip: "所有飞行物定义" })
     missilePfb: CMissileId2Prefab[] = [];
+
+
+    @property({ type: SpriteFrame, tooltip: "一些较小的图片，常用的图片在此定义并预加载" })
+    sfAllImg: SpriteFrame[] = [];
 
     @property({ type: Prefab, tooltip: "弹出信息，主要是伤害" })
     popInfo: Prefab = null;
@@ -37,6 +51,8 @@ export class CResManager extends Component {
 
     private mapMissilePrefab: Map<eMissileId, Prefab> = new Map();
 
+    private mapAllImg: Map<string, SpriteFrame> = new Map();
+
     // 静态实例变量
     private static _instance: CResManager = null!;
 
@@ -46,6 +62,95 @@ export class CResManager extends Component {
             console.error("CResManager 尚未初始化！请确保它被挂载到了场景的节点上。");
         }
         return CResManager._instance;
+    }
+
+
+
+    private herosBundle: AssetManager.Bundle = null;
+    private monstersBundle: AssetManager.Bundle = null;
+
+    //为了兼容以前的写法，写个异步加载的函数方便使用
+    async getAsyncCharPrefab(eID: eCCharacterID): Promise<Prefab> {
+        console.log("异步读取角色", eID);
+        let nCharID = eID;
+        let bundle: AssetManager.Bundle;
+        let bHero: boolean = false;
+        if (eID > eCCharacterID.eciHerosStart) {
+            nCharID -= eCCharacterID.eciHerosStart;
+
+            console.log("从herobundle读取", nCharID);
+            bundle = this.herosBundle;
+            bHero = true;
+        } else {
+            console.log("从monsterbundle读取", nCharID);
+            bundle = this.monstersBundle;
+        }
+
+        const path = CCharactersData.instance.GetCharPrefabPath(nCharID, bHero);
+
+
+        console.log("从bundle读取path", path);
+        const prefab = await new Promise<Prefab>((resolve, reject) => {
+            // 如果资源在根目录，路径传 '' 或 '.' ；如果在子目录如 'icons'，则传 'icons'
+            bundle.load(path, Prefab, (err, prefab) => err ? reject(err) : resolve(prefab));
+        });
+
+        return prefab;
+    }
+
+    dynLoadHero(hero: string, cb: Function) {
+        if (!this.herosBundle) {
+            console.log("勇者bundle还为空，是否太早调用dynLoadHero函数")
+            return;
+        }
+
+        this.herosBundle.load(hero, Prefab, (err: Error | null, prefab: Prefab) => {
+            if (err) {
+                console.error('Failed to load hero prefab', err);
+                return;
+            }
+
+            cb(prefab);
+        })
+    }
+
+    dynLoadMonster(monster: string, cb: Function) {
+        if (!this.monstersBundle) {
+            console.log("魔物bundle还为空，是否太早调用dynLoadMonster函数")
+            return;
+        }
+
+        this.monstersBundle.load(monster, Prefab, (err: Error | null, prefab: Prefab) => {
+            if (err) {
+                console.error('Failed to load hero prefab', err);
+                return;
+            }
+
+            cb(prefab);
+        })
+    }
+
+    private _dyncLoadHerosBundle() {
+        assetManager.loadBundle(HEROS_BUNDLE, (err: Error | null, bundle: AssetManager.Bundle) => {
+            if (err) {
+                console.error('Failed to load heros bundle:', err);
+                return;
+            }
+
+            this.herosBundle = bundle;
+        });
+    }
+
+    private _dyncLoadMonstersBundle() {
+        assetManager.loadBundle(MONSTER_BUNDLE, (err: Error | null, bundle: AssetManager.Bundle) => {
+            if (err) {
+                console.error('Failed to load monsters bundle:', err);
+                return;
+            }
+
+            this.monstersBundle = bundle;
+        });
+
     }
 
     private async _dynLoadSkillsIcon() {
@@ -112,12 +217,12 @@ export class CResManager extends Component {
         }
 
         //初始化监工数据
-        this.mapMonsters.clear();
-        for (const cfg of this.characterCfg) {
-            if (!cfg) continue;
+        // this.mapMonsters.clear();
+        // for (const cfg of this.characterCfg) {
+        //     if (!cfg) continue;
 
-            this.mapMonsters.set(cfg.eType, cfg);
-        }
+        //     this.mapMonsters.set(cfg.eType, cfg);
+        // }
 
         //初始化房间类型map
         this.mapRoomImgData.clear();
@@ -139,7 +244,19 @@ export class CResManager extends Component {
             this.mapMissilePrefab.set(data.emId, data.pfbMissile);
         }
 
+        //所有图片以名字建立索引键
+        for (const sf of this.sfAllImg) {
+            if (!sf) continue;
+            this.mapAllImg.set(sf.name, sf);
+        }
+
         this._dynLoadSkillsIcon();
+        this._dyncLoadHerosBundle();
+        this._dyncLoadMonstersBundle();
+    }
+
+    getImg(name: string): SpriteFrame {
+        return this.mapAllImg.get(name);
     }
 
     getMissilePrefab(id: eMissileId) {

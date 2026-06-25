@@ -1,4 +1,4 @@
-import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab } from 'cc';
+import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab, ParticleSystem2D } from 'cc';
 import { eRoomType, eCCharacterID, eBattleCamp } from '../BaseDef';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CGlobalData } from '../GlobalData';
@@ -10,6 +10,7 @@ import { gameStateMgr } from '../GameStateMgr';
 import { GameConfig, SessionResult, GameState, eWebAction } from '../GameConfig';
 import { CCharacter } from '../character/character';
 import { CCharactersManager } from '../CharacaterMannager';
+import { CCharactersData } from '../CharacatersData';
 
 
 
@@ -90,9 +91,9 @@ export class CBaseRoom extends Component {
 
     testBattle() {
         console.log("添加几个战斗角色看看");
-        // this.addRole(eCCharacterID.eciDragon, 250);
-        // this.addRole(eCCharacterID.eciTauren, 250);
-        this.addRole(eCCharacterID.eciEyetyarnt, 250);
+        this.addRole(eCCharacterID.eciDragon, 250);
+        //this.addRole(eCCharacterID.eciTauren, 250);
+        // this.addRole(eCCharacterID.eciEyetyarnt, 250);
         this.addRole(eCCharacterID.eciSkullSoldier, 250);
         this.addRole(eCCharacterID.eciSkullArcher, 250);
 
@@ -103,9 +104,9 @@ export class CBaseRoom extends Component {
         this.addRole(eCCharacterID.eciPriestHF, -150);
     }
 
-    addRole(eId: eCCharacterID, pos: number) {
+    async addRole(eId: eCCharacterID, pos: number) {
 
-        const char: CCharacter = CCharactersManager.instance.CreateChacater4room(eId, this);
+        const char: CCharacter = await CCharactersManager.instance.CreateChacater4room(eId, this);
 
         char.setInBattle(true);
 
@@ -205,6 +206,11 @@ export class CBaseRoom extends Component {
         let anim = this.nodeUpgradeEffect.getComponent(Animation);
         const sAni = anim.clips[0].name;
 
+        const nodeP2dEffect = this.nodeUpgradeEffect.getChildByName("ParticleEffect");
+        for (let i = 0; i < nodeP2dEffect.children.length; ++i) {
+            nodeP2dEffect.children[i].getComponent(ParticleSystem2D).resetSystem();
+        }
+
         anim.play(sAni);
         anim.once(Animation.EventType.FINISHED, () => {
             this.nodeUpgradeEffect.active = false;
@@ -216,9 +222,10 @@ export class CBaseRoom extends Component {
         nodeMissile.parent = this.nodeBattleShowLayer;
     }
 
-    addChar(eCharId: eCCharacterID): CCharacter {
+    async addChar(eCharId: eCCharacterID): Promise<CCharacter> {
         CGlobalData.instance.setRoomOSTypeByIndex(this.index, eCharId);
-        let prefabOS: Prefab = CResManager.instance.getCharPrefab(eCharId);
+
+        let prefabOS: Prefab = await CResManager.instance.getAsyncCharPrefab(eCharId);
 
         const nodeOs = instantiate(prefabOS);
         const comChar = nodeOs.getComponent(CCharacter);;

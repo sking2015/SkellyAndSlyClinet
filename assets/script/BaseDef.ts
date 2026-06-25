@@ -30,6 +30,7 @@ export enum eCCharacterID {
     eciSkullSoldier = 91,            //骷髅战士
     eciSkullArcher = 92,             //骷髅弓手    
 
+    eciHerosStart = 100,         //勇者系ID从101开始..
     eciSoldierHM = 101,        //人类男性战士
     eciMageHF = 102,            //人类女性法师
     eciArcherEM = 103,          //精灵男性弓手

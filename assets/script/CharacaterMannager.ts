@@ -78,9 +78,9 @@ export class CCharactersManager {
 
 
 
-    CreateChacater(eID: eCCharacterID): CCharacter {
+    async CreateChacater(eID: eCCharacterID): Promise<CCharacter> {
+        let prefabChar: Prefab = await CResManager.instance.getAsyncCharPrefab(eID);
         ++this.nAutoCharIdx;
-        let prefabChar: Prefab = CResManager.instance.getCharPrefab(eID);
         const nodeChar = instantiate(prefabChar);
         const comChar: CCharacter = nodeChar.getComponent(CCharacter);
         comChar.index = this.nAutoCharIdx;
@@ -92,8 +92,8 @@ export class CCharactersManager {
     }
 
     //为房间创建角色，主要是放入房间列表中
-    CreateChacater4room(eID: eCCharacterID, room: CBaseRoom): CCharacter {
-        const char: CCharacter = this.CreateChacater(eID);
+    async CreateChacater4room(eID: eCCharacterID, room: CBaseRoom): Promise<CCharacter> {
+        const char: CCharacter = await this.CreateChacater(eID);
         let chars: CCharacterContainer;
         const roomIndex = room.index;
         if (this.mapCharInRoom.has(roomIndex)) {
@@ -208,7 +208,7 @@ export class CCharactersManager {
             }
         }
 
-        console.log("寻找血量百分比最低单位为...", target.eCharId);
+        // console.log("寻找血量百分比最低单位为...", target.eCharId);
         return target;
     }
 

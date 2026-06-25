@@ -22,6 +22,8 @@ export class CSkillCure extends CSkillBase {
 
         const tar = this.SearchLowestHPTarget();
 
+        if (!tar) return;
+
         if (tar.getHPPer() < 0.9) {
             this.target = tar;
         } else {
