@@ -26,7 +26,7 @@ export class CSkillOnce extends CSkillBase {
         this.target.onHitedReady(this.caster);
         this.caster.play(this.act, () => {
             // console.log("技能播放完毕", this.caster);
-            this.target.onHited();
+            this.target.onHited(this.caster);
             this.caster.SwitchToStand();
             cb ? cb() : null;
         });

@@ -26,7 +26,7 @@ export class CSkillRepeatRange extends CSkillRepeatedly {
         for (let i = 0; i < this.arrTargets.length; ++i) {
             const tar = this.arrTargets[i];
             tar.onHitedReady(this.caster);
-            tar.onHited();
+            tar.onHited(this.caster);
         }
     }
 }

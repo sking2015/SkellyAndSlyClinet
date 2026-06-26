@@ -26,7 +26,7 @@ export class CSkillOnce extends CSkillBase {
 
             //有可能已经在其它地方释放了，先挡一下
             if (this.target) {
-                this.target.onHited();
+                this.target.onHited(this.caster);
             }
 
             this.caster.SwitchToStand();

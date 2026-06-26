@@ -618,8 +618,8 @@
     "emissionRate": 999.999985098839,
     "life": 0.5,
     "lifeVar": 0.2,
-    "angle": 190,
-    "angleVar": 50,
+    "angle": 210,
+    "angleVar": 20,
     "startSize": 40,
     "startSizeVar": 10,
     "endSize": 80,
@@ -642,7 +642,7 @@
     "gravity": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 100
+      "y": 400
     },
     "speed": 300,
     "speedVar": 50,

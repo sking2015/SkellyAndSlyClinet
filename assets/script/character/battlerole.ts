@@ -53,6 +53,10 @@ export class CBattleRole extends COverseer {
     @property({ type: Animation, tooltip: "大招闪光" })
     aniFlash: Animation = null
 
+
+    @property({ type: ParticleSystem2D, tooltip: "技能起手粒子特效" })
+    p2dSkillStart: ParticleSystem2D = null;
+
     //是否在战斗状态，对于魔王军来说，有可能是在房间巡逻或监工或者只是展示
     bInBattle: boolean = false;
 
@@ -72,7 +76,7 @@ export class CBattleRole extends COverseer {
     eState: eBattleState = eBattleState.ebsNone;
 
     //受击时的行为者，简单的说就是这次被谁打的
-    hitedcaster: CCharacter = null;
+    arrHitedStriker: CCharacter[] = [];
 
     //是否正在受击
     bHited: boolean = false;
@@ -112,6 +116,10 @@ export class CBattleRole extends COverseer {
 
         if (this.nodeSkillCast) {
             this.nodeSkillCast.active = false;
+        }
+
+        if (this.nodeImpact) {
+            this.nodeImpact.active = false;
         }
     }
 
@@ -221,8 +229,8 @@ export class CBattleRole extends COverseer {
             case eCCharacterID.eciDragon:
                 {
                     // this.bUninterruptible = true;
-                    const skill = new CSkillRepeatRange(this);
-                    // const skill = new CSkillOnce(this);
+                    //const skill = new CSkillRepeatRange(this);
+                    const skill = new CSkillOnce(this);
                     this.setMaxHP(50000);
                     this.setHP(50000);
 
@@ -297,6 +305,10 @@ export class CBattleRole extends COverseer {
                 ani.play(ani.clips[0].name);
             }
         }
+
+        if (this.p2dSkillStart) {
+            this.p2dSkillStart.resetSystem();
+        }
     }
 
     getInBattle(): boolean {
@@ -326,6 +338,7 @@ export class CBattleRole extends COverseer {
     }
 
     LauncheMissile(id: eMissileId) {
+        console.log("LauncheMissile", id);
         const prefabMissile: Prefab = CResManager.instance.getMissilePrefab(id);
         const nodeMissile: Node = instantiate(prefabMissile);
         //const posMissile = this.node.position.clone().add(this.nodeLaunchePos.position);
@@ -340,13 +353,16 @@ export class CBattleRole extends COverseer {
     }
 
     onLauncheMissile() {
-        this.curSkill.LauncheMissile();
+        //只有还活着才发射
+        if (this.IsAlive()) {
+            this.curSkill.LauncheMissile();
+        }
     }
 
     onStrikeTargets() {
         for (let i = 0; i < this.arrTargets.length; ++i) {
             const char = this.arrTargets[i];
-            char.onHited();
+            char.onHited(this);
         }
     }
 
@@ -440,11 +456,20 @@ export class CBattleRole extends COverseer {
 
 
             if (this.nodeImpact) {
-                const ani = this.nodeImpact.getComponent(Animation);
-                ani.play(ani.clips[0].name);
-                ani.once(Animation.EventType.FINISHED, () => {
+                this.nodeImpact.active = true;
+
+                this.nodeImpact.setParent(this.room.nodeCharLayer, true);
+                const p2d = this.nodeImpact.getComponent(ParticleSystem2D);
+                p2d.resetSystem();
+                this.scheduleOnce(() => {
                     this.playDeathFlyOut();
-                })
+                }, 0.2)
+
+                // const ani = this.nodeImpact.getComponent(Animation);
+                // ani.play(ani.clips[0].name);
+                // ani.once(Animation.EventType.FINISHED, () => {
+                //     this.playDeathFlyOut();
+                // })
 
             } else {
                 this.playDead(() => {
@@ -497,14 +522,15 @@ export class CBattleRole extends COverseer {
     }
 
     onHitedReady(caster: CCharacter) {
-        this.hitedcaster = caster;
+        //this.arrHitedStriker.push(caster);
     }
 
     //受击表现，可能在两个时机播放，一时如果配置了关键帧，那么在关键就会执行这个函数。
     //如果攻击动作没配置关键帧，将在攻击动画完毕后调用这个函数
-    onHited() {
-        if (this.hitedcaster) {
-            // console.log(this.eCharId, "受击", this.hitedcaster);
+    onHited(caster: CCharacter) {
+
+        if (caster) {
+            // console.log(this.eCharId, "受击", this.arrHitedStriker);
 
             //非站立状态或霸体状态只闪红
             if (this.eState != eBattleState.ebsStand || this.bUninterruptible) {
@@ -523,8 +549,6 @@ export class CBattleRole extends COverseer {
                 });
             }
             this.onDamage();
-
-            this.hitedcaster = null;
         }
 
     }
@@ -679,9 +703,6 @@ export class CBattleRole extends COverseer {
         //选择目标
         this.onSelectTarget();
 
-        if (this.eCharId == eCCharacterID.eciDragon) {
-            console.log("看下龙的AI");
-        }
 
         //如果有技能，又没有在释放技能，开始走索敌流程
         if (this.curSkill) {
@@ -694,7 +715,7 @@ export class CBattleRole extends COverseer {
                 //范围技能和单体技能走不同流程
                 if (this.curSkill.IsRangeAffect()) {
                     //范围技能至少要有两个目标才释放
-                    console.log("看一下现在的目标组", this.arrTargets)
+                    //console.log("看一下现在的目标组", this.arrTargets)
                     if (this.arrTargets.length > 1) {
                         this.CastSkill()
                     } else {

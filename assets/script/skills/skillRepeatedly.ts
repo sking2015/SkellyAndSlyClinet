@@ -32,7 +32,7 @@ export class CSkillRepeatedly extends CSkillBase {
 
     StrikeOnce() {
         this.target.onHitedReady(this.caster);
-        this.target.onHited();
+        this.target.onHited(this.caster);
     }
 
     bInStrike: boolean = false;

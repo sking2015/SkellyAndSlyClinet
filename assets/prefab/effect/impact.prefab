@@ -112,10 +112,10 @@
       "b": 255,
       "a": 255
     },
-    "duration": 10,
-    "emissionRate": 0,
-    "life": 0.1,
-    "lifeVar": 0.2,
+    "duration": 0.2,
+    "emissionRate": 600,
+    "life": 0.5,
+    "lifeVar": 0.5,
     "angle": 360,
     "angleVar": 360,
     "startSize": 2,
@@ -136,18 +136,18 @@
       "x": 0,
       "y": 0
     },
-    "emitterMode": 1,
+    "emitterMode": 0,
     "gravity": {
       "__type__": "cc.Vec2",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": -200
     },
-    "speed": 0,
-    "speedVar": 190.7899932861328,
-    "tangentialAccel": -92.11000061035156,
-    "tangentialAccelVar": 65.79000091552734,
-    "radialAccel": -671.0499877929688,
-    "radialAccelVar": 65.79000091552734,
+    "speed": 100,
+    "speedVar": 0,
+    "tangentialAccel": 0,
+    "tangentialAccelVar": 0,
+    "radialAccel": 0,
+    "radialAccelVar": 0,
     "rotationIsDir": false,
     "startRadius": 0,
     "startRadiusVar": 0,
@@ -156,7 +156,7 @@
     "rotatePerS": 10,
     "rotatePerSVar": 0,
     "playOnLoad": true,
-    "autoRemoveOnFinish": false,
+    "autoRemoveOnFinish": true,
     "_preview": true,
     "preview": true,
     "_custom": true,
@@ -168,7 +168,7 @@
       "__uuid__": "b730527c-3233-41c2-aaf7-7cdab58f9749@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_totalParticles": 40,
+    "_totalParticles": 600,
     "_startColor": {
       "__type__": "cc.Color",
       "r": 255,
@@ -212,7 +212,7 @@
     "node": {
       "__id__": 1
     },
-    "_enabled": true,
+    "_enabled": false,
     "__prefab": {
       "__id__": 7
     },
@@ -242,6 +242,7 @@
       "__id__": 0
     },
     "fileId": "05rOvGTwZIuazbfy8/4+w3",
+    "instance": null,
     "targetOverrides": null
   }
 ]

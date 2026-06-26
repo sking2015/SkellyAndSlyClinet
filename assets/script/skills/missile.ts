@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, tween, Animation, Vec3, math, misc, Collider2D, IPhysics2DContact, Contact2DType } from 'cc';
+import { _decorator, Component, Node, tween, Animation, Vec3, math, misc, Collider2D, IPhysics2DContact, Contact2DType, ParticleSystem2D } from 'cc';
 import { CBattleRole } from '../character/battlerole';
 const { ccclass, property } = _decorator;
 
@@ -11,6 +11,9 @@ export class CMissile extends Component {
     //飞行动画，如果有配置需要在飞行期间播放飞行动画
     @property({ type: Node, tooltip: "飞行动画节点，如果动画需要配置自动加载播放，需要在到达目标点后删除隐藏" })
     nodeFly: Node = null;
+
+    @property({ type: ParticleSystem2D, tooltip: "飞行时的粒子特效" })
+    p2dFly: ParticleSystem2D = null;
 
     //如果有配置会在飞行到目标位后播放爆炸动画
     @property({ type: Node, tooltip: "爆炸动画节点，如果有配置会在飞行到目标位后播放爆炸动画" })
@@ -29,6 +32,15 @@ export class CMissile extends Component {
         //打开飞行节点，隐藏爆炸节点
         if (this.nodeFly) {
             this.nodeFly.active = true;
+
+            if (this.p2dFly) {
+                this.p2dFly.stopSystem(); // 确保初始状态是静止的
+
+                // 延迟到下一帧（等由于加载产生的超大 dt 过去后）再播放
+                this.scheduleOnce(() => {
+                    this.p2dFly.resetSystem();
+                }, 0);
+            }
         }
 
         if (this.nodeExplode) {
@@ -83,13 +95,21 @@ export class CMissile extends Component {
     }
 
     onFinished() {
-        this.bFinishe = true;
+        if (this.p2dFly) {
+            //如果有飞行拖尾，两秒后结束，让拖尾表现完
+            this.scheduleOnce(() => {
+                this.bFinishe = true;
+            }, 2)
+        } else {
+            this.bFinishe = true;
+        }
         this.caster.onMissileFinished();
     }
 
     doExplode() {
         tween(this.nodeFly).to(0.1, { scale: new Vec3(0.1, 0.1, 0.1) }).call(() => {
             this.nodeFly.active = false;
+            this.p2dFly.stopSystem();
             if (this.nodeExplode) {
                 this.nodeExplode.active = true;
                 const ani = this.nodeExplode.getComponent(Animation);
@@ -126,7 +146,7 @@ export class CMissile extends Component {
             }
 
             role.onHitedReady(this.caster);
-            role.onHited();
+            role.onHited(this.caster);
 
             this._isMoving = false;
         }

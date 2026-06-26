@@ -567,7 +567,7 @@ export class CCharacter extends Component {
 
     }
 
-    onHited() {
+    onHited(caster: CCharacter) {
         console.log("受击事件");
     }
 
