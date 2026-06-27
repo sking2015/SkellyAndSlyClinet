@@ -161,25 +161,25 @@ export class login extends cc.Component {
             (completedCount: number, totalCount: number, item: cc.AssetManager.RequestItem) => {
                 const progress = completedCount / totalCount;
                 this.nProgress = progress > this.nProgress ? progress : this.nProgress;
-                console.log("实际加载进度", this.nProgress.toFixed(2));
-                console.log("加载资原", completedCount, totalCount, item.url, item.uuid);
+                // console.log("实际加载进度", this.nProgress.toFixed(2));
+                // console.log("加载资原", completedCount, totalCount, item.url, item.uuid);
 
 
-                // 2. 尝试从全局资源缓存中抓取已经解析好的资产名字
-                let cachedAsset: cc.Asset = cc.assetManager.assets.get(item.uuid);
-                let assetRealName = cachedAsset ? cachedAsset.name : "未解析完成";
-                let assetType = cachedAsset ? cachedAsset.constructor.name : "未知类型";
+                // // 2. 尝试从全局资源缓存中抓取已经解析好的资产名字
+                // let cachedAsset: cc.Asset = cc.assetManager.assets.get(item.uuid);
+                // let assetRealName = cachedAsset ? cachedAsset.name : "未解析完成";
+                // let assetType = cachedAsset ? cachedAsset.constructor.name : "未知类型";
 
-                console.log(`[加载中 ${completedCount}/${totalCount}]`);
-                console.log(`-> UUID: ${item.uuid}`);
-                console.log(`-> 临时URL: ${item.url}`);
-                console.log(`-> 资产:`, cachedAsset);
-                console.log(`-> 内存资产名: %c${assetRealName}%c | 类型: %c${assetType}`, "color:green;font-weight:bold;", "", "color:blue;");
+                // console.log(`[加载中 ${completedCount}/${totalCount}]`);
+                // console.log(`-> UUID: ${item.uuid}`);
+                // console.log(`-> 临时URL: ${item.url}`);
+                // console.log(`-> 资产:`, cachedAsset);
+                // console.log(`-> 内存资产名: %c${assetRealName}%c | 类型: %c${assetType}`, "color:green;font-weight:bold;", "", "color:blue;");
 
-                // 3. 如果能拿到具体对象，还能直接看它的关联关系（例如 SpriteFrame 会挂载 texture）
-                if (cachedAsset && cachedAsset.name) {
-                    console.log(`   -> 属于纹理: ${cachedAsset.name}`);
-                }
+                // // 3. 如果能拿到具体对象，还能直接看它的关联关系（例如 SpriteFrame 会挂载 texture）
+                // if (cachedAsset && cachedAsset.name) {
+                //     console.log(`   -> 属于纹理: ${cachedAsset.name}`);
+                // }
             },
             // 2. 完成回调
             (error: Error | null) => {
