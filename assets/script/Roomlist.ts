@@ -106,8 +106,9 @@ export class Roomlist extends Component {
             ComRoom.setRoomLevel(data.level);
             if (data.level > 0) {
                 ComRoom.setStock(data.nStock);
-                ComRoom.onUnlock();
                 ComRoom.refreshRoomData();
+                ComRoom.onUnlock();
+
 
             }
 

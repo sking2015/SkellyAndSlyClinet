@@ -37,7 +37,7 @@ export class GameConfig {
     // 游戏状态键名
     public static readonly GAME_STATE_KEY: string = 'game_state';
 
-    public static readonly ONLY_DEBUG_CLINTE: boolean = true;
+    public static readonly ONLY_DEBUG_CLINTE: boolean = false;
 }
 
 /**

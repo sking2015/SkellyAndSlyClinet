@@ -332,9 +332,9 @@ export class CCharacter extends Component {
             const key = item.key;
             const w = this._currentWeights.get(key) || 0;
 
-            if (key == 'work') {
-                console.log("现在的key是工作", key, w);
-            }
+            // if (key == 'work') {
+            //     console.log("现在的key是工作", key, w);
+            // }
 
             //当不允许工作时跳过这个键
             if (!this.bEnableWork && key == ACT_WORK) {
@@ -428,7 +428,7 @@ export class CCharacter extends Component {
             }
 
             this.moveDirection = this._returnTargetX > currentX ? eDirction.edRight : eDirction.edLeft;
-            console.log(`[CCharacter] 外部刷新开启回归。目标点: ${this._returnTargetX.toFixed(1)}`);
+            // console.log(`[CCharacter] 外部刷新开启回归。目标点: ${this._returnTargetX.toFixed(1)}`);
         } else {
             this.switchRandomAction();
         }
@@ -610,6 +610,7 @@ export class CCharacter extends Component {
 
         // 1. 运用动态随机滚轮抽签
         const nextActionKey = this.getRandomActionByWeight();
+        // console.log("随机到nextActionKey", nextActionKey);
 
         // 2. 获取并计算带正负30%波动的持续时间
         const config = this.actionList.find(item => item.key === nextActionKey) || this.actionList[0];

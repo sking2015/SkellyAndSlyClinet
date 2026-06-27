@@ -235,7 +235,7 @@ export class CBaseRoom extends Component {
 
     onUnlock() {
         console.log("房间解锁");
-        this.testBattle();
+        // this.testBattle();
     }
 
     async onClickUnLock() {

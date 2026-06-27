@@ -200,14 +200,14 @@ export class CResRoom extends CBaseRoom {
         }
     }
 
-    setOverseer(eOverseer: eCCharacterID) {
+    async setOverseer(eOverseer: eCCharacterID) {
         if (this.eCCharacterID != eOverseer) {
 
             //这里是监工动画部份。。。
             this.eCCharacterID = eOverseer;
             CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.eCCharacterID);
 
-            const comOS: CCharacter = CCharactersManager.instance.CreateChacater4room(this.eCCharacterID, this);
+            const comOS: CCharacter = await CCharactersManager.instance.CreateChacater4room(this.eCCharacterID, this);
             const nodeOS = comOS.node;
 
 
