@@ -59,7 +59,7 @@ export enum GameState {
     GAME = 'game',
 }
 
-//网络消息相关，网络消息定义
+//网络消息相关，网络消息定义。
 export enum eWebAction {
     ewa_room_lvup = 'room-lv-up',               //房间升级
     ewa_room_gather = 'room-gather',            //房间收集资源
