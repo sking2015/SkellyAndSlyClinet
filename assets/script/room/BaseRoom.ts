@@ -1,4 +1,4 @@
-import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab, ParticleSystem2D } from 'cc';
+import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab, ParticleSystem2D, v3 } from 'cc';
 import { eRoomType, eCCharacterID, eBattleCamp } from '../BaseDef';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CGlobalData } from '../GlobalData';
@@ -27,6 +27,9 @@ export class CBaseRoom extends Component {
 
     @property(Sprite)
     sprFg: Sprite = null;
+
+    @property({type:Node,tooltip:"右上角展开按钮"})
+    nodeSwitchExpand:Node = null;    
 
     @property({ type: Label, tooltip: "显示的房间等级" })
     labelRoomLevel: Label = null;
@@ -59,6 +62,8 @@ export class CBaseRoom extends Component {
 
     nodeLockLabel: Node = null;
     bUnlockable: boolean = false; // 是否可解锁，目前简单写成只有当上一个房间解锁后才会变为true    
+
+    bOpneExpandPanel:boolean = false;
 
     //房间原始高度
     oriHeight: number = 0;
@@ -285,7 +290,17 @@ export class CBaseRoom extends Component {
     onClickSetting() {
         console.log("click setting");
 
-        this.onOpenExpand();
+        if(this.bOpneExpandPanel) {
+            this.onCloseExpand();
+            this.nodeSwitchExpand.scale = v3(1,1);
+            this.bOpneExpandPanel = true;
+        } else {
+            this.onOpenExpand();
+            this.nodeSwitchExpand.scale = v3(1,-1);
+            this.bOpneExpandPanel = false;
+        }
+
+        
 
         // console.log("先用来测试一下设置监工");
         // this.setOverseer(eCCharacterID.eciEyetyarnt);
