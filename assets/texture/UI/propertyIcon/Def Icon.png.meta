@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "ea2ef8da-8788-48f9-9950-a06475301239",
+  "uuid": "6037f4e4-a80b-4389-afc9-9f0da67dcac7",
   "files": [
     ".json",
     ".png"
@@ -10,14 +10,14 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "ea2ef8da-8788-48f9-9950-a06475301239@6c48a",
-      "displayName": "Troop Formation Background Panel",
+      "uuid": "6037f4e4-a80b-4389-afc9-9f0da67dcac7@6c48a",
+      "displayName": "Def Icon",
       "id": "6c48a",
       "name": "texture",
       "userData": {
         "wrapModeS": "clamp-to-edge",
         "wrapModeT": "clamp-to-edge",
-        "imageUuidOrDatabaseUri": "ea2ef8da-8788-48f9-9950-a06475301239",
+        "imageUuidOrDatabaseUri": "6037f4e4-a80b-4389-afc9-9f0da67dcac7",
         "isUuid": true,
         "visible": false,
         "minfilter": "linear",
@@ -34,21 +34,21 @@
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "ea2ef8da-8788-48f9-9950-a06475301239@f9941",
-      "displayName": "Troop Formation Background Panel",
+      "uuid": "6037f4e4-a80b-4389-afc9-9f0da67dcac7@f9941",
+      "displayName": "Def Icon",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
         "trimThreshold": 1,
         "rotated": false,
-        "offsetX": 0,
-        "offsetY": 0,
-        "trimX": 0,
-        "trimY": 0,
-        "width": 739,
-        "height": 509,
-        "rawWidth": 739,
-        "rawHeight": 509,
+        "offsetX": 0.5,
+        "offsetY": -0.5,
+        "trimX": 1,
+        "trimY": 1,
+        "width": 29,
+        "height": 29,
+        "rawWidth": 30,
+        "rawHeight": 30,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +60,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -369.5,
-            -254.5,
+            -14.5,
+            -14.5,
             0,
-            369.5,
-            -254.5,
+            14.5,
+            -14.5,
             0,
-            -369.5,
-            254.5,
+            -14.5,
+            14.5,
             0,
-            369.5,
-            254.5,
+            14.5,
+            14.5,
             0
           ],
           "indexes": [
@@ -82,38 +82,38 @@
             3
           ],
           "uv": [
+            1,
+            29,
+            30,
+            29,
+            1,
             0,
-            509,
-            739,
-            509,
-            0,
-            0,
-            739,
+            30,
             0
           ],
           "nuv": [
-            0,
-            0,
-            1,
-            0,
+            0.03333333333333333,
             0,
             1,
+            0,
+            0.03333333333333333,
+            0.9666666666666667,
             1,
-            1
+            0.9666666666666667
           ],
           "minPos": [
-            -369.5,
-            -254.5,
+            -14.5,
+            -14.5,
             0
           ],
           "maxPos": [
-            369.5,
-            254.5,
+            14.5,
+            14.5,
             0
           ]
         },
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "ea2ef8da-8788-48f9-9950-a06475301239@6c48a",
+        "imageUuidOrDatabaseUri": "6037f4e4-a80b-4389-afc9-9f0da67dcac7@6c48a",
         "atlasUuid": "",
         "trimType": "auto"
       },
@@ -129,6 +129,6 @@
     "type": "sprite-frame",
     "fixAlphaTransparencyArtifacts": false,
     "hasAlpha": true,
-    "redirect": "ea2ef8da-8788-48f9-9950-a06475301239@6c48a"
+    "redirect": "6037f4e4-a80b-4389-afc9-9f0da67dcac7@6c48a"
   }
 }
