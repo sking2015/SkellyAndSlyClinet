@@ -46,7 +46,7 @@ Enum(eCCharacterID);
 @ccclass('CCharacterCfg')
 export class CCharacterCfg {
     @property({ type: Enum(eCCharacterID), tooltip: '监工的枚举类型' })
-    eType: eCCharacterID = eCCharacterID.eciNoe;
+    eType: eCCharacterID = eCCharacterID.eciNone;
 
     @property({ type: SpriteFrame, tooltip: '监工对应的头像spriteframe' })
     sfHead: SpriteFrame = null;

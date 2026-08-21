@@ -78,7 +78,7 @@ export class CResRoom extends CBaseRoom {
 
     //监工的角色对像
     charOverseer: CCharacter = null;
-    eCCharacterID: eCCharacterID = eCCharacterID.eciNoe;
+    eCCharacterID: eCCharacterID = eCCharacterID.eciNone;
 
     nWorkerNum: number = 0;
 
@@ -205,7 +205,7 @@ export class CResRoom extends CBaseRoom {
 
             //这里是监工动画部份。。。
             this.eCCharacterID = eOverseer;
-            CGlobalData.instance.setRoomOSTypeByIndex(this.index, this.eCCharacterID);
+            CGlobalData.instance.setRoomOSIdByIndex(this.index, this.eCCharacterID);
 
             const comOS: CCharacter = await CCharactersManager.instance.CreateChacater4room(this.eCCharacterID, this);
             const nodeOS = comOS.node;

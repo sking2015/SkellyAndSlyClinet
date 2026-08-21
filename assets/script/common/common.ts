@@ -2,6 +2,7 @@
 import { tween, UIOpacity, Animation, Component } from "cc";
 import { Node } from "cc";
 import { Button } from 'cc';
+import { CButtonCooldown } from './ButtonCooldown';
 
 /**
  * 全局按钮点击冷却配置
@@ -44,6 +45,14 @@ export function formatString(template: string, ...args: string[]): string {
     });
 }
 
+declare module 'cc' {
+    interface Button {
+        /** 按钮冷却时间（毫秒），<=0 或 undefined 表示不冷却 */
+        cooldownTime?: number;
+        __lastClickTime?: number;
+    }
+}
+
 export function initGlobalButtonCooldown() {
     // 保存原有的 _onTouchEnded 方法
     const originalTouchEnded = Button.prototype['_onTouchEnded'];
@@ -54,18 +63,22 @@ export function initGlobalButtonCooldown() {
             return;
         }
 
+        // 获取节点上挂载的冷却配置组件
+        const config = this.getComponent(CButtonCooldown);
+
+        // 如果没有挂载组件，或者组件的 enabledCooldown 为 false，则直接放行
+        if (!config || !config.enabledCooldown) {
+            originalTouchEnded.call(this, event);
+            return;
+        }
+
         const now = Date.now();
-        // 使用 __lastClickTime 变量记录在上一次点击的时间戳上
-        if (this.__lastClickTime && now - this.__lastClickTime < BUTTON_COOLDOWN_TIME) {
-            // 如果在冷却时间内，拦截事件，不执行后续逻辑
+        if (this.__lastClickTime && now - this.__lastClickTime < config.cooldownTime) {
             event.propagationStopped = true;
             return;
         }
 
-        // 记录本次点击时间
         this.__lastClickTime = now;
-
-        // 调用原有的点击逻辑
         originalTouchEnded.call(this, event);
     };
 }

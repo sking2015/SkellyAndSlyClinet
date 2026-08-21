@@ -228,7 +228,7 @@ export class CBaseRoom extends Component {
     }
 
     async addChar(eCharId: eCCharacterID): Promise<CCharacter> {
-        CGlobalData.instance.setRoomOSTypeByIndex(this.index, eCharId);
+        CGlobalData.instance.setRoomOSIdByIndex(this.index, eCharId);
 
         let prefabOS: Prefab = await CResManager.instance.getAsyncCharPrefab(eCharId);
 

@@ -3,6 +3,7 @@ import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CCharData, CCharactersData } from './CharacatersData';
 import { CCharButton } from './CharButton';
 import { CGlobalData } from './GlobalData';
+import { eCCharacterID } from './BaseDef';
 
 const { ccclass, property } = _decorator;
 
@@ -13,6 +14,9 @@ export class CMALPanel extends Component {
 
     @property({ type: Node, tooltip: "魔物列表容器节点" })
     nodeCharList: Node;
+
+
+    private mapCharButton: Map<eCCharacterID, CCharButton> = new Map();
 
     start() {
     }
@@ -28,8 +32,16 @@ export class CMALPanel extends Component {
         }
     }
 
+    refreshCharButton(eCharId: eCCharacterID) {
+        const comCharBtn: CCharButton = this.mapCharButton.get(eCharId);
+        if (comCharBtn) {
+            comCharBtn.refreshData();
+        }
+    }
+
     refreshShow() {
         this.nodeCharList.removeAllChildren();
+        this.mapCharButton.clear();
 
         CGlobalData.instance.foreachMonsters((data: CCharData) => {
             const monster = instantiate(this.prefabCharButton);
@@ -37,6 +49,8 @@ export class CMALPanel extends Component {
             comCharBtn.setCharData(data);
             comCharBtn.SetParentPanel(this.node);
             monster.parent = this.nodeCharList;
+
+            this.mapCharButton.set(data.ID, comCharBtn);
         })
     }
 

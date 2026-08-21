@@ -7,6 +7,7 @@ export enum eRoomType {
     ertCrystalMine = 3,      // 水晶矿
     ertDoor = 10,            //魔王城大门
     ertAlchemy = 11,        //炼金术实验室
+    ertBattleRoom = 12,        //战斗房间
 }
 
 //矿场增益类型
@@ -19,7 +20,7 @@ export enum eMineBuffType {
 
 //角色ID,以后多了移到配置表
 export enum eCCharacterID {
-    eciNoe = 0,
+    eciNone = 0,
     eciEyetyarnt = 1,               //独眼巨人
     eciLich = 2,                  //巫妖
     eciOrc = 3,                      //兽人
@@ -121,6 +122,14 @@ export enum eLifeState {
     elsAny = 4                  //任意，也许有些技能不看状态全部都要选中
 }
 
+//部队类型
+export enum eTroopType {
+    ettNone = 0,
+    ettSoldier = 1,               //近战
+    ettArcher = 2,                //远程
+    ettMage = 3,                  //法师
+}
+
 ////////////////////////
 //网络交换数据定义
 //////////////////////////
@@ -135,10 +144,14 @@ export interface IResources {
 
 export interface IRoom {
     readonly index: number;
-    readonly room_type: number;
+    readonly room_type: eRoomType;
     readonly level: number;
-    readonly overseer_index: number;
+    readonly overseer_id: number;
+    readonly guard_id: number;
     readonly storage: number;
+    readonly soldier_num: number;
+    readonly archer_num: number;
+    readonly mage_num: number;
 
 }
 

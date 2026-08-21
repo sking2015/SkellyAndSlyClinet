@@ -20,11 +20,11 @@ export default class OSSelectBtn extends Component {
     })
     nodeSelected: Node = null;
 
-    eID: eCCharacterID = eCCharacterID.eciNoe;
+    eID: eCCharacterID = eCCharacterID.eciNone;
 
     setOverseer(data: CCharData) {
         this.eID = data.ID;
-        if (data.Level > 0 && this.eID != eCCharacterID.eciNoe) {
+        if (data.Level > 0 && this.eID != eCCharacterID.eciNone) {
             const sf: SpriteFrame = CResManager.instance.getCharHead(data.ID);
             this.sprIcon.spriteFrame = sf;
             this.getComponent(Button).interactable = true;

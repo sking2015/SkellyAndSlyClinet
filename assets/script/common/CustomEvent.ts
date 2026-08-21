@@ -27,4 +27,7 @@ export enum UniEvent {
     on_click_char_ui = "onClickCharUI",                         //点击角色按钮
     on_ani_key = "onAniKeyFrame",                               //触发动画关键帧
     on_launche_missile = "onLauncheMissile",                    //发射飞行物
+    on_click_troop = "onClickTroop",                            //点击部队按钮
+    on_refresh_charInfo = "onRefreshCharInfo",                //刷新角色信息
+    on_room_refresh = "onRoomRefresh",                          //刷新房间
 }

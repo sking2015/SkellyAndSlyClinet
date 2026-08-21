@@ -6,13 +6,12 @@ import { CGlobalData } from './GlobalData';
 import { ResourceShowArea } from './ResourceShowArea';
 import { fadeInOut, initGlobalButtonCooldown } from './common/common';
 import { CMALPanel } from './MALPanel';
+import { CTroopDeployPanel } from './TroopDeployPanel';
 import { CMonsterDetailPanel } from './MonsterDetailPanel';
 import { CCharactersManager } from './CharacaterMannager';
 
-
-
 import { Roomlist } from './Roomlist';
-import { eRoomType } from './BaseDef';
+import { eRoomType, eTroopType } from './BaseDef';
 
 const { ccclass, property } = _decorator;
 
@@ -33,6 +32,10 @@ export class main extends Component {
 
     @property({ type: CMALPanel, tooltip: "炼金实验室面板" })
     comMALPanel: CMALPanel = null;
+
+    @property({ type: CTroopDeployPanel, tooltip: "部队部署面板" })
+    comTroopDeployPanel: CTroopDeployPanel = null;
+
 
     @property({ type: ResourceShowArea, tooltip: "资源显示区域组件" })
     comResShowArea: ResourceShowArea = null;
@@ -75,6 +78,9 @@ export class main extends Component {
         this.node.on(UniEvent.on_open_room_panel, this.onPopRoomFunPanel, this);
         this.node.on(UniEvent.on_close_room_panel, this.onCloseRoomFunPanel, this);
         this.node.on(UniEvent.on_click_char_ui, this.onPopMonsterDetailPanel, this);
+        this.node.on(UniEvent.on_click_troop, this.onPopTroopDeployPanel, this);
+        this.node.on(UniEvent.on_refresh_charInfo, this.refreshCharInfo, this);
+        this.node.on(UniEvent.on_room_refresh, this.onRoomRefresh, this);
 
     }
 
@@ -89,6 +95,9 @@ export class main extends Component {
         this.node.off(UniEvent.on_open_room_panel, this.onPopRoomFunPanel, this);
         this.node.off(UniEvent.on_close_room_panel, this.onCloseRoomFunPanel, this);
         this.node.off(UniEvent.on_click_char_ui, this.onPopMonsterDetailPanel, this);
+        this.node.off(UniEvent.on_click_troop, this.onPopTroopDeployPanel, this);
+        this.node.off(UniEvent.on_refresh_charInfo, this.refreshCharInfo, this);
+        this.node.off(UniEvent.on_room_refresh, this.onRoomRefresh, this);
     }
 
     onEnable() {
@@ -109,7 +118,11 @@ export class main extends Component {
     }
 
     onChangeOverseer(event: CustomEvent) {
-        this.roomList.onChangeOverseer(event.detail.roomIdx, event.detail.eOSType);
+        this.roomList.onChangeOverseer(event.detail.roomIdx, event.detail.eOSId);
+    }
+
+    onRoomRefresh(event: CustomEvent) {
+        this.roomList.onRoomRefresh(event.detail.roomIdx);
     }
 
     onRoomUpgrade(event: CustomEvent) {
@@ -134,13 +147,27 @@ export class main extends Component {
     //打开房间功能面板
     onPopRoomFunPanel(event: CustomEvent) {
         this.nodeMask.active = true;
+        console.log("onPopRoomFunPanel~~", event.detail.roomType, event.detail.roomIndex, event.detail.troopIndex);
         switch (event.detail.roomType) {
             case eRoomType.ertAlchemy:
                 this.comMALPanel.Show(true);
                 break;
+            case eRoomType.ertBattleRoom:
+            case eRoomType.ertDoor:
+                this.comTroopDeployPanel.Show(true);
+                this.comTroopDeployPanel.setInfo(event.detail.roomIndex, event.detail.troopIndex);
+                break;
             default:
                 console.log("不认识的房间类型")
         }
+    }
+
+    //打开部队部署面板
+    onPopTroopDeployPanel(event: CustomEvent) {
+        this.nodeMask.active = true;
+        this.comTroopDeployPanel.Show(true);
+        let nTroopIndex: number = Number(event.detail.troopIndex);
+        this.comTroopDeployPanel.setInfo(event.detail.roomIndex, nTroopIndex as eTroopType);
     }
 
     //打开魔物属性界面
@@ -149,6 +176,11 @@ export class main extends Component {
         //this.comMDPanel.setCharID(event.detail.charID);
         this.comMDPanel.setChar(event.detail.data);
         this.comMDPanel.ShowFromOther(event.detail.panel);
+    }
+
+    refreshCharInfo(event: CustomEvent) {
+        console.log("refreshCharInfo~~", event.detail.charID, event.detail.data);
+        this.comMALPanel.refreshCharButton(event.detail.charID);
     }
 
 
@@ -197,6 +229,7 @@ export class main extends Component {
 
         this.comMALPanel.Show(false);
         this.comMDPanel.Close();
+        this.comTroopDeployPanel.Show(false);
 
         PhysicsSystem2D.instance.enable = true;
 

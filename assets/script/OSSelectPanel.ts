@@ -44,7 +44,7 @@ export default class OSSelectPanel extends Component {
     nodeBlank: Node = null;
 
 
-    eCurOSType: eCCharacterID = eCCharacterID.eciNoe;
+    eCurOSId: eCCharacterID = eCCharacterID.eciNone;
 
     //当前描述房间index
     nCurRoomIndex: number = -1;
@@ -60,9 +60,9 @@ export default class OSSelectPanel extends Component {
     refreshInfo() {
 
         this.refreshSelected();
-        this.sprImg.spriteFrame = CResManager.instance.getCharAvatar(this.eCurOSType);
+        this.sprImg.spriteFrame = CResManager.instance.getCharAvatar(this.eCurOSId);
 
-        const osData: COSCfgData = COverseerManager.instance.getOverseerData(this.eCurOSType);
+        const osData: COSCfgData = COverseerManager.instance.getOverseerData(this.eCurOSId);
 
         if (osData) {
             this.lblOSName.string = osData.name;
@@ -112,14 +112,14 @@ export default class OSSelectPanel extends Component {
 
     onSelectOverseer(event: CustomEvent) {
         console.log("监工选择面板触发事件数据:", event);
-        this.eCurOSType = event.detail.osType;
+        this.eCurOSId = event.detail.osType;
 
         this.refreshInfo();
     }
 
     refreshSelected() {
         this.mapOSBtn.forEach((comBtn: OSSelectBtn, eType: eCCharacterID) => {
-            comBtn.setSelect(this.eCurOSType === eType);
+            comBtn.setSelect(this.eCurOSId === eType);
         })
     }
 
@@ -136,13 +136,13 @@ export default class OSSelectPanel extends Component {
 
     onClickConfirm() {
         //TODO:这里需要先调用网络调用通知服务器某个房间已经确认更换监工，目前先直接换
-        this.node.dispatchEvent(new CustomEvent(UniEvent.on_change_overseer, true, { roomIdx: this.nCurRoomIndex, eOSType: this.eCurOSType }))
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_change_overseer, true, { roomIdx: this.nCurRoomIndex, eOSId: this.eCurOSId }))
         this.onClose();
     }
 
     setRoomIndex(idx: number) {
         this.nCurRoomIndex = idx;
-        this.eCurOSType = CGlobalData.instance.getRoomOSTypeByIndex(idx);
+        this.eCurOSId = CGlobalData.instance.getRoomOSIdByIndex(idx);
         this.refreshInfo();
     }
 

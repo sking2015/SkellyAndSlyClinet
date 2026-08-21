@@ -8,6 +8,7 @@ import { CCharacter } from './character/character';
 import { CGlobalData } from './GlobalData';
 import { formatCompactNumber } from './common/common';
 import { CCharData, CCharactersData } from './CharacatersData';
+import { CustomEvent, UniEvent } from './common/CustomEvent';
 
 
 const { ccclass, property } = _decorator;
@@ -73,7 +74,7 @@ export class CMonsterDetailPanel extends Component {
     uiHolyResist: CUIElement = null;
 
 
-    eCharId: eCCharacterID = eCCharacterID.eciNoe;
+    eCharId: eCCharacterID = eCCharacterID.eciNone;
     nLevel: number = 0;
 
     charRole: CCharacter = null;
@@ -182,8 +183,16 @@ export class CMonsterDetailPanel extends Component {
     }
 
     doReforge() {
+        this.nLevel = 1;
+        CGlobalData.instance.setMonsterLevel(this.eCharId, this.nLevel);
+
+        this.lblLevel.string = "LV:" + this.data.Level.toString();
+
         this.charRole.ResumeFromStone();
         this.charRole.playEffect();
+
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_refresh_charInfo, true, { charID: this.eCharId, data: this.data }));
+
     }
 
     onClickStory() {

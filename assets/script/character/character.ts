@@ -60,7 +60,7 @@ export class CCharacter extends Component {
 
     ePlace: eCharPlace = eCharPlace.ecpNone;
 
-    eCharId: eCCharacterID = eCCharacterID.eciNoe;
+    eCharId: eCCharacterID = eCCharacterID.eciNone;
 
     //全局唯一索引，方便定位查找
     _index: number = -1;
@@ -232,6 +232,18 @@ export class CCharacter extends Component {
             }, this)
 
             aniEffect.play(ani);
+        }
+    }
+
+    Show4Stone(bShow: boolean) {
+        if (bShow) {
+            this.nodeGray.active = true;
+            this.nodeChar.active = false;
+            this.bStone = true;
+        } else {
+            this.nodeGray.active = false;
+            this.nodeChar.active = true;
+            this.bStone = false;
         }
     }
 

@@ -66,10 +66,19 @@ export class Roomlist extends Component {
         }
     }
 
-    onChangeOverseer(roomIndex: number, eOSType: eCCharacterID) {
+    onRoomRefresh(roomIndex: number) {
         const room = this.rooms[roomIndex];
         if (room) {
-            room.onSelectOverseer(eOSType);
+            room.refreshRoomData();
+        } else {
+            console.error("room refresh error,can't room by room index", roomIndex);
+        }
+    }
+
+    onChangeOverseer(roomIndex: number, eOSId: eCCharacterID) {
+        const room = this.rooms[roomIndex];
+        if (room) {
+            room.onSelectOverseer(eOSId);
         } else {
             console.error("change overseer error,can't room by room index", roomIndex);
         }

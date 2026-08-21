@@ -36,7 +36,7 @@ export class CCharButton extends Component {
     @property({ type: SpriteFrame, tooltip: "配置新获得和已获得标记" })
     sfMark: SpriteFrame[] = [];
 
-    eCharID: eCCharacterID = eCCharacterID.eciNoe;
+    eCharID: eCCharacterID = eCCharacterID.eciNone;
     level: number = 0;
 
     data: CCharData = null;
@@ -52,9 +52,7 @@ export class CCharButton extends Component {
 
     SetCharId(eID: eCCharacterID) {
         this.eCharID = eID;
-        this.level = CGlobalData.instance.getMonsterLevel(this.eCharID);
-        this.data = CCharactersData.instance.GetCharData(this.eCharID, this.level);
-        this.refreshShow();
+        this.refreshData();
     }
 
     setCharData(data: CCharData) {
@@ -65,7 +63,19 @@ export class CCharButton extends Component {
         this.refreshShow();
     }
 
+    refreshData() {
+        this.level = CGlobalData.instance.getMonsterLevel(this.eCharID);
+        this.data = CCharactersData.instance.GetCharData(this.eCharID, this.level);
+        this.refreshShow();
+    }
+
     private refreshShow() {
+        console.log("refreshShow~~", this.eCharID, this.level, this.data);
+        if (!this.data) {
+            console.error("没有魔物数据，无法刷新显示");
+            return;
+        }
+
         this.lblName.string = this.data.Name;
         this.sprHead.spriteFrame = CResManager.instance.getImg(this.data.Head);
 

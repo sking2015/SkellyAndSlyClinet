@@ -1,7 +1,11 @@
-import { _decorator, Component, Node, EventTouch, tween } from 'cc';
+import { _decorator, Component, Node, EventTouch, tween, Sprite, Label } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { fadeInOut } from '../common/common';
+import { CTroopInfo } from '../TroopInfo';
+import { CLordInfo } from '../LordInfo';
+import { eCCharacterID } from '../BaseDef';
+import { CGlobalData } from '../GlobalData';
 
 const { ccclass, property } = _decorator;
 
@@ -14,9 +18,68 @@ export class CBattleRoom extends CBaseRoom {
     @property({ type: Node, tooltip: "房间左上角战力显示面板" })
     nodeCombatDataPanel: Node = null;
 
+    @property({ type: Label, tooltip: "部署部队总量" })
+    lblTotalTroops: Label = null;
+
+    @property({ type: CLordInfo, tooltip: "房间领主信息" })
+    lordInfo: CLordInfo = null;
+
+    @property({ type: CTroopInfo, tooltip: "房间守卫信息（战士）" })
+    troopInfoSoldier: CTroopInfo = null;
+
+    @property({ type: CTroopInfo, tooltip: "房间守卫信息（弓箭手）" })
+    troopInfoArcher: CTroopInfo = null;
+
+    @property({ type: CTroopInfo, tooltip: "房间守卫信息（法师）" })
+    troopInfoMage: CTroopInfo = null;
+
+
+
+    nTroopsCapacity: number = 15; // 部队容量,先写死15,以后再上影响值
+
+    eGuardId: eCCharacterID = eCCharacterID.eciNone;
+    nSoldierNum: number = 0;
+    nArcherNum: number = 0;
+    nMageNum: number = 0;
+
     start() {
         super.start();
         this.nodeCombatDataPanel.active = false;
+
+        this.refreshRoomShow();
+    }
+
+
+    refreshExpand() {
+        this.eGuardId = CGlobalData.instance.getRoomGuardIdByIndex(this.index);
+
+        this.nSoldierNum = CGlobalData.instance.getRoomSoldierNumByIndex(this.index);
+        this.nArcherNum = CGlobalData.instance.getRoomArcherNumByIndex(this.index);
+        this.nMageNum = CGlobalData.instance.getRoomMageNumByIndex(this.index);
+
+
+        //模拟一下血量，后续可以根据兵营里的兵种信息获取真实的血量
+        let nSoldierHp = 200;
+        let nArcherHp = 100;
+        let nMageHp = 100;
+
+        //刷新房间的战力显示
+        this.lordInfo.setCharID(this.eGuardId);
+        this.troopInfoSoldier.setCount(this.nSoldierNum);
+        this.troopInfoArcher.setCount(this.nArcherNum);
+        this.troopInfoMage.setCount(this.nMageNum);
+
+        this.lblTotalTroops.string = (this.nSoldierNum + this.nArcherNum + this.nMageNum).toString() + "/" + this.nTroopsCapacity.toString();
+
+        this.troopInfoSoldier.setHealth(nSoldierHp * this.nSoldierNum);
+        this.troopInfoArcher.setHealth(nArcherHp * this.nArcherNum);
+        this.troopInfoMage.setHealth(nMageHp * this.nMageNum);
+    }
+
+
+    refreshRoomShow() {
+        super.refreshRoomShow();
+        console.log("以后这里应该要放刷新守卫显示的内容");
     }
 
     onClickLord() {
@@ -25,6 +88,9 @@ export class CBattleRoom extends CBaseRoom {
 
     onClickTroop(event: EventTouch, customEventData: string) {
         console.log("点击了房间的小兵按钮", customEventData);
+
+        // this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_room_panel, true, { roomType: this.roomType, roomIndex: this.index }));
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_troop, true, { troopIndex: customEventData, roomIndex: this.index }));
     }
 
     onClickConfirm() {
