@@ -51,6 +51,7 @@ export class CLordInfo extends Component {
 
     setCharID(charID: eCCharacterID) {
         const nLevel = CGlobalData.instance.getMonsterLevel(charID);
+
         if (nLevel > 0) {
             const charData = CCharactersData.instance.GetCharData(charID, nLevel);
             if (charData) {

@@ -28,14 +28,15 @@ export enum eCCharacterID {
     eciTauren = 5,                  //牛头人
     eciDemonMax = 6,                 //魔王军最大数量
 
-    eciSkullSoldier = 91,            //骷髅战士
-    eciSkullArcher = 92,             //骷髅弓手    
+    eciSkullSoldier = 910,            //骷髅战士
+    eciSkullArcher = 920,             //骷髅弓手    
+    eciSkullMage = 930,             //骷髅法师
 
-    eciHerosStart = 100,         //勇者系ID从101开始..
-    eciSoldierHM = 101,        //人类男性战士
-    eciMageHF = 102,            //人类女性法师
-    eciArcherEM = 103,          //精灵男性弓手
-    eciPriestHF = 104,          //人类女性牧师
+    eciHerosStart = 1000,         //勇者系ID从1000开始..
+    eciSoldierHM = 1001,        //人类男性战士
+    eciMageHF = 1002,            //人类女性法师
+    eciArcherEM = 1003,          //精灵男性弓手
+    eciPriestHF = 1004,          //人类女性牧师
 }
 
 //种族
@@ -111,6 +112,7 @@ export enum eMissileId {
     emiFireball = 1,                //火球
     emiArrow = 2,                    //箭矢
     emiArrowSkull = 3,              //骷髅弓手的箭矢
+    emiDarkMagic = 4,               //黑魔法
 }
 
 //生命状态

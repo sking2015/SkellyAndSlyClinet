@@ -7,11 +7,11 @@
       "embeddedPlayerGroups": []
     },
     "_native": "",
-    "sample": 8,
+    "sample": 5,
     "speed": 1,
     "wrapMode": 1,
     "enableTrsBlending": false,
-    "_duration": 1,
+    "_duration": 1.4,
     "_hash": 500763545,
     "_tracks": [
       {
@@ -65,40 +65,30 @@
     "__type__": "cc.ObjectCurve",
     "_times": [
       0,
-      0.125,
-      0.25,
-      0.375,
-      0.5,
-      0.625,
-      0.75
+      0.2,
+      0.4,
+      0.6,
+      0.8
     ],
     "_values": [
       {
-        "__uuid__": "d7bfead9-e4e8-4459-98e1-81bf823645a4@f9941",
+        "__uuid__": "fa9d430c-b3a6-4a38-8d0e-27dfb3a58730@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "de1e7bc9-e93c-4f84-a834-5e57040d14ac@f9941",
+        "__uuid__": "8b86c990-03f4-430f-bced-f7827837219a@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "0cc3856c-cd32-46b9-9d75-0fea0667e2d4@f9941",
+        "__uuid__": "01fc5e16-dab8-4dd6-8f44-3adc6ffe4de7@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "91e39404-ce50-4425-82e5-b3fa8d9a2626@f9941",
+        "__uuid__": "8bcbb87f-0c87-44fb-9a27-b4593394eaae@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "3b707ac7-c748-40b5-aa0f-80a13bf0afb6@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "d64a1605-a8d2-4e1b-a2aa-5d14a2655636@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "e9f026d7-b2db-4024-aea3-877f9be2fbe8@f9941",
+        "__uuid__": "cfbc2a3c-934e-4134-8723-adf1f90ad1fa@f9941",
         "__expectedType__": "cc.SpriteFrame"
       }
     ]
@@ -189,8 +179,8 @@
     "__type__": "cc.RealCurve",
     "_times": [
       0,
-      0.875,
-      1
+      1.2000000476837158,
+      1.399999976158142
     ],
     "_values": [
       {
@@ -203,7 +193,9 @@
         "leftTangent": 0,
         "leftTangentWeight": 1,
         "easingMethod": 0,
-        "__editorExtras__": null
+        "__editorExtras__": {
+          "broken": null
+        }
       },
       {
         "__type__": "cc.RealKeyframeValue",

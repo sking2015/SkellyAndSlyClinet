@@ -81,6 +81,7 @@ export class main extends Component {
         this.node.on(UniEvent.on_click_troop, this.onPopTroopDeployPanel, this);
         this.node.on(UniEvent.on_refresh_charInfo, this.refreshCharInfo, this);
         this.node.on(UniEvent.on_room_refresh, this.onRoomRefresh, this);
+        this.node.on(UniEvent.on_open_chars_list, this.onPopCharsListPanel, this);
 
     }
 
@@ -98,6 +99,7 @@ export class main extends Component {
         this.node.off(UniEvent.on_click_troop, this.onPopTroopDeployPanel, this);
         this.node.off(UniEvent.on_refresh_charInfo, this.refreshCharInfo, this);
         this.node.off(UniEvent.on_room_refresh, this.onRoomRefresh, this);
+        this.node.off(UniEvent.on_open_chars_list, this.onPopCharsListPanel, this);
     }
 
     onEnable() {
@@ -110,6 +112,14 @@ export class main extends Component {
 
     refreshResource(event: CustomEvent) {
         this.comResShowArea.refreshResource();
+    }
+
+    onPopCharsListPanel(event: CustomEvent) {
+        this.nodeMask.active = true;
+        this.comMALPanel.setSelectMode(true);
+        this.comMALPanel.Show(true);
+        this.comMALPanel.setCallBack4CharButton(event.detail.callback);
+
     }
 
     onGatherRes(event: CustomEvent) {
@@ -150,6 +160,8 @@ export class main extends Component {
         console.log("onPopRoomFunPanel~~", event.detail.roomType, event.detail.roomIndex, event.detail.troopIndex);
         switch (event.detail.roomType) {
             case eRoomType.ertAlchemy:
+                this.comMALPanel.setSelectMode(false);
+                // this.comMALPanel.setCallBack4CharButton(null);
                 this.comMALPanel.Show(true);
                 break;
             case eRoomType.ertBattleRoom:

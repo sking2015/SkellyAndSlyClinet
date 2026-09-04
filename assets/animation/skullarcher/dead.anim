@@ -7,7 +7,7 @@
       "embeddedPlayerGroups": []
     },
     "_native": "",
-    "sample": 8,
+    "sample": 4,
     "speed": 1,
     "wrapMode": 1,
     "enableTrsBlending": false,
@@ -62,25 +62,15 @@
     "__type__": "cc.ObjectCurve",
     "_times": [
       0,
-      0.125,
-      0.25,
-      0.375
+      0.25
     ],
     "_values": [
       {
-        "__uuid__": "3b22eabf-4d6f-41fc-8b89-c00322224e2b@f9941",
+        "__uuid__": "e2fec88f-3fc9-4e42-a8dc-82bd945dd08f@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "5252822f-52f4-45e0-99c3-806fb7477d79@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "eefd050a-01d1-45f0-83df-38e33c2dc822@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "19537154-6522-4a8b-a161-7a0a1295f57a@f9941",
+        "__uuid__": "8272bf41-ba72-4946-86ae-3a80f8224890@f9941",
         "__expectedType__": "cc.SpriteFrame"
       }
     ]

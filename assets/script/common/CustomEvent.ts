@@ -30,4 +30,5 @@ export enum UniEvent {
     on_click_troop = "onClickTroop",                            //点击部队按钮
     on_refresh_charInfo = "onRefreshCharInfo",                //刷新角色信息
     on_room_refresh = "onRoomRefresh",                          //刷新房间
+    on_open_chars_list = "onOpenCharsList",                     //打开角色列表
 }

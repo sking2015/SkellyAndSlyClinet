@@ -49,10 +49,10 @@
         "height": 530,
         "rawWidth": 670,
         "rawHeight": 530,
-        "borderTop": 0,
-        "borderBottom": 0,
-        "borderLeft": 0,
-        "borderRight": 0,
+        "borderTop": 260,
+        "borderBottom": 258,
+        "borderLeft": 326,
+        "borderRight": 325,
         "packable": true,
         "pixelsToUnit": 100,
         "pivotX": 0.5,
@@ -115,7 +115,7 @@
         "isUuid": true,
         "imageUuidOrDatabaseUri": "c9f60880-f8c6-488b-b693-70e2297a71c8@6c48a",
         "atlasUuid": "",
-        "trimType": "auto"
+        "trimType": "custom"
       },
       "ver": "1.0.12",
       "imported": true,

@@ -16,13 +16,27 @@ export class CMALPanel extends Component {
     nodeCharList: Node;
 
 
+
     private mapCharButton: Map<eCCharacterID, CCharButton> = new Map();
+
+    // 是否是选择模式，选择模式下会屏蔽还未解锁的角色，也就是等级为零的角色
+    bSelectMode: boolean = false;
 
     start() {
     }
 
     update(deltaTime: number) {
 
+    }
+
+    setSelectMode(bMode: boolean) {
+        this.bSelectMode = bMode;
+    }
+
+    setCallBack4CharButton(callback: (charId: eCCharacterID) => void) {
+        this.mapCharButton.forEach((comCharBtn: CCharButton, charId: eCCharacterID) => {
+            comCharBtn.setCallBack4Click(callback);
+        })
     }
 
     Show(bShow: boolean) {
@@ -46,6 +60,8 @@ export class CMALPanel extends Component {
         CGlobalData.instance.foreachMonsters((data: CCharData) => {
             const monster = instantiate(this.prefabCharButton);
             const comCharBtn: CCharButton = monster.getComponent(CCharButton);
+
+            comCharBtn.setSelectMode(this.bSelectMode);
             comCharBtn.setCharData(data);
             comCharBtn.SetParentPanel(this.node);
             monster.parent = this.nodeCharList;

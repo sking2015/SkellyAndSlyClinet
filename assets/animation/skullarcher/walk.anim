@@ -66,11 +66,11 @@
     ],
     "_values": [
       {
-        "__uuid__": "51f199cb-895a-404c-805f-c88de898d906@f9941",
+        "__uuid__": "4ae819bd-e126-4347-907f-f4f168781bb2@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "0ed57242-f1a4-4e47-8a64-896fa6626738@f9941",
+        "__uuid__": "a920e274-7236-4a47-8cdd-1e9b53f7724c@f9941",
         "__expectedType__": "cc.SpriteFrame"
       }
     ]

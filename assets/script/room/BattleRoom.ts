@@ -52,6 +52,7 @@ export class CBattleRoom extends CBaseRoom {
 
     refreshExpand() {
         this.eGuardId = CGlobalData.instance.getRoomGuardIdByIndex(this.index);
+        console.log("刷新房间扩展面板显示，房间索引", this.index, "守卫角色ID", this.eGuardId);
 
         this.nSoldierNum = CGlobalData.instance.getRoomSoldierNumByIndex(this.index);
         this.nArcherNum = CGlobalData.instance.getRoomArcherNumByIndex(this.index);
@@ -84,6 +85,16 @@ export class CBattleRoom extends CBaseRoom {
 
     onClickLord() {
         console.log("点击了房间的领主按钮");
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_chars_list, true, {
+            roomIndex: this.index, callback: (charId: eCCharacterID) => {
+                console.log("选择了领主角色", charId);
+                this.eGuardId = charId;
+                CGlobalData.instance.setRoomGuardIdByIndex(this.index, charId);
+                this.refreshExpand();
+
+                this.node.dispatchEvent(new CustomEvent(UniEvent.on_close_room_panel, true));
+            }
+        }));
     }
 
     onClickTroop(event: EventTouch, customEventData: string) {

@@ -7,11 +7,11 @@
       "embeddedPlayerGroups": []
     },
     "_native": "",
-    "sample": 6,
+    "sample": 4,
     "speed": 1,
     "wrapMode": 2,
     "enableTrsBlending": false,
-    "_duration": 0.6666666666666666,
+    "_duration": 1,
     "_hash": 500763545,
     "_tracks": [
       {
@@ -62,25 +62,25 @@
     "__type__": "cc.ObjectCurve",
     "_times": [
       0,
-      0.16666666666666666,
-      0.3333333333333333,
-      0.5
+      0.25,
+      0.5,
+      0.75
     ],
     "_values": [
       {
-        "__uuid__": "8f02bb2a-1853-47f5-a435-a1951d0d31db@f9941",
+        "__uuid__": "0c82d317-1fba-4d3a-a0d2-c35911b1e88f@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "bf0a4c6b-71ea-429c-9241-e11cbcfdfad6@f9941",
+        "__uuid__": "f92d861e-2156-4178-8c44-b68c70e59eed@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "49042e42-e950-47a0-825f-e03d6b3f2644@f9941",
+        "__uuid__": "32cd9482-bea8-47c7-8fda-e0dc2e8e5c0b@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "7b2d118c-ab0d-4bba-9ca2-395e2f378c24@f9941",
+        "__uuid__": "8784eead-bbde-4a46-8e23-124965d95fa1@f9941",
         "__expectedType__": "cc.SpriteFrame"
       }
     ]

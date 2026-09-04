@@ -273,6 +273,19 @@ export class CBattleRole extends COverseer {
                     this.skills.push(skill);
                 }
                 break;
+            case eCCharacterID.eciSkullMage:
+                {
+                    this.setMaxHP(5000);
+                    this.setHP(5000);
+                    // this.bUninterruptible = true;
+                    //const skill = new CSkillRepeatRange(this);
+                    const skill = new CSkillLanche(this);
+
+                    skill.LoadData();
+                    skill.eMissile = eMissileId.emiDarkMagic;
+                    skill.nCD = 2000;
+                    this.skills.push(skill);
+                }
             case eCCharacterID.eciTauren:
                 {
                     this.setMaxHP(20000);
