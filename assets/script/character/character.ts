@@ -91,11 +91,21 @@ export class CCharacter extends Component {
 
 
         scale.x = Math.abs(scale.x) * Number(this._moveDirection);
+
+        // console.log("设置角色朝向", this.node.name, this._moveDirection, scale.x); ``
         this.node.setScale(scale);
     }
 
     get moveDirection(): number {
         return Number(this._moveDirection);
+    }
+
+    setDirection2Right() {
+        this.moveDirection = eDirction.edRight;
+    }
+
+    setDirection2Left() {
+        this.moveDirection = eDirction.edLeft;
     }
 
     deleteSelf() {

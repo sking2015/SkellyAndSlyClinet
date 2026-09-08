@@ -109,7 +109,7 @@ export class CBaseRoom extends Component {
         this.addRole(eCCharacterID.eciPriestHF, -150);
     }
 
-    async addRole(eId: eCCharacterID, pos: number) {
+    async addRole(eId: eCCharacterID, pos: number): Promise<CCharacter> {
 
         const char: CCharacter = await CCharactersManager.instance.CreateChacater4room(eId, this);
 
@@ -118,6 +118,7 @@ export class CBaseRoom extends Component {
         char.node.parent = this.nodeCharLayer;
         char.node.y = -95;
         char.setPosition(pos);
+        return char;
     }
 
     refreshRoomLockShow() {

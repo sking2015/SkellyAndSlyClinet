@@ -9,6 +9,9 @@ const { ccclass, property } = _decorator;
 @ccclass('CTroopDeployPanel')
 export class CTroopDeployPanel extends Component {
 
+    @property({ type: Label, tooltip: "部队部署面板兵种" })
+    troopTypeLabel: Label = null;
+
     @property({ type: Label, tooltip: "总部队数量" })
     totalTroopsLabel: Label = null;
 
@@ -74,17 +77,20 @@ export class CTroopDeployPanel extends Component {
 
         switch (this.troopIndex) {
             case eTroopType.ettSoldier: //近战
+                this.troopTypeLabel.string = "Total Soldiers";
                 this.currentLocationCurrentTroops = CGlobalData.instance.getRoomSoldierNumByIndex(this.roomIndex);
                 this.capacityTroops = CGlobalData.instance.getSoldierCapacity();
                 this.leftTroops = CGlobalData.instance.getSoldierLeft();
 
                 break;
             case eTroopType.ettArcher: //远程
+                this.troopTypeLabel.string = "Total Archers";
                 this.currentLocationCurrentTroops = CGlobalData.instance.getRoomArcherNumByIndex(this.roomIndex);
                 this.capacityTroops = CGlobalData.instance.getArcherCapacity();
                 this.leftTroops = CGlobalData.instance.getArcherLeft();
                 break;
             case eTroopType.ettMage: //法师
+                this.troopTypeLabel.string = "Total Mages";
                 this.currentLocationCurrentTroops = CGlobalData.instance.getRoomMageNumByIndex(this.roomIndex);
                 this.capacityTroops = CGlobalData.instance.getMageCapacity();
                 this.leftTroops = CGlobalData.instance.getMageLeft();

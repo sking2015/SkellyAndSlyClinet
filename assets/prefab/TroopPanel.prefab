@@ -441,8 +441,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 202.6083984375,
-      "height": 35.5
+      "width": 246.330078125,
+      "height": 45.8
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -480,10 +480,10 @@
     "_string": "UNIT PLACE",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 25,
-    "_fontSize": 25,
+    "_actualFontSize": 30,
+    "_fontSize": 30,
     "_fontFamily": "Arial",
-    "_lineHeight": 25,
+    "_lineHeight": 30,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": {
@@ -505,7 +505,7 @@
       "b": 0,
       "a": 255
     },
-    "_outlineWidth": 2,
+    "_outlineWidth": 4,
     "_enableShadow": false,
     "_shadowColor": {
       "__type__": "cc.Color",
@@ -4695,6 +4695,9 @@
     "_enabled": true,
     "__prefab": {
       "__id__": 191
+    },
+    "troopTypeLabel": {
+      "__id__": 25
     },
     "totalTroopsLabel": {
       "__id__": 33
