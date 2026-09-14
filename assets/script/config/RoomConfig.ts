@@ -14,13 +14,13 @@ export const RoomConfigData: Record<string | number, IRoomConfig> = {
     },
     1: {
         "Index": 1,
-        "RoomType": 4,
-        "RoomName": "MAD Alchemy Lab"
+        "RoomType": 13,
+        "RoomName": "Barrack"
     },
     2: {
         "Index": 2,
-        "RoomType": 1,
-        "RoomName": "Lumber Mill"
+        "RoomType": 4,
+        "RoomName": "MAD Alchemy Lab"
     },
     3: {
         "Index": 3,

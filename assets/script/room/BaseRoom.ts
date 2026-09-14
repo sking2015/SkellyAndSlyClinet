@@ -179,8 +179,18 @@ export class CBaseRoom extends Component {
     //刷新房间布景
     refreshRoomScenery() {
         const nImgLv: number = Math.floor(this.roomLevel / 3 - 0.1) + 1;
-        this.sprBg.spriteFrame = CResManager.instance.getRoomBg(this.roomType, nImgLv);
-        this.sprFg.spriteFrame = CResManager.instance.getRoomFg(this.roomType, nImgLv);
+        let sfBg = CResManager.instance.getRoomBg(this.roomType, nImgLv);
+        if (sfBg != null) {
+            this.sprBg.spriteFrame = sfBg;
+        }
+
+        let sfFg = CResManager.instance.getRoomFg(this.roomType, nImgLv);
+        if (sfFg != null) {
+            this.sprFg.spriteFrame = sfFg;
+        }
+        // this.sprBg.spriteFrame = CResManager.instance.getRoomBg(this.roomType, nImgLv);
+        //
+        // this.sprFg.spriteFrame = CResManager.instance.getRoomFg(this.roomType, nImgLv);
     }
 
     onOpenExpand() {

@@ -147,11 +147,11 @@ export class CGlobalData {
     initSimRoomsData() {
         //模拟数据，免得每次开服务器        
         this.loadSimRoomsData(0, eRoomType.ertDoor);
-        this.loadSimRoomsData(1, eRoomType.ertAlchemy);
-        this.loadSimRoomsData(2, eRoomType.ertLumberMill);
-        this.loadSimRoomsData(3, eRoomType.ertMetalWorkshop);
-        this.loadSimRoomsData(4, eRoomType.ertCrystalMine);
-
+        this.loadSimRoomsData(1, eRoomType.ertBarrack);
+        this.loadSimRoomsData(2, eRoomType.ertAlchemy);
+        this.loadSimRoomsData(3, eRoomType.ertLumberMill);
+        this.loadSimRoomsData(4, eRoomType.ertMetalWorkshop);
+        this.loadSimRoomsData(5, eRoomType.ertCrystalMine);
     }
 
     foreachRooms(callback: Function) {

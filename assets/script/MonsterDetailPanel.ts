@@ -95,6 +95,7 @@ export class CMonsterDetailPanel extends Component {
     setChar(data: CCharData) {
         this.eCharId = data.ID;
         this.data = data;
+        this.nLevel = CGlobalData.instance.getMonsterLevel(this.eCharId);
     }
 
     initAllProperties() {
