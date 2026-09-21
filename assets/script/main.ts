@@ -9,6 +9,7 @@ import { CMALPanel } from './MALPanel';
 import { CTroopDeployPanel } from './TroopDeployPanel';
 import { CMonsterDetailPanel } from './MonsterDetailPanel';
 import { CCharactersManager } from './CharacaterMannager';
+import { CTroopUpgrade } from './TroopUpgrade';
 
 import { Roomlist } from './Roomlist';
 import { eRoomType, eTroopType } from './BaseDef';
@@ -36,6 +37,8 @@ export class main extends Component {
     @property({ type: CTroopDeployPanel, tooltip: "部队部署面板" })
     comTroopDeployPanel: CTroopDeployPanel = null;
 
+    @property({ type: CTroopUpgrade, tooltip: "部队升级面板" })
+    comTroopUpgradePanel: CTroopUpgrade = null;
 
     @property({ type: ResourceShowArea, tooltip: "资源显示区域组件" })
     comResShowArea: ResourceShowArea = null;
@@ -82,6 +85,7 @@ export class main extends Component {
         this.node.on(UniEvent.on_refresh_charInfo, this.refreshCharInfo, this);
         this.node.on(UniEvent.on_room_refresh, this.onRoomRefresh, this);
         this.node.on(UniEvent.on_open_chars_list, this.onPopCharsListPanel, this);
+        this.node.on(UniEvent.on_open_troop_upgrade, this.onPopTroopUpgradePanel, this);
 
     }
 
@@ -100,6 +104,7 @@ export class main extends Component {
         this.node.off(UniEvent.on_refresh_charInfo, this.refreshCharInfo, this);
         this.node.off(UniEvent.on_room_refresh, this.onRoomRefresh, this);
         this.node.off(UniEvent.on_open_chars_list, this.onPopCharsListPanel, this);
+        this.node.off(UniEvent.on_open_troop_upgrade, this.onPopTroopUpgradePanel, this);
     }
 
     onEnable() {
@@ -112,6 +117,11 @@ export class main extends Component {
 
     refreshResource(event: CustomEvent) {
         this.comResShowArea.refreshResource();
+    }
+
+    onPopTroopUpgradePanel(event: CustomEvent) {
+        this.nodeMask.active = true;
+        this.comTroopUpgradePanel.Show(true);
     }
 
     onPopCharsListPanel(event: CustomEvent) {

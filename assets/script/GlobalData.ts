@@ -75,9 +75,13 @@ export class CGlobalData {
     nArcherCapacity: number = 50;
     nMageCapacity: number = 50;
 
-    nSoldierLeft: number = 50;
-    nArcherLeft: number = 50;
-    nMageLeft: number = 50;
+    nSoldierLeft: number = 10;
+    nArcherLeft: number = 10;
+    nMageLeft: number = 10;
+
+    nSoldierLevel: number = 1;
+    nArcherLevel: number = 1;
+    nMageLevel: number = 1;
 
 
     constructor() {
@@ -268,6 +272,37 @@ export class CGlobalData {
         return 0;
     }
 
+    genOneTroop(eType: eTroopType) {
+        switch (eType) {
+            case eTroopType.ettSoldier:
+                this.nSoldierLeft++;
+                break;
+            case eTroopType.ettArcher:
+                this.nArcherLeft++;
+                break;
+            case eTroopType.ettMage:
+                this.nMageLeft++;
+                break;
+        }
+    }
+
+    getTroopLevel(eType: eTroopType) {
+        let level: number = 0;
+        switch (eType) {
+            case eTroopType.ettSoldier:
+                level = this.nSoldierLevel;
+                break;
+            case eTroopType.ettArcher:
+                level = this.nArcherLevel;
+                break;
+            case eTroopType.ettMage:
+                level = this.nMageLevel;
+                break;
+        }
+
+        return level;
+    }
+
     getSoldierCapacity(): number {
         return this.nSoldierCapacity;
     }
@@ -292,6 +327,17 @@ export class CGlobalData {
         return this.nMageLeft;
     }
 
+    getSoldierCanTrainNum(): number {
+        return this.nSoldierCapacity - this.nSoldierLeft;
+    }
+
+    getArcherCanTrainNum(): number {
+        return this.nArcherCapacity - this.nArcherLeft;
+    }
+
+    getMageCanTrainNum(): number {
+        return this.nMageCapacity - this.nMageLeft;
+    }
 
     DeployTroop(idx: number, troopType: eTroopType, newNum: number) {
         const roomData = this.getRoomDataByIndex(idx);

@@ -9,6 +9,9 @@ export class CCheckGroup extends Component {
     @property([CCheckBox])
     checkBoxList: CCheckBox[] = [];
 
+    curCheckedIndex: number = -1;
+
+
     start() {
         this.setCheckBoxState(0); //默认选中第一个
     }
@@ -18,6 +21,7 @@ export class CCheckGroup extends Component {
     }
 
     setCheckBoxState(index: number) {
+        this.curCheckedIndex = index;
         for (let i = 0; i < this.checkBoxList.length; i++) {
             if (i === index) {
                 this.checkBoxList[i].setCheckBoxState(true);
@@ -25,6 +29,10 @@ export class CCheckGroup extends Component {
                 this.checkBoxList[i].setCheckBoxState(false);
             }
         }
+    }
+
+    getCurCheckedIndex(): number {
+        return this.curCheckedIndex;
     }
 }
 

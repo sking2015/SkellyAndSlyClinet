@@ -4,7 +4,7 @@ export interface IHeros {
     readonly ID: number;
     readonly Name: string;
     readonly Head: string;
-    readonly Portraint: string;
+    readonly Portrait: string;
     readonly Prefab: string;
     readonly HP: number;
     readonly HPup: number;
@@ -47,7 +47,7 @@ export const HerosData: Record<string | number, IHeros> = {
         "ID": 1,
         "Name": "Hero1",
         "Head": "Hero",
-        "Portraint": "soldier_male",
+        "Portrait": "soldier_male",
         "Prefab": "soldier_male",
         "HP": 1000,
         "HPup": 200,
@@ -88,7 +88,7 @@ export const HerosData: Record<string | number, IHeros> = {
         "ID": 2,
         "Name": "Hero2",
         "Head": "Hero",
-        "Portraint": "archer_elf_male",
+        "Portrait": "archer_elf_male",
         "Prefab": "mega_female",
         "HP": 500,
         "HPup": 120,
@@ -129,7 +129,7 @@ export const HerosData: Record<string | number, IHeros> = {
         "ID": 3,
         "Name": "Hero3",
         "Head": "Hero",
-        "Portraint": "mega_female",
+        "Portrait": "mega_female",
         "Prefab": "archer_elf_male",
         "HP": 800,
         "HPup": 180,
@@ -170,7 +170,7 @@ export const HerosData: Record<string | number, IHeros> = {
         "ID": 4,
         "Name": "Hero4",
         "Head": "Hero",
-        "Portraint": "Hero",
+        "Portrait": "Hero",
         "Prefab": "priest_female",
         "HP": 2000,
         "HPup": 500,

@@ -31,4 +31,5 @@ export enum UniEvent {
     on_refresh_charInfo = "onRefreshCharInfo",                //刷新角色信息
     on_room_refresh = "onRoomRefresh",                          //刷新房间
     on_open_chars_list = "onOpenCharsList",                     //打开角色列表
+    on_open_troop_upgrade = "onOpenTroopUpgrade",               //打开部队升级界面
 }

@@ -30,8 +30,14 @@ export enum eCCharacterID {
     eciDemonMax = 6,                 //魔王军最大数量
 
     eciSkullSoldier = 910,            //骷髅战士
-    eciSkullArcher = 920,             //骷髅弓手    
+    eciSkullSoldier2 = 911,           //骷髅战士Lv2
+    eciSkullSoldier3 = 912,           //骷髅战士Lv3
+    eciSkullArcher = 920,             //骷髅弓手
+    eciSkullArcher2 = 921,             //骷髅弓手Lv2
+    eciSkullArcher3 = 922,             //骷髅弓手Lv3 
     eciSkullMage = 930,             //骷髅法师
+    eciSkullMage2 = 931,             //骷髅法师Lv2
+    eciSkullMage3 = 932,             //骷髅法师Lv3
 
     eciHerosStart = 1000,         //勇者系ID从1000开始..
     eciSoldierHM = 1001,        //人类男性战士
@@ -131,6 +137,13 @@ export enum eTroopType {
     ettSoldier = 1,               //近战
     ettArcher = 2,                //远程
     ettMage = 3,                  //法师
+}
+
+export const mapTroop2ID: { [key in eTroopType]: number[] } = {
+    [eTroopType.ettNone]: [],
+    [eTroopType.ettSoldier]: [eCCharacterID.eciSkullSoldier, eCCharacterID.eciSkullSoldier2, eCCharacterID.eciSkullSoldier3],
+    [eTroopType.ettArcher]: [eCCharacterID.eciSkullArcher, eCCharacterID.eciSkullArcher2, eCCharacterID.eciSkullArcher3],
+    [eTroopType.ettMage]: [eCCharacterID.eciSkullMage, eCCharacterID.eciSkullMage2, eCCharacterID.eciSkullMage3],
 }
 
 ////////////////////////

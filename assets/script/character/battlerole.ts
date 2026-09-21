@@ -815,7 +815,11 @@ export class CBattleRole extends COverseer {
 
 
     UpdateMove(deltaTime: number) {
-        if (this.charTar) {
+        //有指定位置要优先处理
+        if (this.bNeedRun2Pos) {
+            this.handleRun2PositionMovement(deltaTime);
+        } else if (this.charTar) {
+            //然后才是朝向目标移动
             this.handleMove(deltaTime);
         } else {
             this.SwitchToStand();

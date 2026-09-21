@@ -4,6 +4,7 @@ import { eCharPlace, eBattleCamp, eDirction, eCCharacterID } from '../BaseDef';
 import { fadeInOut } from '../common/common';
 import { CBaseRoom } from '../room/BaseRoom';
 import { CCharactersManager } from '../CharacaterMannager';
+import { editorExtrasTag } from 'cc';
 const { ccclass, property } = _decorator;
 
 export const AI_INTERVAL = 0.1; // AI 0.1秒驱动一次
@@ -552,6 +553,20 @@ export class CCharacter extends Component {
         }
     }
 
+    bNeedRun2Pos: boolean = false;
+    nDestX: number = 0;
+    nDestY: number = 0;
+    cbRun2Position: Function = null;
+
+    run2PositionV2(x: number, y: number, cb?: Function) {
+        console.log("run2PositionV2", x, y);
+        this.nDestX = x;
+        this.nDestY = y;
+        this.cbRun2Position = cb;
+        this.bNeedRun2Pos = true;
+        this.playRun();
+    }
+
     playAttack() {
         console.log("播放攻击动作")
     }
@@ -656,7 +671,10 @@ export class CCharacter extends Component {
     }
 
     UpdateMove(deltaTime: number) {
-        if (this._isReturningToRange) {
+        //如果需要跑到指定位置，优先处理这个逻辑
+        if (this.bNeedRun2Pos) {
+            this.handleRun2PositionMovement(deltaTime);
+        } else if (this._isReturningToRange) {
             this.handleReturnMovement(deltaTime);
         } else if (this._currentActionKey === ACT_RUN || this._currentActionKey == ACT_WALK) {
             this.handleRunningMovement(deltaTime);
@@ -665,6 +683,10 @@ export class CCharacter extends Component {
 
     aiBoostTime = 0;
     update(deltaTime: number) {
+        if (this.ePlace == eCharPlace.ecpInRoom) {
+            console.log("CCharacter update", this.node.name, deltaTime);
+        }
+
         if (this.bDelete) {
             if (this.nDeleteTime + 3000 > Date.now()) {
                 //三秒后删除自己
@@ -720,6 +742,46 @@ export class CCharacter extends Component {
             this.switchRandomAction();
         } else {
             this.node.setPosition(pos);
+        }
+    }
+
+    public handleRun2PositionMovement(dt: number) {
+        // console.log("handleRun2PositionMovement", this.nDestX, this.nDestY);
+
+        let pos = this.node.position.clone();
+        let speed = this.runSpeed;
+
+        if (this._currentActionKey == ACT_WALK) {
+            speed *= 0.5;
+        }
+
+        let directionX = this.nDestX - pos.x;
+        let directionY = this.nDestY - pos.y;
+
+        let moveXDir = directionX > 0 ? 1 : -1;
+        let moveYDir = directionY > 0 ? 1 : -1;
+
+        if (moveXDir > 0) {
+            this.moveDirection = eDirction.edRight;
+        } else {
+            this.moveDirection = eDirction.edLeft;
+        }
+
+        if (Math.abs(directionX) > 1) {
+            pos.x += speed * moveXDir * dt;
+        }
+
+        if (Math.abs(directionY) > 1) {
+            pos.y += speed * moveYDir * dt;
+        }
+
+        this.node.setPosition(pos);
+
+        if (Math.abs(pos.x - this.nDestX) < 5 && Math.abs(pos.y - this.nDestY) < 5) {
+            this.bNeedRun2Pos = false;
+            if (this.cbRun2Position) {
+                this.cbRun2Position();
+            }
         }
     }
 

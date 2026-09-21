@@ -4,7 +4,7 @@ export interface IMonsters {
     readonly ID: number;
     readonly Name: string;
     readonly Head: string;
-    readonly Portraint: string;
+    readonly Portrait: string;
     readonly Prefab: string;
     readonly HP: number;
     readonly HPup: number;
@@ -50,7 +50,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "ID": 1,
         "Name": "EyeTyarnt",
         "Head": "tyarnt",
-        "Portraint": "tyarnt",
+        "Portrait": "tyarnt",
         "Prefab": "Eyetyrant",
         "HP": 1000,
         "HPup": 200,
@@ -94,7 +94,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "ID": 2,
         "Name": "Lich",
         "Head": "lich",
-        "Portraint": "lich",
+        "Portrait": "lich",
         "Prefab": "Lich",
         "HP": 500,
         "HPup": 120,
@@ -138,7 +138,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "ID": 3,
         "Name": "Orc",
         "Head": "orc",
-        "Portraint": "orc",
+        "Portrait": "orc",
         "Prefab": "Orc",
         "HP": 800,
         "HPup": 180,
@@ -182,7 +182,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "ID": 4,
         "Name": "Dragon",
         "Head": "dragon",
-        "Portraint": "dragon",
+        "Portrait": "dragon",
         "Prefab": "Dragon",
         "HP": 2000,
         "HPup": 500,
@@ -226,7 +226,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "ID": 5,
         "Name": "Tauren",
         "Head": "tauren",
-        "Portraint": "tauren",
+        "Portrait": "tauren",
         "Prefab": "Tauren",
         "HP": 1500,
         "HPup": 400,
@@ -270,7 +270,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "ID": 910,
         "Name": "skullSoldier",
         "Head": "skullSoldier",
-        "Portraint": "skullSoldier",
+        "Portrait": "skullSoldier",
         "Prefab": "skullSoldier",
         "HP": 1000,
         "HPup": 200,
@@ -314,7 +314,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "ID": 920,
         "Name": "skullArcher",
         "Head": "skullArcher",
-        "Portraint": "skullArcher",
+        "Portrait": "skullArcher",
         "Prefab": "skullArcher",
         "HP": 800,
         "HPup": 200,
@@ -358,7 +358,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "ID": 930,
         "Name": "skullMage",
         "Head": "skullMage",
-        "Portraint": "skullMage",
+        "Portrait": "skullMage",
         "Prefab": "skullMage",
         "HP": 700,
         "HPup": 200,

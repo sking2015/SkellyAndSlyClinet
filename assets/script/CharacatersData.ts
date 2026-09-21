@@ -162,4 +162,21 @@ export class CCharactersData {
 
         return "";
     }
+
+    GetCharPortraitPath(nID: number, bHero: boolean = false): string {
+
+        if (bHero) {
+            const cfg: IHeros = HerosData[nID];
+            if (cfg) {
+                return cfg.Portrait;
+            }
+        } else {
+            const cfg: IMonsters = MonstersData[nID];
+            if (cfg) {
+                return cfg.Portrait;
+            }
+        }
+
+        return "";
+    }
 }
