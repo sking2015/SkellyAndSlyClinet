@@ -119,9 +119,15 @@ export class main extends Component {
         this.comResShowArea.refreshResource();
     }
 
+    onTroopUpgrade() {
+
+    }
+
     onPopTroopUpgradePanel(event: CustomEvent) {
         this.nodeMask.active = true;
         this.comTroopUpgradePanel.Show(true);
+        this.comTroopUpgradePanel.setTroopType(event.detail.ett);
+        this.comTroopUpgradePanel.setBarrackRoom(event.detail.comBR);
     }
 
     onPopCharsListPanel(event: CustomEvent) {

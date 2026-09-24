@@ -11,6 +11,7 @@ import { Label } from 'cc';
 import { CGlobalData } from '../GlobalData';
 import { ITroop_Produce, Troop_ProduceData } from "../config/Troop_Produce"
 
+
 const { ccclass, property } = _decorator;
 
 @ccclass('CBarrackRoom')
@@ -36,6 +37,19 @@ export class CBarrackRoom extends CBaseRoom {
 
     @property({ type: Node, tooltip: "部队出生点" })
     troopBornPos: Node | null = null;
+
+
+    @property({ type: Label, tooltip: "部队等级" })
+    lblTroopLv: Label = null;
+
+    @property({ type: Label, tooltip: "部队血量" })
+    lblTroopHP: Label = null;
+
+    @property({ type: Label, tooltip: "部队攻击" })
+    lblTroopATK: Label = null;
+
+    @property({ type: Label, tooltip: "部队防御" })
+    lblTroopDEF: Label = null;
 
 
     trainingTroopCount: number = 0; //当前训练部队数量
@@ -81,7 +95,7 @@ export class CBarrackRoom extends CBaseRoom {
         this.lblTrainMetal.string = nTotalMetal.toString();
     }
 
-    refreshTroopRole() {
+    refreshTroopRole(bPlayEffect: boolean = false) {
         this.troopBase.removeAllChildren();
 
         let nTroopIndex = this.checkGroup.getCurCheckedIndex() + 1;
@@ -94,6 +108,14 @@ export class CBarrackRoom extends CBaseRoom {
 
         this.refreshCost();
 
+        let troopData: ITroop_Produce = Troop_ProduceData[this.nCurTroopId];
+        console.log("troopData", troopData);
+
+        this.lblTroopLv.string = level.toString();
+        this.lblTroopHP.string = troopData.Base_HP.toString();
+        this.lblTroopATK.string = troopData.Base_Attack.toString();
+        this.lblTroopDEF.string = troopData.Base_Defense.toString();
+
 
         CResManager.instance.dynLoadMonster(CCharactersData.instance.GetCharPrefabPath(this.nCurTroopId), (prefab: Prefab) => {
             const nodeRole = instantiate(prefab);
@@ -102,6 +124,10 @@ export class CBarrackRoom extends CBaseRoom {
 
             this.charTroop.SetPlace(eCharPlace.ecpShow);
             this.charTroop.playStand();
+
+            if (bPlayEffect) {
+                this.charTroop.playEffect();
+            }
         })
 
     }
@@ -121,9 +147,13 @@ export class CBarrackRoom extends CBaseRoom {
 
     onClickTroopUpgradeBtn() {
         console.log("onClickTroopUpgradeBtn");
-        this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_troop_upgrade, true));
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_troop_upgrade, true, { ett: this.eCurTroopType, comBR: this }));
     }
 
+    onTroopUpgrad() {
+        console.log("部队升级....~!!");
+        this.refreshTroopRole(true);
+    }
 
 
     bProducingTroop: boolean = false;

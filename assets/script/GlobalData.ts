@@ -100,6 +100,10 @@ export class CGlobalData {
         return CGlobalData._instance;
     }
 
+    doCostCoin() {
+
+    }
+
 
     //监工目前只有有限种类,所以eotWizard后面的lv都设为0
     initMonstersData() {
@@ -282,6 +286,20 @@ export class CGlobalData {
                 break;
             case eTroopType.ettMage:
                 this.nMageLeft++;
+                break;
+        }
+    }
+
+    doTroopLvUp(ett: eTroopType) {
+        switch (ett) {
+            case eTroopType.ettSoldier:
+                this.nSoldierLevel++;
+                break;
+            case eTroopType.ettArcher:
+                this.nArcherLevel++;
+                break;
+            case eTroopType.ettMage:
+                this.nMageLevel++;
                 break;
         }
     }

@@ -11,8 +11,8 @@ export interface ITroop_Upgrades {
     readonly SpriteName: string;
 }
 
-export const Troop_UpgradesData: ITroop_Upgrades[] = [
-    {
+export const Troop_UpgradesData: Record<string | number, ITroop_Upgrades> = {
+    910: {
         "BaseUnitID": 910,
         "Level": 1,
         "Cost_Gold": 0,
@@ -22,7 +22,7 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "Defense": 60,
         "SpriteName": "skullSoldier"
     },
-    {
+    911: {
         "BaseUnitID": 911,
         "Level": 2,
         "Cost_Gold": 10000,
@@ -30,9 +30,9 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "HP": 600,
         "Attack": 40,
         "Defense": 80,
-        "SpriteName": "skullSoldier"
+        "SpriteName": "skullSoldier2"
     },
-    {
+    912: {
         "BaseUnitID": 912,
         "Level": 3,
         "Cost_Gold": 25000,
@@ -40,9 +40,9 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "HP": 800,
         "Attack": 55,
         "Defense": 110,
-        "SpriteName": "skullSoldier"
+        "SpriteName": "skullSoldier3"
     },
-    {
+    920: {
         "BaseUnitID": 920,
         "Level": 1,
         "Cost_Gold": 0,
@@ -52,7 +52,7 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "Defense": 20,
         "SpriteName": "skullArcher"
     },
-    {
+    921: {
         "BaseUnitID": 921,
         "Level": 2,
         "Cost_Gold": 12000,
@@ -60,9 +60,9 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "HP": 280,
         "Attack": 80,
         "Defense": 30,
-        "SpriteName": "skullArcher"
+        "SpriteName": "skullArcher2"
     },
-    {
+    922: {
         "BaseUnitID": 922,
         "Level": 3,
         "Cost_Gold": 30000,
@@ -70,9 +70,9 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "HP": 400,
         "Attack": 115,
         "Defense": 45,
-        "SpriteName": "skullArcher"
+        "SpriteName": "skullArcher3"
     },
-    {
+    930: {
         "BaseUnitID": 930,
         "Level": 1,
         "Cost_Gold": 0,
@@ -82,7 +82,7 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "Defense": 10,
         "SpriteName": "skullMage"
     },
-    {
+    931: {
         "BaseUnitID": 931,
         "Level": 2,
         "Cost_Gold": 20000,
@@ -90,9 +90,9 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "HP": 220,
         "Attack": 140,
         "Defense": 15,
-        "SpriteName": "skullMage"
+        "SpriteName": "skullMage2"
     },
-    {
+    932: {
         "BaseUnitID": 932,
         "Level": 3,
         "Cost_Gold": 50000,
@@ -100,6 +100,6 @@ export const Troop_UpgradesData: ITroop_Upgrades[] = [
         "HP": 320,
         "Attack": 210,
         "Defense": 25,
-        "SpriteName": "skullMage"
+        "SpriteName": "skullMage3"
     }
-];
+};
