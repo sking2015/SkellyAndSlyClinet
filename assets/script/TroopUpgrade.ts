@@ -5,11 +5,14 @@ import { CGlobalData } from './GlobalData';
 import { CResManager } from './ResManager';
 import { CCharactersData } from './CharacatersData';
 import { CCharacter } from './character/character';
+import { getI18nText } from './i18nLan';
 import { ITroop_Upgrades, Troop_UpgradesData } from './config/Troop_Upgrades';
 import { CBarrackRoom } from './room/BarrackRoom';
 import { Label } from 'cc';
 
 const { ccclass, property } = _decorator;
+
+const MAX_LV_Placeholder = "--";
 
 @ccclass('CTroopUpgrade')
 export class CTroopUpgrade extends Component {
@@ -51,6 +54,10 @@ export class CTroopUpgrade extends Component {
 
     @property({ type: Label, tooltip: "升级所需水晶" })
     lblCostCrystal: Label = null;
+
+
+    @property({ type: Node, tooltip: "满级提示" })
+    nodeMaxLvTip: Node = null;
 
 
 
@@ -112,16 +119,6 @@ export class CTroopUpgrade extends Component {
                 this.troopSrc.playStand();
             })
 
-            this.nTarTroopId = mapTroop2ID[this.ett][level] as number;
-
-            CResManager.instance.dynLoadMonster(CCharactersData.instance.GetCharPrefabPath(this.nTarTroopId), (prefab: Prefab) => {
-                const nodeRole = instantiate(prefab);
-                nodeRole.parent = this.nodeTroopTar;
-                this.troopTar = nodeRole.getComponent(CCharacter);
-
-                this.troopTar.SetPlace(eCharPlace.ecpShow);
-                this.troopTar.playStand();
-            })
 
             let oriLvInfo: ITroop_Upgrades = Troop_UpgradesData[this.nSrcTroopId];
             this.lblSrcLv.string = level.toString();
@@ -129,25 +126,56 @@ export class CTroopUpgrade extends Component {
             this.lblSrcATK.string = oriLvInfo.Attack.toString();
             this.lblSrcDEF.string = oriLvInfo.Defense.toString();
 
-            let lvupInfo: ITroop_Upgrades = Troop_UpgradesData[this.nTarTroopId];
 
-            this.nCostCoin = lvupInfo.Cost_Gold;
-            this.nCostCrystal = lvupInfo.Cost_Gem;
+            //只有等级未满，才有升级数据
+            if (level < mapTroop2ID[this.ett].length) {
+                this.nodeMaxLvTip.active = false;
+                this.nTarTroopId = mapTroop2ID[this.ett][level] as number;
 
-            this.lblCostCoin.string = this.nCostCoin.toString();
-            this.lblCostCrystal.string = this.nCostCrystal.toString();
+                CResManager.instance.dynLoadMonster(CCharactersData.instance.GetCharPrefabPath(this.nTarTroopId), (prefab: Prefab) => {
+                    const nodeRole = instantiate(prefab);
+                    nodeRole.parent = this.nodeTroopTar;
+                    this.troopTar = nodeRole.getComponent(CCharacter);
+
+                    this.troopTar.SetPlace(eCharPlace.ecpShow);
+                    this.troopTar.playStand();
+                })
+
+                let lvupInfo: ITroop_Upgrades = Troop_UpgradesData[this.nTarTroopId];
+
+                this.nCostCoin = lvupInfo.Cost_Gold;
+                this.nCostCrystal = lvupInfo.Cost_Gem;
+
+                this.lblCostCoin.string = this.nCostCoin.toString();
+                this.lblCostCrystal.string = this.nCostCrystal.toString();
 
 
-            this.lblTarLv.string = (level + 1).toString();
-            this.lblTarHP.string = lvupInfo.HP.toString();
-            this.lblTarATK.string = lvupInfo.Attack.toString();
-            this.lblTarDEF.string = lvupInfo.Defense.toString();
+                this.lblTarLv.string = (level + 1).toString();
+                this.lblTarHP.string = lvupInfo.HP.toString();
+                this.lblTarATK.string = lvupInfo.Attack.toString();
+                this.lblTarDEF.string = lvupInfo.Defense.toString();
+            } else {
+
+                this.lblCostCoin.string = MAX_LV_Placeholder;
+                this.lblCostCrystal.string = MAX_LV_Placeholder;
+
+                this.nodeMaxLvTip.active = true;
+                this.lblTarLv.string = MAX_LV_Placeholder;
+                this.lblTarHP.string = MAX_LV_Placeholder;
+                this.lblTarATK.string = MAX_LV_Placeholder;
+                this.lblTarDEF.string = MAX_LV_Placeholder;
+
+            }
         }
 
     }
 
     onClickConfirm() {
-        if (CGlobalData.instance.nCoin >= this.nCostCoin && CGlobalData.instance.nCrystal >= this.nCostCrystal) {
+        if (this.nCurTroopLevel >= mapTroop2ID[this.ett].length) {
+            console.log("部队已经满级");
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: getI18nText("MAX_LV_TIP_4_UNIT") }));
+
+        } else if (CGlobalData.instance.nCoin >= this.nCostCoin && CGlobalData.instance.nCrystal >= this.nCostCrystal) {
             CGlobalData.instance.nCoin -= this.nCostCoin;
             CGlobalData.instance.nCrystal -= this.nCostCrystal;
 
@@ -158,9 +186,9 @@ export class CTroopUpgrade extends Component {
             this.node.dispatchEvent((new CustomEvent(UniEvent.on_troop_upgrade, true)));
 
             this.comBarrackRoom.onTroopUpgrad();
-
-            this.Show(false);
         }
+
+        this.Show(false);
     }
 
     Show(bShow: boolean) {

@@ -186,5 +186,10 @@ export const i18nData: Record<string | number, Ii18n> = {
         "ID": "HAVE_BEEN_MAXLV",
         "EN": "This room was max level.",
         "CH": "undefined"
+    },
+    "MAX_LV_TIP_4_UNIT": {
+        "ID": "MAX_LV_TIP_4_UNIT",
+        "EN": "This unit was max level.",
+        "CH": "undefined"
     }
 };
