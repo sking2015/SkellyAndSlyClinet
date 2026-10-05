@@ -5,10 +5,12 @@ export enum eRoomType {
     ertLumberMill = 1,  // 伐木场
     ertMetalWorkshop = 2,   // 金属工坊
     ertCrystalMine = 3,      // 水晶矿
-    ertDoor = 10,            //魔王城大门
+
+    ertCastleOutSide = 10,   //魔王城外部
     ertAlchemy = 11,        //炼金术实验室
     ertBattleRoom = 12,        //战斗房间
     ertBarrack = 13,        //兵营
+    ertDoor = 14,            //魔王城大门（内部）
 }
 
 //矿场增益类型

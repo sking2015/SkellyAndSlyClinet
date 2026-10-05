@@ -116,7 +116,7 @@ export class CBaseRoom extends Component {
         char.setInBattle(true);
 
         char.node.parent = this.nodeCharLayer;
-        char.node.y = -95;
+        char.node.y = 0;
         char.setPosition(pos);
         return char;
     }
@@ -169,7 +169,8 @@ export class CBaseRoom extends Component {
     }
 
     refreshRoomShow() {
-        const name = getRoomName(this.index);
+        console.log("房间基类刷新显示，一般情况下需要在派生类重写", this.roomType);
+        const name = getRoomName(this.roomType);
 
         this.labelRoomName.string = name;
 
@@ -254,6 +255,14 @@ export class CBaseRoom extends Component {
         // this.testBattle();
     }
 
+    unlock() {
+        console.log("房间解锁~~!!!");
+        const nodeText: Node = this.nodeLocked.getChildByName('Label');
+        nodeText.active = false;
+
+        this.nodeLocked.active = false;
+    }
+
     async onClickUnLock() {
         console.log("click unlock");
         if (!this.bUnlockable) {
@@ -268,7 +277,7 @@ export class CBaseRoom extends Component {
             return;
         }
 
-        this.setRoomLevel(1);
+
 
 
         let comUnlock = this.nodeLocked.getComponent(Animation);
@@ -277,14 +286,15 @@ export class CBaseRoom extends Component {
 
             fadeInOut(this.nodeLocked, 0.5, false, () => {
 
-                const nodeText: Node = this.nodeLocked.getChildByName('Label');
-                nodeText.active = false;
-
-                this.nodeLocked.active = false;
+                this.setRoomLevel(1);
+                this.unlock();
+                this.onUnlock();
             });
 
-            this.onUnlock();
+
         });
+
+        this.setRoomLevel(1);
 
 
         if (GameConfig.ONLY_DEBUG_CLINTE) {

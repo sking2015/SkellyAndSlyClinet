@@ -182,6 +182,7 @@ export class main extends Component {
                 break;
             case eRoomType.ertBattleRoom:
             case eRoomType.ertDoor:
+            case eRoomType.ertCastleOutSide:
                 this.comTroopDeployPanel.Show(true);
                 this.comTroopDeployPanel.setInfo(event.detail.roomIndex, event.detail.troopIndex);
                 break;

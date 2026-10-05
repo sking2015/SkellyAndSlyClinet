@@ -150,19 +150,25 @@ export class CGlobalData {
             archer_num: 0,
             mage_num: 0
         });
+
+        if (level > 0) {
+            this.nUnlockRoomNum++;
+        }
     }
 
     initSimRoomsData() {
-        //模拟数据，免得每次开服务器        
-        this.loadSimRoomsData(0, eRoomType.ertDoor);
-        this.loadSimRoomsData(1, eRoomType.ertBarrack);
-        this.loadSimRoomsData(2, eRoomType.ertAlchemy);
-        this.loadSimRoomsData(3, eRoomType.ertLumberMill);
-        this.loadSimRoomsData(4, eRoomType.ertMetalWorkshop);
-        this.loadSimRoomsData(5, eRoomType.ertCrystalMine);
+        //模拟数据，免得每次开服务器  
+        this.loadSimRoomsData(0, eRoomType.ertCastleOutSide, 1);
+        this.loadSimRoomsData(1, eRoomType.ertDoor);
+        this.loadSimRoomsData(2, eRoomType.ertBarrack);
+        this.loadSimRoomsData(3, eRoomType.ertAlchemy);
+        this.loadSimRoomsData(4, eRoomType.ertLumberMill);
+        this.loadSimRoomsData(5, eRoomType.ertMetalWorkshop);
+        this.loadSimRoomsData(6, eRoomType.ertCrystalMine);
     }
 
     foreachRooms(callback: Function) {
+        console.log("foreachRooms", this.listRooms.length, this.listRooms);
         for (let i = 0; i < this.listRooms.length; ++i) {
             callback(this.listRooms[i]);
         }

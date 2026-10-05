@@ -225,12 +225,16 @@ export class CResManager extends Component {
         // }
 
         //初始化房间类型map
+        console.log("房间数据", this.roomdata);
+
         this.mapRoomImgData.clear();
         for (const data of this.roomdata) {
             if (!data) continue;
 
             this.mapRoomImgData.set(data.eRt, data);
         }
+
+        console.log("房间类型map", this.mapRoomImgData);
 
         for (const data of this.raceSFCfg) {
             if (!data) continue;

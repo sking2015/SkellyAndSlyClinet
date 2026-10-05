@@ -26,7 +26,7 @@
     "_active": true,
     "_components": [],
     "_prefab": {
-      "__id__": 388
+      "__id__": 390
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -57,7 +57,7 @@
     },
     "autoReleaseAssets": false,
     "_globals": {
-      "__id__": 401
+      "__id__": 403
     },
     "_id": "bee56949-57da-4306-aed7-7a39e34f344e"
   },
@@ -7563,8 +7563,7 @@
     "instance": {
       "__id__": 329
     },
-    "targetOverrides": null,
-    "nestedPrefabInstanceRoots": null
+    "targetOverrides": null
   },
   {
     "__type__": "cc.PrefabInstance",
@@ -8135,15 +8134,15 @@
       },
       {
         "__id__": 366
-      }
-    ],
-    "propertyBarCfg": [
+      },
       {
         "__id__": 367
       },
       {
         "__id__": 368
-      },
+      }
+    ],
+    "propertyBarCfg": [
       {
         "__id__": 369
       },
@@ -8161,15 +8160,15 @@
       },
       {
         "__id__": 374
-      }
-    ],
-    "raceSFCfg": [
+      },
       {
         "__id__": 375
       },
       {
         "__id__": 376
-      },
+      }
+    ],
+    "raceSFCfg": [
       {
         "__id__": 377
       },
@@ -8190,20 +8189,26 @@
       },
       {
         "__id__": 383
-      }
-    ],
-    "missilePfb": [
+      },
       {
         "__id__": 384
       },
       {
         "__id__": 385
-      },
+      }
+    ],
+    "missilePfb": [
       {
         "__id__": 386
       },
       {
         "__id__": 387
+      },
+      {
+        "__id__": 388
+      },
+      {
+        "__id__": 389
       }
     ],
     "sfAllImg": [
@@ -8419,7 +8424,7 @@
   },
   {
     "__type__": "CRoomType2Data",
-    "eRt": 10,
+    "eRt": 12,
     "prefabRoom": {
       "__uuid__": "b8bd6b08-c940-4093-a717-0ff1aec321c0",
       "__expectedType__": "cc.Prefab"
@@ -8483,6 +8488,30 @@
     "eRt": 13,
     "prefabRoom": {
       "__uuid__": "b20c3749-dac5-4874-b6f3-8bbb6ec5330c",
+      "__expectedType__": "cc.Prefab"
+    },
+    "lvdata": [],
+    "prefabWorker": null,
+    "sfResourceIcon": null,
+    "sfResCapIcon": null
+  },
+  {
+    "__type__": "CRoomType2Data",
+    "eRt": 10,
+    "prefabRoom": {
+      "__uuid__": "6855f700-cbaa-4816-82ba-37b6d5a0438f",
+      "__expectedType__": "cc.Prefab"
+    },
+    "lvdata": [],
+    "prefabWorker": null,
+    "sfResourceIcon": null,
+    "sfResCapIcon": null
+  },
+  {
+    "__type__": "CRoomType2Data",
+    "eRt": 14,
+    "prefabRoom": {
+      "__uuid__": "b8bd6b08-c940-4093-a717-0ff1aec321c0",
       "__expectedType__": "cc.Prefab"
     },
     "lvdata": [],
@@ -8666,9 +8695,6 @@
     "instance": null,
     "targetOverrides": [
       {
-        "__id__": 389
-      },
-      {
         "__id__": 391
       },
       {
@@ -8682,6 +8708,9 @@
       },
       {
         "__id__": 399
+      },
+      {
+        "__id__": 401
       }
     ],
     "nestedPrefabInstanceRoots": [
@@ -8721,7 +8750,7 @@
       "__id__": 158
     },
     "targetInfo": {
-      "__id__": 390
+      "__id__": 392
     }
   },
   {
@@ -8743,7 +8772,7 @@
       "__id__": 173
     },
     "targetInfo": {
-      "__id__": 392
+      "__id__": 394
     }
   },
   {
@@ -8765,7 +8794,7 @@
       "__id__": 182
     },
     "targetInfo": {
-      "__id__": 394
+      "__id__": 396
     }
   },
   {
@@ -8787,7 +8816,7 @@
       "__id__": 196
     },
     "targetInfo": {
-      "__id__": 396
+      "__id__": 398
     }
   },
   {
@@ -8809,7 +8838,7 @@
       "__id__": 318
     },
     "targetInfo": {
-      "__id__": 398
+      "__id__": 400
     }
   },
   {
@@ -8831,7 +8860,7 @@
       "__id__": 327
     },
     "targetInfo": {
-      "__id__": 400
+      "__id__": 402
     }
   },
   {
@@ -8843,28 +8872,28 @@
   {
     "__type__": "cc.SceneGlobals",
     "ambient": {
-      "__id__": 402
-    },
-    "shadows": {
-      "__id__": 403
-    },
-    "_skybox": {
       "__id__": 404
     },
-    "fog": {
+    "shadows": {
       "__id__": 405
     },
-    "octree": {
+    "_skybox": {
       "__id__": 406
     },
-    "skin": {
+    "fog": {
       "__id__": 407
     },
-    "lightProbeInfo": {
+    "octree": {
       "__id__": 408
     },
-    "postSettings": {
+    "skin": {
       "__id__": 409
+    },
+    "lightProbeInfo": {
+      "__id__": 410
+    },
+    "postSettings": {
+      "__id__": 411
     },
     "bakedWithStationaryMainLight": false,
     "bakedWithHighpLightmap": false

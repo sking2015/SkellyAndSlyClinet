@@ -39,6 +39,6 @@ export function getResDataByRoomTypeAndLevel(eRt: eRoomType, level: number): IRe
     }
 }
 
-export function getRoomName(idx: number): string {
-    return RoomConfigData[idx].RoomName;
+export function getRoomName(eType: eRoomType): string {
+    return RoomConfigData[eType].RoomName;
 }

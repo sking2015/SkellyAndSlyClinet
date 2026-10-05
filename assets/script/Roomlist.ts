@@ -103,7 +103,7 @@ export class Roomlist extends Component {
     initAllRoom() {
         let index: number = 0;
         CGlobalData.instance.foreachRooms((data: CRoomData) => {
-            console.log("room data", data);
+            console.log("room data", data.eType, data);
 
             const prefabRoom: Prefab = CResManager.instance.getRoomPrefab(data.eType);
             const nodeRoom = instantiate(prefabRoom);
@@ -116,9 +116,8 @@ export class Roomlist extends Component {
             if (data.level > 0) {
                 ComRoom.setStock(data.nStock);
                 ComRoom.refreshRoomData();
+                ComRoom.unlock();
                 ComRoom.onUnlock();
-
-
             }
 
 

@@ -1,7 +1,7 @@
 [
   {
     "__type__": "cc.Prefab",
-    "_name": "battleRoom",
+    "_name": "CastleOutSide",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_native": "",
@@ -13,7 +13,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "battleRoom",
+    "_name": "CastleOutSide",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": null,
@@ -224,7 +224,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 670,
-      "height": 239
+      "height": 758
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -260,7 +260,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "19c422e8-ca52-4581-a0bc-4bf99a1f99e9@f9941",
+      "__uuid__": "807794f4-e504-4280-b17d-52ea12b2a722@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -332,7 +332,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": -94.467,
+      "y": -353.463,
       "z": 0
     },
     "_lrot": {
@@ -425,7 +425,7 @@
     "_anchorPoint": {
       "__type__": "cc.Vec2",
       "x": 0.5,
-      "y": 0.5
+      "y": 0
     },
     "_id": ""
   },
@@ -513,7 +513,7 @@
     "_anchorPoint": {
       "__type__": "cc.Vec2",
       "x": 0.5,
-      "y": 0.5
+      "y": 0
     },
     "_id": ""
   },
@@ -601,7 +601,7 @@
     "_anchorPoint": {
       "__type__": "cc.Vec2",
       "x": 0.5,
-      "y": 0.5
+      "y": 0
     },
     "_id": ""
   },
@@ -636,7 +636,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 560,
+      "width": 680,
       "height": 200
     },
     "_anchorPoint": {
@@ -658,7 +658,7 @@
     "node": {
       "__id__": 9
     },
-    "_enabled": true,
+    "_enabled": false,
     "__prefab": {
       "__id__": 25
     },
@@ -680,7 +680,7 @@
     "node": {
       "__id__": 9
     },
-    "_enabled": true,
+    "_enabled": false,
     "__prefab": {
       "__id__": 27
     },
@@ -758,7 +758,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 0,
+      "y": -251.193,
       "z": 0
     },
     "_lrot": {
@@ -798,7 +798,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 560,
+      "width": 680,
       "height": 200
     },
     "_anchorPoint": {
@@ -1054,7 +1054,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": -173.345,
-      "y": 88,
+      "y": -209.951,
       "z": 0
     },
     "_lrot": {
@@ -1341,7 +1341,7 @@
         "__id__": 56
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 64
@@ -1678,7 +1678,7 @@
         "__id__": 70
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 78
@@ -2029,8 +2029,8 @@
     },
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": 286.74199999999996,
-      "y": 71.18399999999997,
+      "x": -271.761,
+      "y": 322.212,
       "z": 0
     },
     "_lrot": {
@@ -2120,8 +2120,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 90,
-      "height": 87
+      "width": 150,
+      "height": 103
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -2157,7 +2157,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "904b91fb-c4f1-48ae-aa0f-db8b6346ce72@f9941",
+      "__uuid__": "fa878883-82c6-4d62-96f7-866a4dba9863@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -2863,7 +2863,7 @@
         "__id__": 121
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 129
@@ -3263,7 +3263,7 @@
     "propertyPath": [
       "_active"
     ],
-    "value": true
+    "value": false
   },
   {
     "__type__": "cc.TargetInfo",
@@ -3750,8 +3750,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 670,
-      "height": 239
+      "width": 700,
+      "height": 758
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3876,7 +3876,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": -119.5,
+      "y": -379,
       "z": 0
     },
     "_lrot": {
@@ -10216,7 +10216,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 670,
-      "height": 569
+      "height": 1088
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
