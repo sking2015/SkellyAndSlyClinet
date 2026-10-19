@@ -28,14 +28,18 @@ export const RoomConfigData: Record<string | number, IRoomConfig> = {
     },
     12: {
         "RoomType": 12,
-        "RoomName": "Battle Room"
+        "RoomName": "Feed Room"
     },
     13: {
         "RoomType": 13,
-        "RoomName": "Barrack"
+        "RoomName": "Battle Room"
     },
     14: {
         "RoomType": 14,
+        "RoomName": "Barrack"
+    },
+    15: {
+        "RoomType": 15,
         "RoomName": "Castle Door"
     }
 };

@@ -162,9 +162,10 @@ export class CGlobalData {
         this.loadSimRoomsData(1, eRoomType.ertDoor);
         this.loadSimRoomsData(2, eRoomType.ertBarrack);
         this.loadSimRoomsData(3, eRoomType.ertAlchemy);
-        this.loadSimRoomsData(4, eRoomType.ertLumberMill);
-        this.loadSimRoomsData(5, eRoomType.ertMetalWorkshop);
-        this.loadSimRoomsData(6, eRoomType.ertCrystalMine);
+        this.loadSimRoomsData(4, eRoomType.ertFeedRoom);
+        this.loadSimRoomsData(5, eRoomType.ertLumberMill);
+        this.loadSimRoomsData(6, eRoomType.ertMetalWorkshop);
+        this.loadSimRoomsData(7, eRoomType.ertCrystalMine);
     }
 
     foreachRooms(callback: Function) {
