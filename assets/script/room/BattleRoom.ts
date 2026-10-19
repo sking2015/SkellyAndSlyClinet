@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, EventTouch, tween, Sprite, Label } from 'cc';
+import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, Label } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { fadeInOut } from '../common/common';
@@ -194,21 +194,35 @@ export class CBattleRoom extends CBaseRoom {
         super.onOpenExpand();
         console.log("点击展开按钮，展开房间的扩展面板");
 
+        this.stopCombatPanelAnimation();
         this.nodeCombatDataPanel.active = true;
         fadeInOut(this.nodeCombatDataPanel, 0.3, true, () => {
             tween(this.nodeCombatDataPanel).to(0.3, { y: COMBAT_PANEL_Y_EXPANDED }, { easing: 'backOut' }).start();
         });
     }
 
-    onCloseExpand() {
-        super.onCloseExpand();
+    CloseExpand() {
+        const wasOpen = this.bOpneExpandPanel || this.nodeExpandPanel.active;
+        super.CloseExpand();
+        if (!wasOpen) {
+            return;
+        }
         console.log("点击关闭按钮，关闭房间的扩展面板");
+        this.stopCombatPanelAnimation();
         tween(this.nodeCombatDataPanel).to(0.3, { y: COMBAT_PANEL_Y_COLLAPSED }, { easing: 'backIn' }).call(() => {
             fadeInOut(this.nodeCombatDataPanel, 0.3, false, () => {
                 this.nodeCombatDataPanel.active = false;
             });
         }).start();
 
+    }
+
+    private stopCombatPanelAnimation() {
+        Tween.stopAllByTarget(this.nodeCombatDataPanel);
+        const opacity = this.nodeCombatDataPanel.getComponent(UIOpacity);
+        if (opacity) {
+            Tween.stopAllByTarget(opacity);
+        }
     }
 
 }

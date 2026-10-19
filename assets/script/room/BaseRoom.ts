@@ -195,6 +195,8 @@ export class CBaseRoom extends Component {
     }
 
     onOpenExpand() {
+        this.bOpneExpandPanel = true;
+        this.nodeSwitchExpand?.setScale(1, -1, 1);
         this.nodeExpandPanel.active = true;
         this.refreshExpand();
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_expand, true, { index: this.index, offset: this.offset }))
@@ -208,6 +210,8 @@ export class CBaseRoom extends Component {
 
     CloseExpand() {
         this.nodeExpandPanel.active = false;
+        this.bOpneExpandPanel = false;
+        this.nodeSwitchExpand?.setScale(1, 1, 1);
     }
 
     refreshExpand() {
@@ -313,12 +317,8 @@ export class CBaseRoom extends Component {
 
         if (this.bOpneExpandPanel) {
             this.onCloseExpand();
-            this.nodeSwitchExpand.scale = v3(1, 1);
-            this.bOpneExpandPanel = false;
         } else {
             this.onOpenExpand();
-            this.nodeSwitchExpand.scale = v3(1, -1);
-            this.bOpneExpandPanel = true;
         }
 
         // console.log("先用来测试一下设置监工");
