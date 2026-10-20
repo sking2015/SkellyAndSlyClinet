@@ -2,6 +2,7 @@ import { eCCharacterID, eRoomType, IPlayer, IPlayerData, IRoom } from './BaseDef
 import { CCharData, CCharactersData } from './CharacatersData';
 import { GameConfig } from './GameConfig';
 import { eTroopType } from './BaseDef';
+import { CItem, CItemManager } from './Item';
 
 //房间数据
 //
@@ -83,11 +84,14 @@ export class CGlobalData {
     nArcherLevel: number = 1;
     nMageLevel: number = 1;
 
+    mgrItem: CItemManager = new CItemManager();
+
 
     constructor() {
         console.log("全局数据类开始构造");
         this.initMonstersData();
         this.initSimRoomsData();
+        this.initSimItems();
     }
 
     private static _instance: CGlobalData = null;
@@ -166,6 +170,16 @@ export class CGlobalData {
         this.loadSimRoomsData(5, eRoomType.ertLumberMill);
         this.loadSimRoomsData(6, eRoomType.ertMetalWorkshop);
         this.loadSimRoomsData(7, eRoomType.ertCrystalMine);
+    }
+
+    initSimItems() {
+        //模拟数据，免得每次开服务器  
+        this.mgrItem.createItem(1001);
+        this.mgrItem.createItem(1002);
+        this.mgrItem.createItem(1003);
+        this.mgrItem.createItem(1004);
+        this.mgrItem.createItem(8001);
+        this.mgrItem.createItem(8002);
     }
 
     foreachRooms(callback: Function) {
