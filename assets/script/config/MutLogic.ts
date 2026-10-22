@@ -1,6 +1,6 @@
 /** 自动生成 TS 配置 */
 
-export interface ILogic {
+export interface IMutLogic {
     readonly rule_id: number;
     readonly priority: number;
     readonly max_diff_threshold: number;
@@ -9,7 +9,7 @@ export interface ILogic {
     readonly desc: string;
 }
 
-export const LogicData: Record<string | number, ILogic> = {
+export const MutLogicData: Record<string | number, IMutLogic> = {
     1: {
         "rule_id": 1,
         "priority": 0,

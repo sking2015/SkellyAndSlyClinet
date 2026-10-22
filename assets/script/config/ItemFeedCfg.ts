@@ -1,6 +1,6 @@
 /** 自动生成 TS 配置 */
 
-export interface Iitem_feed {
+export interface IItemFeedCfg {
     readonly item_id: number;
     readonly item_name: string;
     readonly icon_spr: string;
@@ -19,7 +19,7 @@ export interface Iitem_feed {
     readonly mut_points: number;
 }
 
-export const item_feedData: Record<string | number, Iitem_feed> = {
+export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
     1001: {
         "item_id": 1001,
         "item_name": "Demon Horn",

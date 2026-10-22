@@ -4,7 +4,7 @@ import { CrystalMineData } from './config/CrystalMine';
 import { MetalWorkshopData } from './config/MetalWorkshop';
 import { LumberMillData } from './config/LumberMill';
 import { RoomConfigData } from './config/RoomConfig';
-import { IdefaultRoomLvUpCfg, defaultRoomLvUpCfgData } from './config/defaultRoomLvUpCfg';
+import { IRoomLvUpCfg, RoomLvUpCfgData } from './config/RoomLvUpCfg';
 
 
 export interface IResData {
@@ -20,8 +20,8 @@ export interface IResData {
     readonly Cost_lumber: number;
 }
 
-export function getDefaultRoomLvUpCfg(level: number): IdefaultRoomLvUpCfg {
-    return defaultRoomLvUpCfgData[level];
+export function getDefaultRoomLvUpCfg(level: number): IRoomLvUpCfg {
+    return RoomLvUpCfgData[level];
 
 }
 

@@ -1,13 +1,17 @@
 import { _decorator, Component, Node } from 'cc';
-import { IItemsConfig, ItemsConfigData } from './config/ItemsConfig';
+import { IItemFeedCfg, ItemFeedCfgData } from './config/ItemFeedCfg';
 
 
 export class CItem {
     public id: number = 0;
     private num: number = 0;
 
-    public get config(): IItemsConfig {
-        return ItemsConfigData[this.id];
+    // public get config(): IItemsConfig {
+    //     return ItemsConfigData[this.id];
+    // }
+
+    public get feedCfg(): IItemFeedCfg {
+        return ItemFeedCfgData[this.id];
     }
 
     public get itemNum(): number {

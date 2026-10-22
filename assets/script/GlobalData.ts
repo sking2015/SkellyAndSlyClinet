@@ -3,6 +3,7 @@ import { CCharData, CCharactersData } from './CharacatersData';
 import { GameConfig } from './GameConfig';
 import { eTroopType } from './BaseDef';
 import { CItem, CItemManager } from './Item';
+import { CFeedData } from './FeedData';
 
 //房间数据
 //
@@ -83,6 +84,9 @@ export class CGlobalData {
     nSoldierLevel: number = 1;
     nArcherLevel: number = 1;
     nMageLevel: number = 1;
+
+    //喂养数据
+    dataFeed: CFeedData = new CFeedData();
 
     mgrItem: CItemManager = new CItemManager();
 
@@ -174,12 +178,12 @@ export class CGlobalData {
 
     initSimItems() {
         //模拟数据，免得每次开服务器  
-        this.mgrItem.createItem(1001);
-        this.mgrItem.createItem(1002);
-        this.mgrItem.createItem(1003);
-        this.mgrItem.createItem(1004);
-        this.mgrItem.createItem(8001);
-        this.mgrItem.createItem(8002);
+        this.mgrItem.createItem(1001, 30);
+        this.mgrItem.createItem(1002, 30);
+        this.mgrItem.createItem(1003, 30);
+        this.mgrItem.createItem(1004, 30);
+        this.mgrItem.createItem(8001, 30);
+        this.mgrItem.createItem(8002, 30);
     }
 
     foreachRooms(callback: Function) {

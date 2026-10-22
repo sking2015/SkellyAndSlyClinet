@@ -21,7 +21,7 @@ export class UIItem extends Component {
         this.numNode.string = item ? item.itemNum.toString() : '';
         if (!item) return;
 
-        const config = item.config;
+        const config = item.feedCfg;
         if (!config || !config.icon_spr) {
             console.error(`Missing icon config for itemId: ${item.id}`);
             return;
