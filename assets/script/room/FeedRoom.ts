@@ -6,6 +6,7 @@ import { UIItem } from '../UIItem';
 import { FEED_ATTRIBUTES, FeedAttribute } from '../FeedData';
 import { CUIProperty } from '../UIProperty';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
+import { MutStageCfgData } from '../config/MutStageCfg';
 const { ccclass } = _decorator;
 
 @ccclass('CFeedRoom')
@@ -25,8 +26,11 @@ export class CFeedRoom extends CBaseRoom {
     private changeScales = new Map<Label, Vec3>();
     private mutationLevel: Label = null;
     private mutationProgress: ProgressBar = null;
+    private mutationPercent: Label = null;
     private feedButton: Node = null;
     private valueTransition: { progress: number } = null;
+    private displayedMutLevel: number = null;
+    private pendingCapResets = new Map<CUIProperty, { cap: number; opacity: UIOpacity; originalOpacity: number }>();
 
     public get selectedItem(): CItem {
         return this.items.find(item => item.id === this.selectedId) || null;
@@ -47,6 +51,7 @@ export class CFeedRoom extends CBaseRoom {
         }
         this.mutationLevel = this.node.getChildByPath('base/roomBG/MutantLvTitle/Lv')?.getComponent(Label);
         this.mutationProgress = this.node.getChildByPath('base/roomBG/MutationProgressBarBg/ProgressBar')?.getComponent(ProgressBar);
+        this.mutationPercent = this.node.getChildByPath('base/roomBG/MutantEnergyTitle/value')?.getComponent(Label);
         this.feedButton = this.nodeExpandPanel.getChildByName('Feed Button');
         this.feedButton?.on(Node.EventType.TOUCH_END, this.onFeed, this);
         this.refreshFeedData();
@@ -111,28 +116,57 @@ export class CFeedRoom extends CBaseRoom {
         // 普通面板刷新不打断进行中的数值动画。
         if (this.valueTransition && !animate) return;
         this.stopValueTransition();
-        const starts = new Map<FeedAttribute, { value: number; progress: number }>();
-        const targets = new Map<FeedAttribute, { value: number; progress: number }>();
+        if (!animate) this.clearCapResets();
+        const starts = new Map<FeedAttribute, number>();
+        const targets = new Map<FeedAttribute, number>();
         this.statViews.forEach((view, attribute) => {
-            starts.set(attribute, { value: view.curValue, progress: view.pb.progress });
-            const value = data[attribute];
-            targets.set(attribute, { value, progress: Math.max(0, Math.min(1, value / data.getAttributeCap(attribute))) });
+            starts.set(attribute, view.curValue);
+            targets.set(attribute, data[attribute]);
             view.setTitle(`${attribute}:`);
-            view.setMaxValue(data.getAttributeCap(attribute));
         });
-        if (this.mutationLevel) this.mutationLevel.string = data.mutLevel.toString();
+        const mutationStartLevel = this.displayedMutLevel ?? data.mutLevel;
+        const mutationTargetLevel = data.mutLevel;
         const mutationStart = this.mutationProgress?.progress || 0;
         const required = data.stageCfg.req_mutation_points;
         const mutationTarget = required > 0 ? Math.max(0, Math.min(1, data.mutPoints / required)) : 0;
         const render = (ratio: number) => {
+            // 将各级进度串成连续区间，跨级时由满条归零，避免向后插值。
+            const start = mutationStartLevel + mutationStart;
+            const target = mutationTargetLevel + mutationTarget;
+            const position = start + (target - start) * ratio;
+            const nextLevel = ratio === 1 ? mutationTargetLevel
+                : Math.min(mutationTargetLevel, Math.floor(position));
+            if (animate) {
+                const previousLevel = this.displayedMutLevel ?? mutationStartLevel;
+                for (let level = previousLevel; level < nextLevel; level++) {
+                    // 满条时触发粒子，随后进入下一级；不显示房间升级文字。
+                    this.setMutationProgress(1);
+                    this.playUpgradeEffect(false);
+                    this.setMutationProgress(0);
+                }
+            }
+            this.displayedMutLevel = nextLevel;
+            // 跨级时保持原条长闪烁，结束后再按新上限直接重置。
+            const stage = MutStageCfgData[nextLevel];
             this.statViews.forEach((view, attribute) => {
-                const start = starts.get(attribute);
-                const target = targets.get(attribute);
-                view.curValue = start.value + (target.value - start.value) * ratio;
-                view.pb.progress = start.progress + (target.progress - start.progress) * ratio;
+                const startValue = starts.get(attribute);
+                view.curValue = startValue + (targets.get(attribute) - startValue) * ratio;
+                const cap = attribute === 'HP' ? stage.hp_cap
+                    : attribute === 'MP' ? stage.mp_cap : stage.stat_cap;
+                const pending = this.pendingCapResets.get(view);
+                if (pending) {
+                    pending.cap = cap;
+                } else if (animate && cap !== view.maxValue) {
+                    this.blinkBeforeCapReset(view, cap);
+                } else {
+                    view.setMaxValue(cap);
+                    view.pb.progress = Math.max(0, Math.min(1, view.curValue / cap));
+                }
                 view.lblValue.string = Math.round(view.curValue).toString();
             });
-            if (this.mutationProgress) this.mutationProgress.progress = mutationStart + (mutationTarget - mutationStart) * ratio;
+            if (this.mutationLevel) this.mutationLevel.string = this.displayedMutLevel.toString();
+            this.setMutationProgress(ratio === 1 ? mutationTarget
+                : Math.max(0, Math.min(1, position - this.displayedMutLevel)));
         };
         if (!animate) {
             render(1);
@@ -152,6 +186,35 @@ export class CFeedRoom extends CBaseRoom {
         this.valueTransition = null;
     }
 
+    private blinkBeforeCapReset(view: CUIProperty, cap: number) {
+        const node = view.pb.node;
+        const opacity = node.getComponent(UIOpacity) || node.addComponent(UIOpacity);
+        const pending = { cap, opacity, originalOpacity: opacity.opacity };
+        this.pendingCapResets.set(view, pending);
+        tween(opacity).repeat(5,
+            tween<UIOpacity>().to(0.15, { opacity: 0 })
+                .to(0.15, { opacity: pending.originalOpacity })
+        ).call(() => {
+            view.setMaxValue(pending.cap);
+            view.pb.progress = Math.max(0, Math.min(1, view.curValue / pending.cap));
+            opacity.opacity = pending.originalOpacity;
+            this.pendingCapResets.delete(view);
+        }).start();
+    }
+
+    private clearCapResets() {
+        this.pendingCapResets.forEach(pending => {
+            Tween.stopAllByTarget(pending.opacity);
+            pending.opacity.opacity = pending.originalOpacity;
+        });
+        this.pendingCapResets.clear();
+    }
+
+    private setMutationProgress(progress: number) {
+        if (this.mutationProgress) this.mutationProgress.progress = progress;
+        if (this.mutationPercent) this.mutationPercent.string = `${Math.floor(progress * 100)}%`;
+    }
+
     private onFeed(event: EventTouch) {
         event.propagationStopped = true;
         const item = this.selectedItem;
@@ -161,7 +224,8 @@ export class CFeedRoom extends CBaseRoom {
             }));
             return;
         }
-        const changes = CGlobalData.instance.dataFeed.feed(item);
+        const data = CGlobalData.instance.dataFeed;
+        const changes = data.feed(item);
         if (!changes) {
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: '喂养配置缺失，无法喂养' }));
             return;
@@ -312,6 +376,7 @@ export class CFeedRoom extends CBaseRoom {
 
     private stopAnimations() {
         this.stopValueTransition();
+        this.clearCapResets();
         this.clearFeedChanges();
         this.baseScales.forEach((_, node) => this.stopPulse(node));
     }
