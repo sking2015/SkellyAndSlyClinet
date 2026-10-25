@@ -10,9 +10,9 @@ export type FeedAttribute = typeof FEED_ATTRIBUTES[number];
 //封装喂养数据
 export class CFeedData extends CBattleData {
     public nBeastPoint: number = 0;              //狂兽指数
-    public abyssPoint: number = 0;               //深渊指数
+    public nAbyssPoint: number = 0;               //深渊指数
     public nLegionPoint: number = 0;            //统御指数
-    public fleshPoint: number = 0;              //血肉指数
+    public nFleshPoint: number = 0;              //血肉指数
 
     public mutPoints: number = 0;                //突变点数
     public mutLevel: number = 0;                 //突变等级
@@ -57,9 +57,9 @@ export class CFeedData extends CBattleData {
         this.MaxHP = this.HP;
         this.MaxMP = this.MP;
         this.nBeastPoint += config.gene_beast;
-        this.abyssPoint += config.gene_abyss;
+        this.nAbyssPoint += config.gene_abyss;
         this.nLegionPoint += config.gene_legion;
-        this.fleshPoint += config.gene_flesh;
+        this.nFleshPoint += config.gene_flesh;
         this.mutPoints += config.mut_points;
         while (MutStageCfgData[this.mutLevel + 1]
             && this.stageCfg.req_mutation_points > 0
