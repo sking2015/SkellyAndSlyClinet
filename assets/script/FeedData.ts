@@ -2,6 +2,7 @@
 import { CBattleData } from "./BattleData";
 import { CItem } from './Item';
 import { MutStageCfgData } from './config/MutStageCfg';
+import { eMutationType } from './BaseDef';
 
 export const FEED_ATTRIBUTES = ['HP', 'MP', 'ATK', 'DEF', 'INT', 'MDF', 'SPD', 'LAC'] as const;
 export type FeedAttribute = typeof FEED_ATTRIBUTES[number];
@@ -15,6 +16,12 @@ export class CFeedData extends CBattleData {
 
     public mutPoints: number = 0;                //突变点数
     public mutLevel: number = 0;                 //突变等级
+    public model_id: number = 0;                  //当前模型ID
+
+
+    public mutType: eMutationType = eMutationType.emtNone;        //突变类型    
+
+
 
     constructor() {
         super();

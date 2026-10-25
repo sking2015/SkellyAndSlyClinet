@@ -81,6 +81,19 @@ export enum eCharPlace {
     ecpInRoom = 2,                  //在房间里
 }
 
+//突变类型
+export enum eMutationType {
+    emtNone = 0,
+    emtBeast = 1,               //狂兽
+    emtAbyss = 2,               //深渊
+    emtLegion = 3,              //统御
+    emtFlesh = 4,               //血肉
+    emtChaos = 5,               //混沌
+}
+
+
+
+
 
 //角色属性定义
 export enum eProperty {
