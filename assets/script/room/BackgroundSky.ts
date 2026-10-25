@@ -4,9 +4,7 @@ const { ccclass, property } = _decorator;
 
 interface CloudFlight {
     node: Node;
-    origin: Vec3;
-    wait: number;
-    flying: boolean;
+    speed: number;
 }
 
 interface BatStream {
@@ -19,10 +17,10 @@ interface BatStream {
 
 @ccclass('CBackgroundSky')
 export class CBackgroundSky extends Component {
-    @property({ tooltip: '出现间隔下限（秒）' })
+    @property({ tooltip: '蝙蝠批次出现间隔下限（秒）' })
     minInterval = 5;
 
-    @property({ tooltip: '出现间隔上限（秒）' })
+    @property({ tooltip: '蝙蝠批次出现间隔上限（秒）' })
     maxInterval = 20;
 
     @property({ tooltip: '云朵移动速度下限（像素/秒）' })
@@ -30,6 +28,9 @@ export class CBackgroundSky extends Component {
 
     @property({ tooltip: '云朵移动速度上限（像素/秒）' })
     maxCloudSpeed = 100;
+
+    @property({ type: CCInteger, displayName: '云朵数量', tooltip: '开场铺满天空并持续循环使用的云朵数量', min: 0 })
+    cloudCount = 30;
 
     @property({ tooltip: '蝙蝠飞行时间下限（秒）' })
     minBatDuration = 2;
@@ -53,6 +54,8 @@ export class CBackgroundSky extends Component {
     maxBatSpawnPoints = 3;
 
     private clouds: CloudFlight[] = [];
+    private cloudTemplates: Node[] = [];
+    private cloudMinY = 0;
     private batTemplate: Node = null;
     private batOrigin: Vec3 = null;
     private batWait = 0;
@@ -61,19 +64,17 @@ export class CBackgroundSky extends Component {
     private batStreams: BatStream[] = [];
 
     protected onLoad() {
-        this.clouds = this.node.children.filter(node => /^Cloud\d*$/i.test(node.name))
-            .map(node => ({ node, origin: node.position.clone(), wait: 0, flying: false }));
+        this.cloudTemplates = this.node.children.filter(node => /^Cloud\d*$/i.test(node.name));
+        if (this.cloudTemplates.length) {
+            this.cloudMinY = Math.min(...this.cloudTemplates.map(node => node.position.y));
+            this.clouds = this.cloudTemplates.map(node => ({ node, speed: 0 }));
+        }
         this.batTemplate = this.node.getChildByName('bat');
         this.batOrigin = this.batTemplate?.position.clone() || null;
     }
 
     protected onEnable() {
-        for (const cloud of this.clouds) {
-            cloud.node.active = false;
-            cloud.node.setPosition(cloud.origin);
-            cloud.flying = false;
-            cloud.wait = this.nextInterval();
-        }
+        this.prepareClouds();
         if (this.batTemplate) this.batTemplate.active = false;
         this.batWait = this.nextInterval();
     }
@@ -111,23 +112,32 @@ export class CBackgroundSky extends Component {
         return { left: Math.min(a, b), right: Math.max(a, b) };
     }
 
-    private flyCloud(cloud: CloudFlight) {
+    private prepareClouds() {
+        if (!this.cloudTemplates.length) return;
+        const count = Math.max(0, Math.floor(this.cloudCount));
+        // 只在数量不足时创建，关闭再打开也继续复用已有云朵。
+        while (this.clouds.length < count) {
+            const template = this.cloudTemplates[this.clouds.length % this.cloudTemplates.length];
+            const node = instantiate(template);
+            node.name = 'FloatingCloud';
+            node.parent = this.node;
+            node.setSiblingIndex(this.cloudTemplates.length);
+            this.clouds.push({ node, speed: 0 });
+        }
+        this.clouds.forEach((cloud, index) => {
+            cloud.node.active = index < count;
+            if (cloud.node.active) this.resetCloud(cloud, true);
+        });
+    }
+
+    private resetCloud(cloud: CloudFlight, initial: boolean = false) {
         const bounds = this.bounds;
         const extents = this.horizontalExtents(cloud.node);
-        const startX = bounds.left - extents.right - 1;
-        const endX = bounds.right - extents.left + 1;
+        const x = initial ? this.random(bounds.left, bounds.right) : bounds.left - extents.right - 1;
+        const y = this.random(this.cloudMinY, Math.max(this.cloudMinY, bounds.top));
         const minSpeed = Math.max(1, this.minCloudSpeed);
-        const speed = this.random(minSpeed, Math.max(minSpeed, this.maxCloudSpeed));
-        cloud.flying = true;
-        cloud.node.setPosition(startX, cloud.origin.y, cloud.origin.z);
-        cloud.node.active = true;
-        tween(cloud.node).to((endX - startX) / speed, {
-            position: new Vec3(endX, cloud.origin.y, cloud.origin.z)
-        }).call(() => {
-            cloud.node.active = false;
-            cloud.flying = false;
-            cloud.wait = this.nextInterval();
-        }).start();
+        cloud.speed = this.random(minSpeed, Math.max(minSpeed, this.maxCloudSpeed));
+        cloud.node.setPosition(x, y, cloud.node.position.z);
     }
 
     private spawnBats() {
@@ -201,10 +211,17 @@ export class CBackgroundSky extends Component {
 
     update(deltaTime: number) {
         this.updateBatStreams(deltaTime);
+        const bounds = this.bounds;
         for (const cloud of this.clouds) {
-            if (cloud.flying) continue;
-            cloud.wait -= deltaTime;
-            if (cloud.wait <= 0) this.flyCloud(cloud);
+            if (!cloud.node.active) continue;
+            const position = cloud.node.position;
+            const x = position.x + cloud.speed * deltaTime;
+            const extents = this.horizontalExtents(cloud.node);
+            if (x + extents.left > bounds.right) {
+                this.resetCloud(cloud);
+            } else {
+                cloud.node.setPosition(x, position.y, position.z);
+            }
         }
         if (this.batTemplate) {
             this.batWait -= deltaTime;
@@ -218,7 +235,6 @@ export class CBackgroundSky extends Component {
     protected onDisable() {
         this.batStreams.length = 0;
         for (const cloud of this.clouds) {
-            Tween.stopAllByTarget(cloud.node);
             cloud.node.active = false;
         }
         for (const bat of this.bats) {

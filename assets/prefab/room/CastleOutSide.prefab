@@ -248,8 +248,8 @@
     },
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": 83.695,
-      "y": 50.245,
+      "x": 231.991,
+      "y": 200.083,
       "z": 0
     },
     "_lrot": {
@@ -890,6 +890,7 @@
     "maxInterval": 10,
     "minCloudSpeed": 30,
     "maxCloudSpeed": 100,
+    "cloudCount": 50,
     "minBatDuration": 1,
     "maxBatDuration": 2,
     "batSpawnInterval": 0.2,
