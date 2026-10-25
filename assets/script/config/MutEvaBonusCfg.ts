@@ -3,7 +3,8 @@
 export interface IMutEvaBonusCfg {
     readonly form_id: number;
     readonly stage_level: number;
-    readonly form_type: string;
+    readonly mut_type: number;
+    readonly form_class: string;
     readonly model_id: number;
     readonly bonus_hp: number;
     readonly bonus_mp: number;
@@ -19,7 +20,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     101: {
         "form_id": 101,
         "stage_level": 1,
-        "form_type": "Beast",
+        "mut_type": 1,
+        "form_class": "Beast",
         "model_id": 1,
         "bonus_hp": 100,
         "bonus_mp": 10,
@@ -33,7 +35,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     102: {
         "form_id": 102,
         "stage_level": 1,
-        "form_type": "Abyss",
+        "mut_type": 2,
+        "form_class": "Abyss",
         "model_id": 1,
         "bonus_hp": 100,
         "bonus_mp": 80,
@@ -47,7 +50,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     103: {
         "form_id": 103,
         "stage_level": 1,
-        "form_type": "Flesh",
+        "mut_type": 4,
+        "form_class": "Flesh",
         "model_id": 1,
         "bonus_hp": 500,
         "bonus_mp": 10,
@@ -61,7 +65,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     104: {
         "form_id": 104,
         "stage_level": 1,
-        "form_type": "Legion",
+        "mut_type": 3,
+        "form_class": "Legion",
         "model_id": 1,
         "bonus_hp": 100,
         "bonus_mp": 20,
@@ -75,7 +80,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     105: {
         "form_id": 105,
         "stage_level": 1,
-        "form_type": "Chaos",
+        "mut_type": 5,
+        "form_class": "Chaos",
         "model_id": 1,
         "bonus_hp": 300,
         "bonus_mp": 30,
@@ -89,7 +95,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     201: {
         "form_id": 201,
         "stage_level": 2,
-        "form_type": "Beast",
+        "mut_type": 1,
+        "form_class": "Beast",
         "model_id": 2,
         "bonus_hp": 300,
         "bonus_mp": 30,
@@ -103,7 +110,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     202: {
         "form_id": 202,
         "stage_level": 2,
-        "form_type": "Abyss",
+        "mut_type": 2,
+        "form_class": "Abyss",
         "model_id": 2,
         "bonus_hp": 300,
         "bonus_mp": 150,
@@ -117,7 +125,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     203: {
         "form_id": 203,
         "stage_level": 2,
-        "form_type": "Flesh",
+        "mut_type": 4,
+        "form_class": "Flesh",
         "model_id": 2,
         "bonus_hp": 1500,
         "bonus_mp": 30,
@@ -131,7 +140,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     204: {
         "form_id": 204,
         "stage_level": 2,
-        "form_type": "Legion",
+        "mut_type": 3,
+        "form_class": "Legion",
         "model_id": 2,
         "bonus_hp": 300,
         "bonus_mp": 50,
@@ -145,7 +155,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     205: {
         "form_id": 205,
         "stage_level": 2,
-        "form_type": "Chaos",
+        "mut_type": 5,
+        "form_class": "Chaos",
         "model_id": 2,
         "bonus_hp": 1000,
         "bonus_mp": 100,
@@ -159,7 +170,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     301: {
         "form_id": 301,
         "stage_level": 3,
-        "form_type": "Beast",
+        "mut_type": 1,
+        "form_class": "Beast",
         "model_id": 3,
         "bonus_hp": 500,
         "bonus_mp": 50,
@@ -173,7 +185,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     302: {
         "form_id": 302,
         "stage_level": 3,
-        "form_type": "Abyss",
+        "mut_type": 2,
+        "form_class": "Abyss",
         "model_id": 3,
         "bonus_hp": 500,
         "bonus_mp": 250,
@@ -187,7 +200,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     303: {
         "form_id": 303,
         "stage_level": 3,
-        "form_type": "Flesh",
+        "mut_type": 4,
+        "form_class": "Flesh",
         "model_id": 3,
         "bonus_hp": 2500,
         "bonus_mp": 50,
@@ -201,7 +215,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     304: {
         "form_id": 304,
         "stage_level": 3,
-        "form_type": "Legion",
+        "mut_type": 3,
+        "form_class": "Legion",
         "model_id": 3,
         "bonus_hp": 500,
         "bonus_mp": 100,
@@ -215,7 +230,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     305: {
         "form_id": 305,
         "stage_level": 3,
-        "form_type": "Chaos",
+        "mut_type": 5,
+        "form_class": "Chaos",
         "model_id": 3,
         "bonus_hp": 2000,
         "bonus_mp": 200,
@@ -229,7 +245,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     401: {
         "form_id": 401,
         "stage_level": 4,
-        "form_type": "Beast",
+        "mut_type": 1,
+        "form_class": "Beast",
         "model_id": 4,
         "bonus_hp": 800,
         "bonus_mp": 100,
@@ -243,7 +260,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     402: {
         "form_id": 402,
         "stage_level": 4,
-        "form_type": "Abyss",
+        "mut_type": 2,
+        "form_class": "Abyss",
         "model_id": 4,
         "bonus_hp": 800,
         "bonus_mp": 400,
@@ -257,7 +275,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     403: {
         "form_id": 403,
         "stage_level": 4,
-        "form_type": "Flesh",
+        "mut_type": 4,
+        "form_class": "Flesh",
         "model_id": 4,
         "bonus_hp": 4000,
         "bonus_mp": 100,
@@ -271,7 +290,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     404: {
         "form_id": 404,
         "stage_level": 4,
-        "form_type": "Legion",
+        "mut_type": 3,
+        "form_class": "Legion",
         "model_id": 4,
         "bonus_hp": 800,
         "bonus_mp": 150,
@@ -285,7 +305,8 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
     405: {
         "form_id": 405,
         "stage_level": 4,
-        "form_type": "Chaos",
+        "mut_type": 5,
+        "form_class": "Chaos",
         "model_id": 4,
         "bonus_hp": 4000,
         "bonus_mp": 400,
