@@ -32,6 +32,9 @@ export enum eCCharacterID {
     eciTauren = 5,                  //牛头人
     eciDemonMax = 6,                 //魔王军最大数量
 
+
+    eciSkellyBase = 100,                 //主角skelly的基础ID
+
     eciSkullSoldier = 910,            //骷髅战士
     eciSkullSoldier2 = 911,           //骷髅战士Lv2
     eciSkullSoldier3 = 912,           //骷髅战士Lv3
