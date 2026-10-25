@@ -886,12 +886,17 @@
     "__prefab": {
       "__id__": 35
     },
-    "minInterval": 5,
-    "maxInterval": 20,
-    "minCloudSpeed": 20,
+    "minInterval": 3,
+    "maxInterval": 10,
+    "minCloudSpeed": 30,
     "maxCloudSpeed": 100,
-    "minBatDuration": 2,
-    "maxBatDuration": 3.5,
+    "minBatDuration": 1,
+    "maxBatDuration": 2,
+    "batSpawnInterval": 0.2,
+    "minBatsPerPoint": 2,
+    "maxBatsPerPoint": 6,
+    "minBatSpawnPoints": 2,
+    "maxBatSpawnPoints": 6,
     "_id": ""
   },
   {

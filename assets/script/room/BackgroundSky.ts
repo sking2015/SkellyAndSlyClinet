@@ -1,4 +1,4 @@
-import { _decorator, Animation, AnimationClip, Component, instantiate, Node, tween, Tween, UITransform, Vec3 } from 'cc';
+import { _decorator, Animation, AnimationClip, CCInteger, Component, instantiate, Node, tween, Tween, UITransform, Vec3 } from 'cc';
 
 const { ccclass, property } = _decorator;
 
@@ -37,6 +37,21 @@ export class CBackgroundSky extends Component {
     @property({ tooltip: '蝙蝠飞行时间上限（秒）' })
     maxBatDuration = 3.5;
 
+    @property({ displayName: '蝙蝠逐只刷新间隔', tooltip: '同一刷新点相邻两只蝙蝠的出现间隔（秒）', min: 0.01 })
+    batSpawnInterval = 0.2;
+
+    @property({ type: CCInteger, displayName: '每点蝙蝠数量下限', tooltip: '每个刷新点随机生成蝙蝠的最小数量', min: 1 })
+    minBatsPerPoint = 2;
+
+    @property({ type: CCInteger, displayName: '每点蝙蝠数量上限', tooltip: '每个刷新点随机生成蝙蝠的最大数量', min: 1 })
+    maxBatsPerPoint = 5;
+
+    @property({ type: CCInteger, displayName: '刷新点数量下限', tooltip: '每批蝙蝠随机生成刷新点的最小数量', min: 1 })
+    minBatSpawnPoints = 1;
+
+    @property({ type: CCInteger, displayName: '刷新点数量上限', tooltip: '每批蝙蝠随机生成刷新点的最大数量', min: 1 })
+    maxBatSpawnPoints = 3;
+
     private clouds: CloudFlight[] = [];
     private batTemplate: Node = null;
     private batOrigin: Vec3 = null;
@@ -70,6 +85,12 @@ export class CBackgroundSky extends Component {
     private nextInterval(): number {
         const min = Math.max(0.1, this.minInterval);
         return this.random(min, Math.max(min, this.maxInterval));
+    }
+
+    private randomCount(minimum: number, maximum: number): number {
+        const min = Math.max(1, Math.floor(minimum));
+        const max = Math.max(min, Math.floor(maximum));
+        return min + Math.floor(Math.random() * (max - min + 1));
     }
 
     private get bounds() {
@@ -115,7 +136,7 @@ export class CBackgroundSky extends Component {
         const extents = this.horizontalExtents(this.batTemplate);
         const left = bounds.left - extents.left;
         const right = Math.max(left, bounds.right - extents.right);
-        const count = 1 + Math.floor(Math.random() * 3);
+        const count = this.randomCount(this.minBatSpawnPoints, this.maxBatSpawnPoints);
         // 分段随机，确保同一批蝙蝠的出生 X 不重合。
         const segment = (right - left) / count;
         for (let index = 0; index < count; index++) {
@@ -126,13 +147,13 @@ export class CBackgroundSky extends Component {
                 start: new Vec3(startX, this.batOrigin.y, this.batOrigin.z),
                 end: new Vec3(endX, bounds.top + 100, this.batOrigin.z),
                 duration: this.random(minDuration, Math.max(minDuration, this.maxBatDuration)),
-                remaining: 2 + Math.floor(Math.random() * 4),
-                wait: 0.2,
+                remaining: this.randomCount(this.minBatsPerPoint, this.maxBatsPerPoint),
+                wait: Math.max(0.01, this.batSpawnInterval),
             };
             // 第一只立即出现，后续蝙蝠复用同一条路径和飞行时间。
             this.spawnBat(stream);
             stream.remaining--;
-            this.batStreams.push(stream);
+            if (stream.remaining > 0) this.batStreams.push(stream);
         }
     }
 
@@ -164,7 +185,7 @@ export class CBackgroundSky extends Component {
             if (stream.wait <= 0) {
                 this.spawnBat(stream);
                 stream.remaining--;
-                stream.wait += 0.2;
+                stream.wait += Math.max(0.01, this.batSpawnInterval);
                 if (stream.remaining === 0) this.batStreams.splice(index, 1);
             }
         }
