@@ -2,7 +2,6 @@ import { _decorator, Component, Node, Prefab, SpriteFrame, assetManager, AssetMa
 import { CCharacterCfg, CRoomType2Data, CProperty2Spriteframe, CRace2Spriteframe, CMissileId2Prefab } from './KeyValuePair';
 import { eCCharacterID, eProperty, eRoomType, eRace, eMissileId } from './BaseDef';
 import { CCharactersData } from './CharacatersData';
-import { promises } from 'dns';
 
 const { ccclass, property } = _decorator;
 

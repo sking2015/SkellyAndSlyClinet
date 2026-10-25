@@ -11,7 +11,7 @@ export interface IItemFeedCfg {
     readonly add_int: number;
     readonly add_mdf: number;
     readonly add_spd: number;
-    readonly add_lac: number;
+    readonly add_lca: number;
     readonly gene_beast: number;
     readonly gene_abyss: number;
     readonly gene_legion: number;
@@ -31,7 +31,7 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "add_int": 0,
         "add_mdf": 0,
         "add_spd": 20,
-        "add_lac": 20,
+        "add_lca": 20,
         "gene_beast": 15,
         "gene_abyss": 0,
         "gene_legion": 0,
@@ -49,7 +49,7 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "add_int": 20,
         "add_mdf": 20,
         "add_spd": 0,
-        "add_lac": 0,
+        "add_lca": 0,
         "gene_beast": -5,
         "gene_abyss": 15,
         "gene_legion": 0,
@@ -67,7 +67,7 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "add_int": 0,
         "add_mdf": 0,
         "add_spd": 0,
-        "add_lac": 0,
+        "add_lca": 0,
         "gene_beast": 0,
         "gene_abyss": 0,
         "gene_legion": -5,
@@ -85,7 +85,7 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "add_int": 0,
         "add_mdf": 0,
         "add_spd": 0,
-        "add_lac": 25,
+        "add_lca": 25,
         "gene_beast": 0,
         "gene_abyss": -5,
         "gene_legion": 15,
@@ -103,7 +103,7 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "add_int": 0,
         "add_mdf": 0,
         "add_spd": 0,
-        "add_lac": 0,
+        "add_lca": 0,
         "gene_beast": 5,
         "gene_abyss": 5,
         "gene_legion": 5,
@@ -121,7 +121,7 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "add_int": 50,
         "add_mdf": 50,
         "add_spd": 50,
-        "add_lac": 50,
+        "add_lca": 50,
         "gene_beast": 20,
         "gene_abyss": 20,
         "gene_legion": 20,

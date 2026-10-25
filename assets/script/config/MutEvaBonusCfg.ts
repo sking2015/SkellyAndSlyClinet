@@ -13,7 +13,7 @@ export interface IMutEvaBonusCfg {
     readonly bonus_int: number;
     readonly bonus_mdf: number;
     readonly bonus_spd: number;
-    readonly bonus_lac: number;
+    readonly bonus_lca: number;
 }
 
 export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
@@ -30,7 +30,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 10,
         "bonus_mdf": 10,
         "bonus_spd": 80,
-        "bonus_lac": 15
+        "bonus_lca": 15
     },
     102: {
         "form_id": 102,
@@ -45,7 +45,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 80,
         "bonus_mdf": 20,
         "bonus_spd": 10,
-        "bonus_lac": 15
+        "bonus_lca": 15
     },
     103: {
         "form_id": 103,
@@ -60,7 +60,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 10,
         "bonus_mdf": 20,
         "bonus_spd": 10,
-        "bonus_lac": 15
+        "bonus_lca": 15
     },
     104: {
         "form_id": 104,
@@ -75,7 +75,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 10,
         "bonus_mdf": 60,
         "bonus_spd": 10,
-        "bonus_lac": 100
+        "bonus_lca": 100
     },
     105: {
         "form_id": 105,
@@ -90,7 +90,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 50,
         "bonus_mdf": 50,
         "bonus_spd": 50,
-        "bonus_lac": 75
+        "bonus_lca": 75
     },
     201: {
         "form_id": 201,
@@ -105,7 +105,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 20,
         "bonus_mdf": 20,
         "bonus_spd": 150,
-        "bonus_lac": 30
+        "bonus_lca": 30
     },
     202: {
         "form_id": 202,
@@ -120,7 +120,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 150,
         "bonus_mdf": 40,
         "bonus_spd": 20,
-        "bonus_lac": 30
+        "bonus_lca": 30
     },
     203: {
         "form_id": 203,
@@ -135,7 +135,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 20,
         "bonus_mdf": 40,
         "bonus_spd": 20,
-        "bonus_lac": 30
+        "bonus_lca": 30
     },
     204: {
         "form_id": 204,
@@ -150,7 +150,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 20,
         "bonus_mdf": 120,
         "bonus_spd": 20,
-        "bonus_lac": 200
+        "bonus_lca": 200
     },
     205: {
         "form_id": 205,
@@ -165,7 +165,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 100,
         "bonus_mdf": 100,
         "bonus_spd": 100,
-        "bonus_lac": 150
+        "bonus_lca": 150
     },
     301: {
         "form_id": 301,
@@ -180,7 +180,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 30,
         "bonus_mdf": 30,
         "bonus_spd": 250,
-        "bonus_lac": 50
+        "bonus_lca": 50
     },
     302: {
         "form_id": 302,
@@ -195,7 +195,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 250,
         "bonus_mdf": 80,
         "bonus_spd": 30,
-        "bonus_lac": 50
+        "bonus_lca": 50
     },
     303: {
         "form_id": 303,
@@ -210,7 +210,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 30,
         "bonus_mdf": 60,
         "bonus_spd": 30,
-        "bonus_lac": 50
+        "bonus_lca": 50
     },
     304: {
         "form_id": 304,
@@ -225,7 +225,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 30,
         "bonus_mdf": 200,
         "bonus_spd": 30,
-        "bonus_lac": 300
+        "bonus_lca": 300
     },
     305: {
         "form_id": 305,
@@ -240,7 +240,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 200,
         "bonus_mdf": 200,
         "bonus_spd": 200,
-        "bonus_lac": 250
+        "bonus_lca": 250
     },
     401: {
         "form_id": 401,
@@ -255,7 +255,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 50,
         "bonus_mdf": 50,
         "bonus_spd": 400,
-        "bonus_lac": 80
+        "bonus_lca": 80
     },
     402: {
         "form_id": 402,
@@ -270,7 +270,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 400,
         "bonus_mdf": 150,
         "bonus_spd": 50,
-        "bonus_lac": 80
+        "bonus_lca": 80
     },
     403: {
         "form_id": 403,
@@ -285,7 +285,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 50,
         "bonus_mdf": 100,
         "bonus_spd": 50,
-        "bonus_lac": 80
+        "bonus_lca": 80
     },
     404: {
         "form_id": 404,
@@ -300,7 +300,7 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 50,
         "bonus_mdf": 300,
         "bonus_spd": 50,
-        "bonus_lac": 500
+        "bonus_lca": 500
     },
     405: {
         "form_id": 405,
@@ -315,6 +315,6 @@ export const MutEvaBonusCfgData: Record<string | number, IMutEvaBonusCfg> = {
         "bonus_int": 350,
         "bonus_mdf": 350,
         "bonus_spd": 350,
-        "bonus_lac": 400
+        "bonus_lca": 400
     }
 };

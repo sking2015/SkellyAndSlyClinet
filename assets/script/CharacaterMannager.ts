@@ -218,7 +218,7 @@ export class CCharactersManager {
         let chars: CCharacter[] = container.getAllChars();
         for (let i = 0; i < chars.length; ++i) {
             let char: CCharacter = chars[i];
-            if (!excepts.includes(char.index)) {
+            if (excepts.indexOf(char.index) === -1) {
                 char.doPause();
             }
         }
@@ -229,7 +229,7 @@ export class CCharactersManager {
         let chars: CCharacter[] = container.getAllChars();
         for (let i = 0; i < chars.length; ++i) {
             let char: CCharacter = chars[i];
-            if (!excepts.includes(char.index)) {
+            if (excepts.indexOf(char.index) === -1) {
                 char.doResuem();
             }
         }

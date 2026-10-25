@@ -18,6 +18,7 @@ export class UIItem extends Component {
     loadItem(item: CItem) {
         const loadVersion = ++this.iconLoadVersion;
         this.iconNode.spriteFrame = null;
+        this.iconNode.grayscale = !!item && item.itemNum < 1;
         this.numNode.string = item ? item.itemNum.toString() : '';
         if (!item) return;
 

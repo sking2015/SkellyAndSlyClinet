@@ -10,5 +10,5 @@ export class CBattleData {
     public INT: number = 0;
     public MDF: number = 0;
     public SPD: number = 0;
-    public LAC: number = 0;
+    public LCA: number = 0;
 }

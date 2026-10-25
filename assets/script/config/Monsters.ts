@@ -274,7 +274,7 @@ export const MonstersData: Record<string | number, IMonsters> = {
         "Prefab": "Skelly_Base",
         "HP": 300,
         "HPup": 100,
-        "MP": 100,
+        "MP": 10,
         "MPup": 10,
         "ATK": 20,
         "ATKup": 10,

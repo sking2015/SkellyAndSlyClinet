@@ -10486,7 +10486,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "LAC",
+    "_name": "LCA",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": {

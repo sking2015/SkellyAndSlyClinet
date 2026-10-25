@@ -1,12 +1,15 @@
-import { _decorator, Node, Label, Layout, Sprite, Tween, tween, Vec3, EventTouch, Color, ProgressBar, UIOpacity } from 'cc';
+import { _decorator, Node, Label, Layout, Sprite, Tween, tween, Vec3, EventTouch, Color, ProgressBar, UIOpacity, Prefab, instantiate, isValid, assetManager, AssetManager, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CGlobalData } from '../GlobalData';
 import { CItem } from '../Item';
 import { UIItem } from '../UIItem';
-import { FEED_ATTRIBUTES, FeedAttribute } from '../FeedData';
+import { CFeedData, FEED_ATTRIBUTES, FeedAttribute } from '../FeedData';
 import { CUIProperty } from '../UIProperty';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { MutStageCfgData } from '../config/MutStageCfg';
+import { MonstersData } from '../config/Monsters';
+import { CCharacter } from '../character/character';
+import { eCharPlace } from '../BaseDef';
 const { ccclass } = _decorator;
 
 @ccclass('CFeedRoom')
@@ -31,6 +34,16 @@ export class CFeedRoom extends CBaseRoom {
     private valueTransition: { progress: number } = null;
     private displayedMutLevel: number = null;
     private pendingCapResets = new Map<CUIProperty, { cap: number; opacity: UIOpacity; originalOpacity: number }>();
+    private roleBase: Node = null;
+    private character: CCharacter = null;
+    private characterAnimation: Animation = null;
+    private idleCountdown = 0;
+    private shownModel: number = null;
+    private modelPrefabs = new Map<number, Prefab>();
+    private modelLoads = new Map<number, Promise<Prefab>>();
+    private feeding = false;
+    private feedVersion = 0;
+    private mutationTransition: { progress: number } = null;
 
     public get selectedItem(): CItem {
         return this.items.find(item => item.id === this.selectedId) || null;
@@ -38,6 +51,7 @@ export class CFeedRoom extends CBaseRoom {
 
     protected onLoad(): void {
         super.onLoad();
+        this.roleBase = this.node.getChildByPath('base/roomBG/RoleBase');
         for (const attribute of FEED_ATTRIBUTES) {
             const node = this.nodeExpandPanel.getChildByPath(`Attribute Backplate/${attribute}`);
             const view = node?.getComponent(CUIProperty);
@@ -114,7 +128,8 @@ export class CFeedRoom extends CBaseRoom {
             return;
         }
         // 普通面板刷新不打断进行中的数值动画。
-        if (this.valueTransition && !animate) return;
+        if ((this.valueTransition || this.feeding) && !animate) return;
+        this.refreshCharacter();
         this.stopValueTransition();
         if (!animate) this.clearCapResets();
         const starts = new Map<FeedAttribute, number>();
@@ -124,30 +139,13 @@ export class CFeedRoom extends CBaseRoom {
             targets.set(attribute, data[attribute]);
             view.setTitle(`${attribute}:`);
         });
-        const mutationStartLevel = this.displayedMutLevel ?? data.mutLevel;
         const mutationTargetLevel = data.mutLevel;
-        const mutationStart = this.mutationProgress?.progress || 0;
         const required = data.stageCfg.req_mutation_points;
         const mutationTarget = required > 0 ? Math.max(0, Math.min(1, data.mutPoints / required)) : 0;
         const render = (ratio: number) => {
-            // 将各级进度串成连续区间，跨级时由满条归零，避免向后插值。
-            const start = mutationStartLevel + mutationStart;
-            const target = mutationTargetLevel + mutationTarget;
-            const position = start + (target - start) * ratio;
-            const nextLevel = ratio === 1 ? mutationTargetLevel
-                : Math.min(mutationTargetLevel, Math.floor(position));
-            if (animate) {
-                const previousLevel = this.displayedMutLevel ?? mutationStartLevel;
-                for (let level = previousLevel; level < nextLevel; level++) {
-                    // 满条时触发粒子，随后进入下一级；不显示房间升级文字。
-                    this.setMutationProgress(1);
-                    this.playUpgradeEffect(false);
-                    this.setMutationProgress(0);
-                }
-            }
-            this.displayedMutLevel = nextLevel;
+            this.displayedMutLevel = mutationTargetLevel;
             // 跨级时保持原条长闪烁，结束后再按新上限直接重置。
-            const stage = MutStageCfgData[nextLevel];
+            const stage = data.stageCfg;
             this.statViews.forEach((view, attribute) => {
                 const startValue = starts.get(attribute);
                 view.curValue = startValue + (targets.get(attribute) - startValue) * ratio;
@@ -165,8 +163,8 @@ export class CFeedRoom extends CBaseRoom {
                 view.lblValue.string = Math.round(view.curValue).toString();
             });
             if (this.mutationLevel) this.mutationLevel.string = this.displayedMutLevel.toString();
-            this.setMutationProgress(ratio === 1 ? mutationTarget
-                : Math.max(0, Math.min(1, position - this.displayedMutLevel)));
+            // 突变槽由独立的逐阶段动画驱动，属性插值不回写槽进度。
+            if (!this.feeding) this.setMutationProgress(mutationTarget);
         };
         if (!animate) {
             render(1);
@@ -215,7 +213,125 @@ export class CFeedRoom extends CBaseRoom {
         if (this.mutationPercent) this.mutationPercent.string = `${Math.floor(progress * 100)}%`;
     }
 
-    private onFeed(event: EventTouch) {
+    private async loadModel(id: number): Promise<Prefab> {
+        if (this.modelPrefabs.has(id)) return this.modelPrefabs.get(id);
+        if (this.modelLoads.has(id)) return this.modelLoads.get(id);
+        const loading = new Promise<Prefab>((resolve, reject) => {
+            const path = MonstersData[id]?.Prefab;
+            if (!path) {
+                reject(new Error(`Missing monster prefab config: ${id}`));
+                return;
+            }
+            const load = (bundle: AssetManager.Bundle) => {
+                bundle.load(path, Prefab, (error, prefab) => error ? reject(error) : resolve(prefab));
+            };
+            const bundle = assetManager.getBundle('monsters');
+            if (bundle) load(bundle);
+            else assetManager.loadBundle('monsters', (error, loaded) => error ? reject(error) : load(loaded));
+        });
+        this.modelLoads.set(id, loading);
+        try {
+            const prefab = await loading;
+            this.modelPrefabs.set(id, prefab);
+            return prefab;
+        } finally {
+            this.modelLoads.delete(id);
+        }
+    }
+
+    private refreshCharacter() {
+        if (!this.roleBase) return;
+        const id = CGlobalData.instance.dataFeed.model_id;
+        if (this.shownModel === id) return;
+        const prefab = this.modelPrefabs.get(id);
+        if (prefab) {
+            this.showCharacter(id, prefab);
+        } else {
+            this.loadModel(id).then(loaded => {
+                if (isValid(this, true) && CGlobalData.instance.dataFeed.model_id === id) {
+                    this.showCharacter(id, loaded);
+                }
+            }).catch(error => console.error('FeedRoom: failed to load character', error));
+        }
+    }
+
+    private showCharacter(id: number, prefab: Prefab) {
+        if (this.shownModel === id) return;
+        const node = instantiate(prefab);
+        const character = node.getComponent(CCharacter);
+        character.eCharId = id;
+        character.SetPlace(eCharPlace.ecpShow);
+        // 在挂到活动节点前设置展示状态，防止参与房间战斗和移动。
+        for (const child of [...this.roleBase.children]) {
+            child.removeFromParent();
+            child.destroy();
+        }
+        node.setPosition(0, 0, 0);
+        node.parent = this.roleBase;
+        // 喂养展示由房间控制动作，停用角色自身的巡逻/战斗 AI。
+        character.enabled = false;
+        this.character = character;
+        this.characterAnimation = node.getChildByName('char')?.getComponent(Animation) || null;
+        const stand = this.characterAnimation?.getState('stand');
+        if (stand) {
+            stand.wrapMode = AnimationClip.WrapMode.Loop;
+            this.characterAnimation.play('stand');
+        }
+        this.idleCountdown = 8 + Math.random() * 6;
+        this.shownModel = id;
+    }
+
+    update(deltaTime: number) {
+        const animation = this.characterAnimation;
+        const idle = animation?.getState('idle');
+        if (!idle || !animation.getState('stand')) return;
+        if (idle.isPlaying) return;
+        this.idleCountdown -= deltaTime;
+        if (this.idleCountdown > 0) return;
+        this.idleCountdown = 8 + Math.random() * 6;
+        idle.wrapMode = AnimationClip.WrapMode.Normal;
+        this.character.play('idle'); // 播放一次后由 CCharacter 返回 stand。
+    }
+
+    private animateMutationProgress(target: number, complete: () => void) {
+        const transition = this.mutationTransition = { progress: this.mutationProgress?.progress || 0 };
+        tween(transition).to(3.4, { progress: target }, {
+            onUpdate: () => this.setMutationProgress(transition.progress)
+        }).delay(target === 1 ? 0.15 : 0).call(() => {
+            this.setMutationProgress(target);
+            this.mutationTransition = null;
+            complete();
+        }).start();
+    }
+
+    private advanceMutation() {
+        const data = CGlobalData.instance.dataFeed;
+        if (!data.canMutate) {
+            const required = data.stageCfg.req_mutation_points;
+            this.animateMutationProgress(required > 0 ? Math.min(1, data.mutPoints / required) : 0, () => {
+                this.feeding = false;
+                this.refreshFeedData();
+            });
+            return;
+        }
+        this.animateMutationProgress(1, () => {
+            const changes = data.mutate();
+            if (!changes) {
+                this.feeding = false;
+                console.error('FeedRoom: missing mutation config');
+                return;
+            }
+            // 所有模型已经在扣除道具前预加载，满槽这一刻即可同步切换。
+            this.refreshFeedData(true);
+            this.character?.playEffect();
+            this.playUpgradeEffect(false);
+            this.showFeedChanges(changes);
+            this.setMutationProgress(0);
+            this.advanceMutation();
+        });
+    }
+
+    private async onFeed(event: EventTouch) {
         event.propagationStopped = true;
         const item = this.selectedItem;
         if (!item || item.itemNum < 1) {
@@ -224,15 +340,47 @@ export class CFeedRoom extends CBaseRoom {
             }));
             return;
         }
+        if (this.feeding) return;
         const data = CGlobalData.instance.dataFeed;
+        // 先验证本次可能跨越的所有阶段并加载形像，失败时不消耗道具。
+        const preview = Object.assign(new CFeedData(), data);
+        const config = item.feedCfg;
+        if (!config) {
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: '喂养配置缺失，无法喂养' }));
+            return;
+        }
+        preview.nBeastPoint += config.gene_beast;
+        preview.nAbyssPoint += config.gene_abyss;
+        preview.nLegionPoint += config.gene_legion;
+        preview.nFleshPoint += config.gene_flesh;
+        preview.mutPoints += config.mut_points;
+        this.feeding = true;
+        const version = ++this.feedVersion;
+        try {
+            const models = new Set<number>([data.model_id]);
+            while (preview.canMutate) {
+                if (!preview.mutate()) throw new Error('缺少突变阶段、奖励或角色配置');
+                models.add(preview.model_id);
+            }
+            await Promise.all([...models].map(id => this.loadModel(id)));
+        } catch (error) {
+            if (version !== this.feedVersion || !isValid(this, true)) return;
+            this.feeding = false;
+            console.error('FeedRoom: mutation preparation failed', error);
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: '角色资源或突变配置加载失败，请重试' }));
+            return;
+        }
+        if (version !== this.feedVersion || !isValid(this, true)) return;
         const changes = data.feed(item);
         if (!changes) {
+            this.feeding = false;
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: '喂养配置缺失，无法喂养' }));
             return;
         }
         this.refreshItems();
         this.refreshFeedData(true);
         this.showFeedChanges(changes);
+        this.advanceMutation();
     }
 
     private showFeedChanges(changes: Record<FeedAttribute, number>) {
@@ -310,7 +458,7 @@ export class CFeedRoom extends CBaseRoom {
     private refreshItemEffects() {
         const config = this.selectedItem?.feedCfg;
         // 按固定属性顺序显示，零值不占用效果标签。
-        const attributes = ['hp', 'mp', 'atk', 'def', 'int', 'mdf', 'spd', 'lac'] as const;
+        const attributes = ['hp', 'mp', 'atk', 'def', 'int', 'mdf', 'spd', 'lca'] as const;
         const allPositive = config && attributes.every(attribute => config[`add_${attribute}`] > 0);
         const effects = allPositive ? [{ name: 'ALL', value: 1 }] : config ? attributes
             .map(attribute => ({ name: attribute.toUpperCase(), value: config[`add_${attribute}`] }))
@@ -382,8 +530,10 @@ export class CFeedRoom extends CBaseRoom {
     }
 
     CloseExpand() {
-        this.stopAnimations();
-        this.refreshFeedData();
+        // 折叠面板不取消已经消耗道具的喂养和突变流程。
+        this.clearFeedChanges();
+        this.baseScales.forEach((_, node) => this.stopPulse(node));
+        if (!this.feeding) this.refreshFeedData();
         super.CloseExpand();
     }
 
@@ -393,10 +543,22 @@ export class CFeedRoom extends CBaseRoom {
     }
 
     protected onDisable() {
+        this.finishPendingMutations();
         this.stopAnimations();
     }
 
+    private finishPendingMutations() {
+        ++this.feedVersion;
+        if (this.mutationTransition) Tween.stopAllByTarget(this.mutationTransition);
+        this.mutationTransition = null;
+        // 离开场景时保留已支付道具的全部结果，下次进入从 dataFeed 恢复。
+        const data = CGlobalData.instance.dataFeed;
+        while (data.canMutate && data.mutate()) { /* 每阶段只结算一次 */ }
+        this.feeding = false;
+    }
+
     protected onDestroy() {
+        this.finishPendingMutations();
         this.stopAnimations();
         this.feedButton?.off(Node.EventType.TOUCH_END, this.onFeed, this);
         this.slots.forEach(slot => slot.node.off(Node.EventType.TOUCH_END, this.onSelectItem, this));
