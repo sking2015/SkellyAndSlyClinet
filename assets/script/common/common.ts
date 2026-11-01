@@ -1,5 +1,5 @@
 
-import { tween, UIOpacity, Animation, Component } from "cc";
+import { tween, Tween, UIOpacity, Animation, Component, isValid } from "cc";
 import { Node } from "cc";
 import { Button } from 'cc';
 import { CButtonCooldown } from './ButtonCooldown';
@@ -8,6 +8,24 @@ import { CButtonCooldown } from './ButtonCooldown';
  * 全局按钮点击冷却配置
  */
 const BUTTON_COOLDOWN_TIME = 500; // 冷却时间，单位：毫秒
+
+const fadeVisibility = new WeakMap<Node, boolean>();
+
+// 可反向打断的显隐过渡：从当前透明度继续，淡出完成后才停用节点。
+export function setNodeVisibleWithFade(node: Node, visible: boolean, duration = 0.3) {
+    if (!node || !isValid(node, true) || fadeVisibility.get(node) === visible) return;
+    fadeVisibility.set(node, visible);
+    if (!node.active && !visible) return;
+    const opacity = node.getComponent(UIOpacity) || node.addComponent(UIOpacity);
+    Tween.stopAllByTarget(opacity);
+    if (visible && !node.active) {
+        opacity.opacity = 0;
+        node.active = true;
+    }
+    tween(opacity).to(duration, { opacity: visible ? 255 : 0 }).call(() => {
+        if (!visible && isValid(node, true)) node.active = false;
+    }).start();
+}
 
 export function fadeInOut(node: Node, duration: number, bIn: boolean, cb?: Function) {
 

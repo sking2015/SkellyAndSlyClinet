@@ -3,6 +3,7 @@ import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { eTroopType } from './BaseDef';
 import { CGlobalData } from './GlobalData';
 import { CkeyValuePair4Spriteframe } from './KeyValuePair';
+import { setNodeVisibleWithFade } from './common/common';
 
 const { ccclass, property } = _decorator;
 
@@ -51,6 +52,8 @@ export class CTroopDeployPanel extends Component {
 
     roomIndex: number = -1;
     troopIndex: eTroopType = eTroopType.ettNone;
+    private canConfigure: (() => boolean) = null;
+    private closing = false;
 
     start() {
 
@@ -60,7 +63,8 @@ export class CTroopDeployPanel extends Component {
 
     }
 
-    setInfo(roomIndex: number, troopIndex: eTroopType) {
+    setInfo(roomIndex: number, troopIndex: eTroopType, canConfigure?: () => boolean) {
+        this.canConfigure = canConfigure || null;
         this.roomIndex = roomIndex;
         this.troopIndex = troopIndex;
 
@@ -121,6 +125,7 @@ export class CTroopDeployPanel extends Component {
     }
 
     onClickDeploy() {
+        if (this.closing || !this.node.active || (this.canConfigure && !this.canConfigure())) return;
         console.log("点击了部署按钮");
         CGlobalData.instance.DeployTroop(this.roomIndex, this.troopIndex, this.currentLocationCurrentTroops);
 
@@ -134,6 +139,7 @@ export class CTroopDeployPanel extends Component {
     }
 
     onClickReduce() {
+        if (this.closing || !this.node.active || (this.canConfigure && !this.canConfigure())) return;
         console.log("点击了减少按钮");
 
         if (this.currentLocationCurrentTroops > 0) {
@@ -146,6 +152,7 @@ export class CTroopDeployPanel extends Component {
     }
 
     onClickIncrease() {
+        if (this.closing || !this.node.active || (this.canConfigure && !this.canConfigure())) return;
         console.log("点击了增加按钮");
         if (this.currentLocationCurrentTroops < this.currentLocationCapacityTroops) {
             this.leftTroops -= 1;
@@ -156,7 +163,8 @@ export class CTroopDeployPanel extends Component {
     }
 
     Show(bShow: boolean) {
-        this.node.active = bShow;
+        this.closing = !bShow;
+        setNodeVisibleWithFade(this.node, bShow);
 
         if (!bShow) {
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_close_room_panel, true));

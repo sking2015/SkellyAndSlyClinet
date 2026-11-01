@@ -1,10 +1,10 @@
 import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, SpriteFrame, Label, UITransform, Vec3 } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
-import { fadeInOut } from '../common/common';
+import { setNodeVisibleWithFade } from '../common/common';
 import { CTroopInfo } from '../TroopInfo';
 import { CLordInfo } from '../LordInfo';
-import { eCCharacterID, eBattleCamp, eDirction } from '../BaseDef';
+import { eCCharacterID, eBattleCamp, eDirction, eRoomType } from '../BaseDef';
 import { CGlobalData } from '../GlobalData';
 import { CCharacter } from '../character/character';
 import { CBattleFormation } from '../BattleFormation';
@@ -67,6 +67,9 @@ export class CBattleRoom extends CBaseRoom {
     private formation: CBattleFormation = null;
     private defensePhase: 'patrol' | 'alert' | 'forming' | 'ready' | 'battle' = 'patrol';
     private alertRemaining = 0;
+    private configurationVersion = 0;
+
+    get isConfigurationLocked(): boolean { return this.defensePhase !== 'patrol'; }
     private slotIds = { charGuard: eCCharacterID.eciNone, charSoldier: eCCharacterID.eciNone,
         charArcher: eCCharacterID.eciNone, charMage: eCCharacterID.eciNone };
 
@@ -130,6 +133,12 @@ export class CBattleRoom extends CBaseRoom {
 
     beginMinorInvasion() {
         this.defensePhase = 'alert';
+        ++this.configurationVersion;
+        const wasOpen = this.bOpneExpandPanel || this.nodeExpandPanel.active;
+        this.CloseExpand();
+        setNodeVisibleWithFade(this.nodeSwitchExpand, false);
+        if (wasOpen) this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_restore, true, { index: this.index }));
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_configuration_locked, true, { roomIndex: this.index }));
         this.alertRemaining = 1.2;
         for (const role of this.getDefenders()) {
             role.holdDeployment();
@@ -141,7 +150,7 @@ export class CBattleRoom extends CBaseRoom {
         this.defensePhase = 'forming';
         const defenders = this.getDefenders();
         const positions = this.formation?.getLineupPositions(defenders);
-        for (const role of defenders) role.marchToDeployment(positions.get(role.eCharId), eDirction.edLeft);
+        for (const role of defenders) role.marchToDeployment(positions.get(role), eDirction.edLeft);
     }
 
     areDefendersReady(): boolean { return this.defensePhase === 'ready' && !this.formation?.isLoading(); }
@@ -153,6 +162,7 @@ export class CBattleRoom extends CBaseRoom {
 
     endMinorInvasion() {
         this.defensePhase = 'patrol';
+        setNodeVisibleWithFade(this.nodeSwitchExpand, true);
         for (const role of this.getDefenders()) this.startPatrol(role);
     }
 
@@ -193,7 +203,7 @@ export class CBattleRoom extends CBaseRoom {
 
     start() {
         super.start();
-        this.nodeCombatDataPanel.active = false;
+        if (this.roomType !== eRoomType.ertCastleOutSide) this.nodeCombatDataPanel.active = false;
 
         this.refreshRoomShow();
     }
@@ -278,9 +288,12 @@ export class CBattleRoom extends CBaseRoom {
 
 
     onClickLord() {
+        if (this.isConfigurationLocked) return;
+        const version = this.configurationVersion;
         console.log("点击了房间的领主按钮");
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_chars_list, true, {
             roomIndex: this.index, callback: (charId: eCCharacterID) => {
+                if (this.isConfigurationLocked || version !== this.configurationVersion) return;
                 console.log("选择了领主角色", charId);
                 CGlobalData.instance.setRoomGuardIdByIndex(this.index, charId);
                 this.refreshExpand();
@@ -291,6 +304,7 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     onClickTroop(event: EventTouch, customEventData: string) {
+        if (this.isConfigurationLocked) return;
         console.log("点击了房间的小兵按钮", customEventData);
 
         // this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_room_panel, true, { roomType: this.roomType, roomIndex: this.index }));
@@ -302,38 +316,44 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     onOpenExpand() {
+        if (this.isConfigurationLocked) return;
         super.onOpenExpand();
+        if (this.roomType === eRoomType.ertCastleOutSide) return;
         console.log("点击展开按钮，展开房间的扩展面板");
 
         this.stopCombatPanelAnimation();
-        this.nodeCombatDataPanel.active = true;
-        fadeInOut(this.nodeCombatDataPanel, 0.3, true, () => {
-            tween(this.nodeCombatDataPanel).to(0.3, { y: COMBAT_PANEL_Y_EXPANDED }, { easing: 'backOut' }).start();
-        });
+        setNodeVisibleWithFade(this.nodeCombatDataPanel, true);
+        tween(this.nodeCombatDataPanel).to(0.3, { y: COMBAT_PANEL_Y_EXPANDED }, { easing: 'backOut' }).start();
     }
 
     CloseExpand() {
         const wasOpen = this.bOpneExpandPanel || this.nodeExpandPanel.active;
         super.CloseExpand();
+        if (this.roomType === eRoomType.ertCastleOutSide) return;
         if (!wasOpen) {
             return;
         }
         console.log("点击关闭按钮，关闭房间的扩展面板");
         this.stopCombatPanelAnimation();
-        tween(this.nodeCombatDataPanel).to(0.3, { y: COMBAT_PANEL_Y_COLLAPSED }, { easing: 'backIn' }).call(() => {
-            fadeInOut(this.nodeCombatDataPanel, 0.3, false, () => {
-                this.nodeCombatDataPanel.active = false;
-            });
-        }).start();
+        setNodeVisibleWithFade(this.nodeCombatDataPanel, false);
+        tween(this.nodeCombatDataPanel).to(0.3, { y: COMBAT_PANEL_Y_COLLAPSED }, { easing: 'backIn' }).start();
 
     }
 
     private stopCombatPanelAnimation() {
         Tween.stopAllByTarget(this.nodeCombatDataPanel);
-        const opacity = this.nodeCombatDataPanel.getComponent(UIOpacity);
-        if (opacity) {
-            Tween.stopAllByTarget(opacity);
-        }
+    }
+
+    onClickSetting() {
+        if (!this.isConfigurationLocked) super.onClickSetting();
+    }
+
+    onClickRoomUpgrade() {
+        if (!this.isConfigurationLocked) super.onClickRoomUpgrade();
+    }
+
+    async onUpgrade() {
+        if (!this.isConfigurationLocked) await super.onUpgrade();
     }
 
 }

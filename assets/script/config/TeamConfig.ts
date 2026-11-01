@@ -16,7 +16,7 @@ export const TeamConfigData: Record<string | number, ITeamConfig> = {
         "ID": 1,
         "Name": "Minor Test Squad1",
         "Level": 1,
-        "Members": "1:2,2:1",
+        "Members": "1:2,1:2,2:1",
         "DropID": 1,
         "ExtraExp": 150,
         "TeamType": "Minor",

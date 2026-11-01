@@ -4,7 +4,7 @@ import OSSelectPanel from './OSSelectPanel';
 import CRoomUpgradePanel from './RoomUpgradePanel';
 import { CGlobalData } from './GlobalData';
 import { ResourceShowArea } from './ResourceShowArea';
-import { fadeInOut, initGlobalButtonCooldown } from './common/common';
+import { fadeInOut, initGlobalButtonCooldown, setNodeVisibleWithFade } from './common/common';
 import { CMALPanel } from './MALPanel';
 import { CTroopDeployPanel } from './TroopDeployPanel';
 import { CMonsterDetailPanel } from './MonsterDetailPanel';
@@ -67,6 +67,7 @@ export class main extends Component {
 
 
     bShowTips: boolean = false;
+    private guardSelectionRoomIndex = -1;
 
 
     startListnerEvent() {
@@ -85,6 +86,7 @@ export class main extends Component {
         this.node.on(UniEvent.on_refresh_charInfo, this.refreshCharInfo, this);
         this.node.on(UniEvent.on_room_refresh, this.onRoomRefresh, this);
         this.node.on(UniEvent.on_open_chars_list, this.onPopCharsListPanel, this);
+        this.node.on(UniEvent.on_room_configuration_locked, this.onRoomConfigurationLocked, this);
         this.node.on(UniEvent.on_open_troop_upgrade, this.onPopTroopUpgradePanel, this);
 
     }
@@ -104,6 +106,7 @@ export class main extends Component {
         this.node.off(UniEvent.on_refresh_charInfo, this.refreshCharInfo, this);
         this.node.off(UniEvent.on_room_refresh, this.onRoomRefresh, this);
         this.node.off(UniEvent.on_open_chars_list, this.onPopCharsListPanel, this);
+        this.node.off(UniEvent.on_room_configuration_locked, this.onRoomConfigurationLocked, this);
         this.node.off(UniEvent.on_open_troop_upgrade, this.onPopTroopUpgradePanel, this);
     }
 
@@ -124,14 +127,16 @@ export class main extends Component {
     }
 
     onPopTroopUpgradePanel(event: CustomEvent) {
-        this.nodeMask.active = true;
+        setNodeVisibleWithFade(this.nodeMask, true);
         this.comTroopUpgradePanel.Show(true);
         this.comTroopUpgradePanel.setTroopType(event.detail.ett);
         this.comTroopUpgradePanel.setBarrackRoom(event.detail.comBR);
     }
 
     onPopCharsListPanel(event: CustomEvent) {
-        this.nodeMask.active = true;
+        if (this.roomList.isRoomConfigurationLocked(event.detail.roomIndex)) return;
+        this.guardSelectionRoomIndex = event.detail.roomIndex;
+        setNodeVisibleWithFade(this.nodeMask, true);
         this.comMALPanel.setSelectMode(true);
         this.comMALPanel.Show(true);
         this.comMALPanel.setCallBack4CharButton(event.detail.callback);
@@ -152,6 +157,7 @@ export class main extends Component {
     }
 
     onRoomUpgrade(event: CustomEvent) {
+        if (this.roomList.isRoomConfigurationLocked(event.detail.roomIdx)) return;
         this.roomList.onRoomUpgrade(event.detail.roomIdx);
     }
 
@@ -162,21 +168,41 @@ export class main extends Component {
     }
 
     onPopRoomUpgrade(event: CustomEvent) {
+        if (this.roomList.isRoomConfigurationLocked(event.detail.roomIdx)) return;
+        this.comRoomUpgradePanel.canConfigure = () => !this.roomList.isRoomConfigurationLocked(event.detail.roomIdx);
         this.comRoomUpgradePanel.setRoomIndex(event.detail.roomIdx);
         this.comRoomUpgradePanel.onOpen();
     }
 
     onCloseRoomFunPanel() {
-        this.nodeMask.active = false;
+        this.guardSelectionRoomIndex = -1;
+        setNodeVisibleWithFade(this.nodeMask, false);
+    }
+
+    onRoomConfigurationLocked(event: CustomEvent) {
+        const index = event.detail.roomIndex;
+        if (this.comTroopDeployPanel.roomIndex === index && this.comTroopDeployPanel.node.active) {
+            this.comTroopDeployPanel.Show(false);
+        }
+        if (this.guardSelectionRoomIndex === index) {
+            this.comMALPanel.setCallBack4CharButton(null);
+            this.comMALPanel.Show(false);
+            this.onCloseRoomFunPanel();
+        }
+        if (this.comRoomUpgradePanel.nCurRoomIndex === index && this.comRoomUpgradePanel.node.active) {
+            this.comRoomUpgradePanel.onClose();
+        }
     }
 
     //打开房间功能面板
     onPopRoomFunPanel(event: CustomEvent) {
-        this.nodeMask.active = true;
+        if (this.roomList.isRoomConfigurationLocked(event.detail.roomIndex)) return;
+        setNodeVisibleWithFade(this.nodeMask, true);
         console.log("onPopRoomFunPanel~~", event.detail.roomType, event.detail.roomIndex, event.detail.troopIndex);
         switch (event.detail.roomType) {
             case eRoomType.ertAlchemy:
                 this.comMALPanel.setSelectMode(false);
+                this.guardSelectionRoomIndex = -1;
                 // this.comMALPanel.setCallBack4CharButton(null);
                 this.comMALPanel.Show(true);
                 break;
@@ -184,7 +210,8 @@ export class main extends Component {
             case eRoomType.ertDoor:
             case eRoomType.ertCastleOutSide:
                 this.comTroopDeployPanel.Show(true);
-                this.comTroopDeployPanel.setInfo(event.detail.roomIndex, event.detail.troopIndex);
+                this.comTroopDeployPanel.setInfo(event.detail.roomIndex, event.detail.troopIndex,
+                    () => !this.roomList.isRoomConfigurationLocked(event.detail.roomIndex));
                 break;
             default:
                 console.log("不认识的房间类型")
@@ -193,15 +220,17 @@ export class main extends Component {
 
     //打开部队部署面板
     onPopTroopDeployPanel(event: CustomEvent) {
-        this.nodeMask.active = true;
+        if (this.roomList.isRoomConfigurationLocked(event.detail.roomIndex)) return;
+        setNodeVisibleWithFade(this.nodeMask, true);
         this.comTroopDeployPanel.Show(true);
         let nTroopIndex: number = Number(event.detail.troopIndex);
-        this.comTroopDeployPanel.setInfo(event.detail.roomIndex, nTroopIndex as eTroopType);
+        this.comTroopDeployPanel.setInfo(event.detail.roomIndex, nTroopIndex as eTroopType,
+            () => !this.roomList.isRoomConfigurationLocked(event.detail.roomIndex));
     }
 
     //打开魔物属性界面
     onPopMonsterDetailPanel(event: CustomEvent) {
-        this.nodeMask.active = true;
+        setNodeVisibleWithFade(this.nodeMask, true);
         //this.comMDPanel.setCharID(event.detail.charID);
         this.comMDPanel.setChar(event.detail.data);
         this.comMDPanel.ShowFromOther(event.detail.panel);

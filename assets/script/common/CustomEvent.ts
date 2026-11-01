@@ -12,6 +12,7 @@ export class CustomEvent extends Event {
 export enum UniEvent {
     on_room_expand = "onRoomExpand",                            //展开房间扩展界面
     on_room_restore = "onRoomRestore",                            //房间恢复，关闭扩展界面
+    on_room_configuration_locked = "onRoomConfigurationLocked", // 接敌时关闭该房间的配置弹窗
     on_open_ospanel = "onOpenOverseerPanel",                    //打开监工界面
     on_click_overseer = "onClickOverseer",                      //点击监工
     on_change_overseer = "onChangeOverseer",                    //改变监工

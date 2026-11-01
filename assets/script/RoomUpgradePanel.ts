@@ -1,7 +1,7 @@
 import { _decorator, Color, color, Component, Label, Node, Sprite } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { IResData, getResDataByRoomTypeAndLevel, getDefaultRoomLvUpCfg } from './ConfigInterface';
-import { formatCompactNumber } from './common/common';
+import { formatCompactNumber, setNodeVisibleWithFade } from './common/common';
 import { LabelGradient } from './common/LabelGradient';
 import { CGlobalData, CRoomData } from './GlobalData';
 import { CResManager } from './ResManager';
@@ -73,6 +73,8 @@ export default class CRoomUpgradePanel extends Component {
 
     //当前描述房间index
     nCurRoomIndex: number = -1;
+    canConfigure: (() => boolean) = null;
+    private closing = false;
 
     bCoinNotEnough: boolean = false;
     bWoodNotEnough: boolean = false;
@@ -187,12 +189,14 @@ export default class CRoomUpgradePanel extends Component {
     }
 
     onOpen() {
-        this.node.active = true;
+        this.closing = false;
+        setNodeVisibleWithFade(this.node, true);
         this.refreshPanel();
     }
 
     onClose() {
-        this.node.active = false;
+        this.closing = true;
+        setNodeVisibleWithFade(this.node, false);
     }
 
     setRoomIndex(idx: number) {
@@ -208,6 +212,7 @@ export default class CRoomUpgradePanel extends Component {
     }
 
     onClickConfirm() {
+        if (this.closing || !this.node.active || (this.canConfigure && !this.canConfigure())) return;
 
         if (this.bCoinNotEnough || this.bWoodNotEnough || this.bMetalNotEnough) {
             //资源不足，无法升级

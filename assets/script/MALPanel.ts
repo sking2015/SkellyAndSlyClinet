@@ -4,6 +4,7 @@ import { CCharData, CCharactersData } from './CharacatersData';
 import { CCharButton } from './CharButton';
 import { CGlobalData } from './GlobalData';
 import { eCCharacterID } from './BaseDef';
+import { setNodeVisibleWithFade } from './common/common';
 
 const { ccclass, property } = _decorator;
 
@@ -40,7 +41,7 @@ export class CMALPanel extends Component {
     }
 
     Show(bShow: boolean) {
-        this.node.active = bShow;
+        setNodeVisibleWithFade(this.node, bShow);
         if (bShow) {
             this.refreshShow();
         }

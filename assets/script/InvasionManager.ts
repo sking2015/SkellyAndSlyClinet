@@ -9,6 +9,7 @@ import { TeamConfigData } from './config/TeamConfig';
 import { CGlobalData } from './GlobalData';
 import { CBaseRoom } from './room/BaseRoom';
 import { CBattleFormation } from './BattleFormation';
+import type { FormationSlotKey } from './BattleFormation';
 import { CBattleRoom } from './room/BattleRoom';
 
 // 小入侵只在城外运行；大入侵的推进和惩罚以后独立接入。
@@ -89,11 +90,11 @@ export class CInvasionManager {
             // 外部移除的角色不能当作击杀结算。
             if (enemy.IsAlive() && (!enemy.node || !isValid(enemy.node))) {
                 this.escaped = true;
-                void this.formation.setCount(enemy.eCharId, 0);
+                void this.formation.removeSlotForCharacter(enemy);
             } else if (enemy.IsAlive() && enemy.getPosition() >= this.exitX) {
                 this.escaped = true;
-                // 没有交战而穿过防线时，同角色后备随队离开，不作为击杀。
-                void this.formation.setCount(enemy.eCharId, 0);
+                // 仅该位置的后备随队离开，不影响其他同 ID 位置，也不作为击杀。
+                void this.formation.removeSlotForCharacter(enemy);
             }
         }
         const alive = this.formation.hasForces();
@@ -124,25 +125,30 @@ export class CInvasionManager {
             const toLayer = (x: number) => layer.convertToNodeSpaceAR(bounds.convertToWorldSpaceAR(new Vec3(x, 0, 0))).x;
             const left = toLayer(-bounds.width * bounds.anchorX) - 80;
             this.exitX = toLayer(bounds.width * (1 - bounds.anchorX)) + 100;
-            let index = 0;
-            const positions = new Map<eCCharacterID, number>();
-            const formation = new CBattleFormation(room, eBattleCamp.ebcHero, id => positions.get(id), (char, replacement) => {
+            const positions = new Map<FormationSlotKey, number>();
+            const lineupTargets = new Map<FormationSlotKey, number>();
+            const slotKeys = new WeakMap<CCharacter, FormationSlotKey>();
+            const formation = new CBattleFormation(room, eBattleCamp.ebcHero, (_id, key) => positions.get(key), (char, replacement, key) => {
                 const role = char as CBattleRole;
                 role.invasionExitX = this.exitX;
-                if (replacement) role.reinforcementTargetX = 0;
+                slotKeys.set(char, key);
+                if (replacement) role.reinforcementTargetX = lineupTargets.get(key) ?? 0;
                 else role.holdDeployment();
             });
             this.formation = formation;
-            for (const [heroId, count] of members) {
+            for (const [index, [heroId, count]] of members.entries()) {
                 const id = (eCCharacterID.eciHerosStart + heroId) as eCCharacterID;
-                if (!positions.has(id)) positions.set(id, left - index++ * 100);
-                await formation.setCount(id, formation.getCount(id) + count);
+                const key = `member:${index}`;
+                positions.set(key, left - index * 100);
+                await formation.setSlotCount(key, id, count);
                 if (generation !== this.generation) return;
                 if (formation.failed) throw new Error('入侵队伍创建失败');
             }
             const lineup = formation.getLineupPositions();
             for (const char of this.enemies) {
-                (char as CBattleRole).marchToDeployment(lineup.get(char.eCharId), eDirction.edRight);
+                const target = lineup.get(char);
+                lineupTargets.set(slotKeys.get(char), target);
+                (char as CBattleRole).marchToDeployment(target, eDirction.edRight);
             }
             this.state = 'entering';
         } catch (error) {

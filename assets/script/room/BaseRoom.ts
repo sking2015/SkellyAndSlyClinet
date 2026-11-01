@@ -2,7 +2,7 @@ import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, A
 import { eRoomType, eCCharacterID, eBattleCamp } from '../BaseDef';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CGlobalData } from '../GlobalData';
-import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinished, delay } from '../common/common';
+import { fadeInOut, waitFadeInout, formatCompactNumber, waitUntilAnimationFinished, delay, setNodeVisibleWithFade } from '../common/common';
 import { getRoomName } from '../ConfigInterface';
 import { CResManager } from '../ResManager';
 import { getI18nText } from '../i18nLan';
@@ -201,7 +201,7 @@ export class CBaseRoom extends Component {
     onOpenExpand() {
         this.bOpneExpandPanel = true;
         this.nodeSwitchExpand?.setScale(1, -1, 1);
-        this.nodeExpandPanel.active = true;
+        setNodeVisibleWithFade(this.nodeExpandPanel, true);
         this.refreshExpand();
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_expand, true, { index: this.index, offset: this.offset }))
     }
@@ -213,7 +213,7 @@ export class CBaseRoom extends Component {
 
 
     CloseExpand() {
-        this.nodeExpandPanel.active = false;
+        setNodeVisibleWithFade(this.nodeExpandPanel, false);
         this.bOpneExpandPanel = false;
         this.nodeSwitchExpand?.setScale(1, 1, 1);
     }

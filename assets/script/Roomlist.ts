@@ -7,6 +7,7 @@ import { CRoomData, CGlobalData } from './GlobalData';
 import { CInvasionManager } from './InvasionManager';
 import { CCharactersManager } from './CharacaterMannager';
 import { CBattleRole } from './character/battlerole';
+import { CBattleRoom } from './room/BattleRoom';
 const { ccclass, property } = _decorator;
 
 @ccclass('Roomlist')
@@ -76,6 +77,11 @@ export class Roomlist extends Component {
         } else {
             console.error("room refresh error,can't room by room index", roomIndex);
         }
+    }
+
+    isRoomConfigurationLocked(roomIndex: number): boolean {
+        const room = this.rooms[roomIndex];
+        return room instanceof CBattleRoom && room.isConfigurationLocked;
     }
 
     onChangeOverseer(roomIndex: number, eOSId: eCCharacterID) {
