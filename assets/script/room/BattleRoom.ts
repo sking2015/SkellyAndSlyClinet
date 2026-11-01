@@ -9,6 +9,7 @@ import { CGlobalData } from '../GlobalData';
 import { CCharacter } from '../character/character';
 import { CBattleFormation } from '../BattleFormation';
 import { CBattleRole } from '../character/battlerole';
+import { getCharacterCombatPower } from '../CombatPower';
 
 const { ccclass, property } = _decorator;
 
@@ -28,6 +29,9 @@ export class CBattleRoom extends CBaseRoom {
 
     @property({ type: Label, tooltip: "部署部队总量" })
     lblTotalTroops: Label = null;
+
+    @property({ type: Label, tooltip: "当前房间部署的守卫和全部部队总战力" })
+    lblCombatNum: Label = null;
 
     @property({ type: CLordInfo, tooltip: "房间领主信息" })
     lordInfo: CLordInfo = null;
@@ -180,6 +184,13 @@ export class CBattleRoom extends CBaseRoom {
         this.troopInfoMage.setCount(this.nMageNum);
 
         this.lblTotalTroops.string = (this.nSoldierNum + this.nArcherNum + this.nMageNum).toString() + "/" + this.nTroopsCapacity.toString();
+
+        // 按编制人数汇总，包含尚未上场的后备，不依赖异步创建的角色节点。
+        const combatPower = getCharacterCombatPower(this.eGuardId)
+            + getCharacterCombatPower(eCCharacterID.eciSkullSoldier) * this.nSoldierNum
+            + getCharacterCombatPower(eCCharacterID.eciSkullArcher) * this.nArcherNum
+            + getCharacterCombatPower(eCCharacterID.eciSkullMage) * this.nMageNum;
+        if (this.lblCombatNum) this.lblCombatNum.string = combatPower.toString();
 
         this.troopInfoSoldier.setHealth(nSoldierHp * this.nSoldierNum);
         this.troopInfoArcher.setHealth(nArcherHp * this.nArcherNum);

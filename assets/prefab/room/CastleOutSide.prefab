@@ -10943,6 +10943,9 @@
     "lblTotalTroops": {
       "__id__": 458
     },
+    "lblCombatNum": {
+      "__id__": 75
+    },
     "lordInfo": {
       "__id__": 273
     },
