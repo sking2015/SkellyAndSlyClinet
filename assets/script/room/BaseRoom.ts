@@ -1,4 +1,4 @@
-import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab, ParticleSystem2D, v3 } from 'cc';
+import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab, ParticleSystem2D, v3, isValid } from 'cc';
 import { eRoomType, eCCharacterID, eBattleCamp } from '../BaseDef';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CGlobalData } from '../GlobalData';
@@ -112,6 +112,10 @@ export class CBaseRoom extends Component {
     async addRole(eId: eCCharacterID, pos: number): Promise<CCharacter> {
 
         const char: CCharacter = await CCharactersManager.instance.CreateChacater4room(eId, this);
+        if (!isValid(this.node, true)) {
+            CCharactersManager.instance.DeleteCharater(char);
+            throw new Error('角色加载完成时房间已销毁');
+        }
 
         char.setInBattle(true);
 

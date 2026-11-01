@@ -4,6 +4,8 @@ import { CResManager } from './ResManager';
 import { CBaseRoom } from './room/BaseRoom';
 import { eCCharacterID } from './BaseDef';
 import { CRoomData, CGlobalData } from './GlobalData';
+import { CInvasionManager } from './InvasionManager';
+import { CCharactersManager } from './CharacaterMannager';
 const { ccclass, property } = _decorator;
 
 @ccclass('Roomlist')
@@ -95,6 +97,7 @@ export class Roomlist extends Component {
 
     start() {
         this.initAllRoom();
+        CInvasionManager.instance.init(this.rooms);
 
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_rooms_init_finish, true));
 
@@ -137,7 +140,14 @@ export class Roomlist extends Component {
     }
 
     update(deltaTime: number) {
+        CInvasionManager.instance.update(deltaTime);
+    }
 
+    onDestroy() {
+        CInvasionManager.instance.stop();
+        for (const room of this.rooms) {
+            CCharactersManager.instance.clearRoomCharacters(room.index);
+        }
     }
 }
 

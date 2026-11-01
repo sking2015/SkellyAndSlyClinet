@@ -85,6 +85,9 @@ export class CGlobalData {
     nArcherLevel: number = 1;
     nMageLevel: number = 1;
 
+
+    nCurStageId: number = 1; //当前关卡ID
+
     //喂养数据
     dataFeed: CFeedData = new CFeedData();
 

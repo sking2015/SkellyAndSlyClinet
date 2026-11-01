@@ -1,4 +1,4 @@
-import { Prefab, instantiate } from 'cc';
+import { Prefab, instantiate, isValid } from 'cc';
 import { CCharacter } from './character/character';
 import { CResManager } from './ResManager';
 import { eCCharacterID, eBattleCamp } from './BaseDef';
@@ -110,13 +110,32 @@ export class CCharactersManager {
     }
 
     DeleteCharater(char: CCharacter) {
+        if (char.index < 0) return;
         this.allChars.del(char.index);
-        let chars: CCharacterContainer = this.mapCharInRoom.get(char.getRoom().index);
+        this.delChars.del(char.index);
+        let chars: CCharacterContainer = this.mapCharInRoom.get(char.getRoom()?.index);
         if (chars) {
             chars.del(char.index);
         }
 
+        char.bIsAlive = false;
         char.Release();
+    }
+
+    getRoomCharacters(roomIndex: number): CCharacter[] {
+        return (this.mapCharInRoom.get(roomIndex)?.getAllChars() || [])
+            .filter(char => char.node && isValid(char.node) && char.node.activeInHierarchy && !char.bDelete);
+    }
+
+    clearRoomCharacters(roomIndex: number) {
+        const chars = this.mapCharInRoom.get(roomIndex)?.getAllChars() || [];
+        for (const char of chars) this.DeleteCharater(char);
+        this.mapCharInRoom.delete(roomIndex);
+    }
+
+    hasLivingEnemy(src: CCharacter, camp: eBattleCamp): boolean {
+        return this.getRoomCharacters(src.getRoom().index)
+            .some(char => char.IsAlive() && char.getInBattle() && char.getBattleCamp() === camp);
     }
 
     ReleaseChacater(char: CCharacter) {
@@ -137,7 +156,7 @@ export class CCharactersManager {
             const posLimit: number = src.getPosition() + nRange;
             for (let i = 0; i < chars.length; ++i) {
                 let char: CCharacter = chars[i];
-                if (char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
+                if (char.node && isValid(char.node) && char.node.activeInHierarchy && char.getInBattle() && char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
                     const posTar: number = char.getPosition();
                     //在源角色位置和目标位之间
                     if (posTar > posSrc && posTar < posLimit) {
@@ -149,7 +168,7 @@ export class CCharactersManager {
             const posLimit: number = src.getPosition() - nRange;
             for (let i = 0; i < chars.length; ++i) {
                 let char: CCharacter = chars[i];
-                if (char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
+                if (char.node && isValid(char.node) && char.node.activeInHierarchy && char.getInBattle() && char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
                     const posTar: number = char.getPosition();
                     //在源角色位置和目标位之间
                     if (posTar < posSrc && posTar > posLimit) {
@@ -172,7 +191,7 @@ export class CCharactersManager {
 
         for (let i = 0; i < chars.length; ++i) {
             let char: CCharacter = chars[i];
-            if (char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
+            if (char.node && isValid(char.node) && char.node.activeInHierarchy && char.getInBattle() && char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
 
                 let distance = src.getDistance(char);
 
@@ -197,7 +216,7 @@ export class CCharactersManager {
 
         for (let i = 0; i < chars.length; ++i) {
             let char: CCharacter = chars[i];
-            if (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp) {
+            if (char.node && isValid(char.node) && char.node.activeInHierarchy && char.getInBattle() && char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
 
                 const per = char.getHPPer()
 

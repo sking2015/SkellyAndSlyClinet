@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, Label } from 'cc';
+import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, Label, isValid } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { fadeInOut } from '../common/common';
@@ -7,6 +7,7 @@ import { CLordInfo } from '../LordInfo';
 import { eCCharacterID } from '../BaseDef';
 import { CGlobalData } from '../GlobalData';
 import { CCharacter } from '../character/character';
+import { CCharactersManager } from '../CharacaterMannager';
 
 const { ccclass, property } = _decorator;
 
@@ -55,6 +56,29 @@ export class CBattleRoom extends CBaseRoom {
     charArcher: CCharacter = null;
     charMage: CCharacter = null;
 
+    private roleVersions = { charGuard: 0, charSoldier: 0, charArcher: 0, charMage: 0 };
+
+    private async replaceRole(slot: 'charGuard' | 'charSoldier' | 'charArcher' | 'charMage', id: eCCharacterID, pos: number) {
+        const version = ++this.roleVersions[slot];
+        if (this[slot]) {
+            CCharactersManager.instance.DeleteCharater(this[slot]);
+            this[slot] = null;
+        }
+        if (id === eCCharacterID.eciNone) return;
+        try {
+            const char = await this.addRole(id, pos);
+            if (!isValid(this.node, true) || version !== this.roleVersions[slot]) {
+                CCharactersManager.instance.DeleteCharater(char);
+                return;
+            }
+            this[slot] = char;
+            char.playEffect();
+            char.setDirection2Left();
+        } catch (error) {
+            console.error('创建房间守军失败', error);
+        }
+    }
+
     start() {
         super.start();
         this.nodeCombatDataPanel.active = false;
@@ -63,55 +87,19 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     async refreshGuardRole() {
-        if (this.charGuard) {
-            this.charGuard.node.destroy();
-            this.charGuard = null;
-        }
-
-        if (this.eGuardId !== eCCharacterID.eciNone) {
-            this.charGuard = await this.addRole(this.eGuardId, GUARD_POS);
-            this.charGuard.playEffect();
-            this.charGuard.setDirection2Left();
-        }
+        await this.replaceRole('charGuard', this.eGuardId, GUARD_POS);
     }
 
     async refreshSoldierRole() {
-        if (this.charSoldier) {
-            this.charSoldier.node.destroy();
-            this.charSoldier = null;
-        }
-
-        if (this.nSoldierNum > 0) {
-            this.charSoldier = await this.addRole(eCCharacterID.eciSkullSoldier, SOLDIER_POS);
-            this.charSoldier.playEffect();
-            this.charSoldier.setDirection2Left();
-        }
+        await this.replaceRole('charSoldier', this.nSoldierNum > 0 ? eCCharacterID.eciSkullSoldier : eCCharacterID.eciNone, SOLDIER_POS);
     }
 
     async refreshArcherRole() {
-        if (this.charArcher) {
-            this.charArcher.node.destroy();
-            this.charArcher = null;
-        }
-
-        if (this.nArcherNum > 0) {
-            this.charArcher = await this.addRole(eCCharacterID.eciSkullArcher, ARCHER_POS);
-            this.charArcher.playEffect();
-            this.charArcher.setDirection2Left();
-        }
+        await this.replaceRole('charArcher', this.nArcherNum > 0 ? eCCharacterID.eciSkullArcher : eCCharacterID.eciNone, ARCHER_POS);
     }
 
     async refreshMageRole() {
-        if (this.charMage) {
-            this.charMage.node.destroy();
-            this.charMage = null;
-        }
-
-        if (this.nMageNum > 0) {
-            this.charMage = await this.addRole(eCCharacterID.eciSkullMage, MAGE_POS);
-            this.charMage.playEffect();
-            this.charMage.setDirection2Left();
-        }
+        await this.replaceRole('charMage', this.nMageNum > 0 ? eCCharacterID.eciSkullMage : eCCharacterID.eciNone, MAGE_POS);
     }
 
     refreshExpand() {

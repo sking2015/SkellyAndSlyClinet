@@ -1,5 +1,5 @@
 import { CkeyValuePair } from '../KeyValuePair';
-import { _decorator, Component, UITransform, Node, Animation, error, warn, Enum, math, Prefab, Sprite, color, ColorKey } from 'cc';
+import { _decorator, Component, UITransform, Node, Animation, error, warn, Enum, math, Prefab, Sprite, color, ColorKey, Tween, isValid } from 'cc';
 import { eCharPlace, eBattleCamp, eDirction, eCCharacterID } from '../BaseDef';
 import { fadeInOut } from '../common/common';
 import { CBaseRoom } from '../room/BaseRoom';
@@ -183,10 +183,12 @@ export class CCharacter extends Component {
     //释放自己
     Release() {
         this.index = -1;
-        if (this.node) {
+        if (this.node && isValid(this.node)) {
             console.log("删除自身");
-            this.node.removeFromParent();
-            this.node = null;
+            Tween.stopAllByTarget(this.node);
+            this.unscheduleAllCallbacks();
+            this.node.active = false;
+            this.node.destroy();
         }
     }
 

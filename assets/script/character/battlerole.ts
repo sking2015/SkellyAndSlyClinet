@@ -60,6 +60,14 @@ export class CBattleRole extends COverseer {
     //是否在战斗状态，对于魔王军来说，有可能是在房间巡逻或监工或者只是展示
     bInBattle: boolean = false;
 
+    // 仅小入侵角色设置：没有存活守军时继续走出右边界。
+    invasionExitX: number | null = null;
+
+    private shouldLeaveInvasion(): boolean {
+        return this.invasionExitX !== null && this.bInBattle &&
+            !CCharactersManager.instance.hasLivingEnemy(this, eBattleCamp.ebcDemon);
+    }
+
     //当前目标
     nTarget: number = -1;
 
@@ -541,6 +549,7 @@ export class CBattleRole extends COverseer {
     //受击表现，可能在两个时机播放，一时如果配置了关键帧，那么在关键就会执行这个函数。
     //如果攻击动作没配置关键帧，将在攻击动画完毕后调用这个函数
     onHited(caster: CCharacter) {
+        if (!this.IsAlive()) return;
 
         if (caster) {
             // console.log(this.eCharId, "受击", this.arrHitedStriker);
@@ -710,6 +719,16 @@ export class CBattleRole extends COverseer {
 
     //战斗AI
     BattleAITick() {
+        if (this.shouldLeaveInvasion()) {
+            this.charTar = null;
+            this.arrTargets = [];
+            if (this.eState !== eBattleState.ebsRun) {
+                this.eState = eBattleState.ebsRun;
+                this.setDirection2Right();
+                this.playRun();
+            }
+            return;
+        }
         //选择技能
         this.onSelectSkill();
 
@@ -790,7 +809,7 @@ export class CBattleRole extends COverseer {
 
     handleMove(dt: number) {
         //最后加个距离判断，避免和目标叠在一起
-        if (this.eState == eBattleState.ebsRun && !this.curSkill.IsCanCastByDistance() && this.getDistance(this.charTar) > 5) {
+        if (this.eState == eBattleState.ebsRun && this.curSkill && this.charTar?.IsAlive() && !this.curSkill.IsCanCastByDistance() && this.getDistance(this.charTar) > 5) {
             let pos = this.getPosition();
             let speed = this.runSpeed;
 
@@ -815,6 +834,12 @@ export class CBattleRole extends COverseer {
 
 
     UpdateMove(deltaTime: number) {
+        if (!this.IsAlive()) return;
+        if (this.shouldLeaveInvasion()) {
+            this.setDirection2Right();
+            this.setPosition(Math.min(this.invasionExitX, this.getPosition() + this.runSpeed * deltaTime));
+            return;
+        }
         //有指定位置要优先处理
         if (this.bNeedRun2Pos) {
             this.handleRun2PositionMovement(deltaTime);
