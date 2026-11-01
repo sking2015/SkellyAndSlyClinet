@@ -1,6 +1,5 @@
 import { isValid, UITransform, Vec3 } from 'cc';
 import { eBattleCamp, eCCharacterID, eRoomType } from './BaseDef';
-import { CCharactersManager } from './CharacaterMannager';
 import { CBattleRole } from './character/battlerole';
 import { CCharacter } from './character/character';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
@@ -9,6 +8,7 @@ import { HerosData } from './config/Heros';
 import { TeamConfigData } from './config/TeamConfig';
 import { CGlobalData } from './GlobalData';
 import { CBaseRoom } from './room/BaseRoom';
+import { CBattleFormation } from './BattleFormation';
 
 // 小入侵只在城外运行；大入侵的推进和惩罚以后独立接入。
 export class CInvasionManager {
@@ -24,7 +24,8 @@ export class CInvasionManager {
     private room: CBaseRoom = null;
     private remaining = 0;
     private state: 'waiting' | 'spawning' | 'active' = 'waiting';
-    private enemies: CCharacter[] = [];
+    private formation: CBattleFormation = null;
+    private get enemies(): CCharacter[] { return this.formation?.getActiveCharacters() || []; }
     private escaped = false;
     private generation = 0;
     private exitX = 0;
@@ -37,8 +38,8 @@ export class CInvasionManager {
 
     stop() {
         ++this.generation;
-        for (const enemy of this.enemies) this.removeEnemy(enemy);
-        this.enemies = [];
+        this.formation?.dispose();
+        this.formation = null;
         this.room = null;
         this.state = 'waiting';
     }
@@ -57,29 +58,36 @@ export class CInvasionManager {
             return;
         }
         if (this.state !== 'active') return;
+        if (this.formation.failed) {
+            this.formation.dispose();
+            this.formation = null;
+            this.resetTimer();
+            return;
+        }
 
         for (const enemy of this.enemies) {
             // 外部移除的角色不能当作击杀结算。
             if (enemy.IsAlive() && (!enemy.node || !isValid(enemy.node))) {
                 this.escaped = true;
-                this.removeEnemy(enemy);
+                void this.formation.setCount(enemy.eCharId, 0);
             } else if (enemy.IsAlive() && enemy.getPosition() >= this.exitX) {
                 this.escaped = true;
-                this.removeEnemy(enemy);
+                // 没有交战而穿过防线时，同角色后备随队离开，不作为击杀。
+                void this.formation.setCount(enemy.eCharId, 0);
             }
         }
-        const alive = this.enemies.some(enemy => enemy.IsAlive() && enemy.node && isValid(enemy.node));
+        const alive = this.formation.hasForces();
         if (!alive) {
             // 先切换状态，保证奖励最多发放一次。死亡演出继续沿用角色原有流程。
             this.resetTimer();
             if (!this.escaped) this.grantReward();
-            this.enemies = [];
+            this.formation.dispose();
+            this.formation = null;
         }
     }
 
     private async spawn() {
         this.state = 'spawning';
-        this.enemies = [];
         this.escaped = false;
         const generation = this.generation;
         const room = this.room;
@@ -96,31 +104,26 @@ export class CInvasionManager {
             const left = toLayer(-bounds.width * bounds.anchorX) - 80;
             this.exitX = toLayer(bounds.width * (1 - bounds.anchorX)) + 100;
             let index = 0;
+            const positions = new Map<eCCharacterID, number>();
+            const formation = new CBattleFormation(room, eBattleCamp.ebcHero, id => positions.get(id), (char, replacement) => {
+                const role = char as CBattleRole;
+                role.invasionExitX = this.exitX;
+                if (replacement) role.reinforcementTargetX = 0;
+            });
+            this.formation = formation;
             for (const [heroId, count] of members) {
-                for (let n = 0; n < count; n++) {
-                    const enemy = await CCharactersManager.instance.CreateChacater4room(
-                        (eCCharacterID.eciHerosStart + heroId) as eCCharacterID, room);
-                    if (generation !== this.generation || !isValid(room.node, true)) {
-                        this.removeEnemy(enemy);
-                        return;
-                    }
-                    this.enemies.push(enemy);
-                    const role = enemy as CBattleRole;
-                    role.nCamp = eBattleCamp.ebcHero;
-                    role.invasionExitX = this.exitX;
-                    role.node.parent = room.nodeCharLayer;
-                    role.node.y = 0;
-                    role.setPosition(left - index++ * 65);
-                    role.setDirection2Right();
-                    role.setInBattle(true);
-                }
+                const id = (eCCharacterID.eciHerosStart + heroId) as eCCharacterID;
+                positions.set(id, left - index++ * 65);
+                await formation.setCount(id, formation.getCount(id) + count);
+                if (generation !== this.generation) return;
+                if (formation.failed) throw new Error('入侵队伍创建失败');
             }
             this.state = 'active';
         } catch (error) {
             if (generation !== this.generation) return;
             console.error('[小入侵] 创建队伍失败', error);
-            for (const enemy of this.enemies) this.removeEnemy(enemy);
-            this.enemies = [];
+            this.formation?.dispose();
+            this.formation = null;
             this.resetTimer();
         }
     }
@@ -154,7 +157,4 @@ export class CInvasionManager {
         }
     }
 
-    private removeEnemy(enemy: CCharacter) {
-        CCharactersManager.instance.DeleteCharater(enemy);
-    }
 }

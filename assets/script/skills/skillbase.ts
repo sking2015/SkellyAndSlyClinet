@@ -105,7 +105,7 @@ export class CSkillBase {
         if (this.target) {
             const distance = this.caster.getDistance(this.target);
             // console.log("看一下距离", distance, this, this.nSkillRange);
-            this.bCastByDistance = distance < this.nSkillRange;
+            this.bCastByDistance = distance <= this.nSkillRange;
         }
     }
 

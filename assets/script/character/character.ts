@@ -70,6 +70,7 @@ export class CCharacter extends Component {
     room: CBaseRoom = null;
 
     bIsAlive: boolean = true;
+    onBattleDeath: ((char: CCharacter) => void) | null = null;
 
     //是否需要删除
     bDelete: boolean = false;

@@ -1,13 +1,14 @@
-import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, Label, isValid } from 'cc';
+import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, Label } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { fadeInOut } from '../common/common';
 import { CTroopInfo } from '../TroopInfo';
 import { CLordInfo } from '../LordInfo';
-import { eCCharacterID } from '../BaseDef';
+import { eCCharacterID, eBattleCamp } from '../BaseDef';
 import { CGlobalData } from '../GlobalData';
 import { CCharacter } from '../character/character';
-import { CCharactersManager } from '../CharacaterMannager';
+import { CBattleFormation } from '../BattleFormation';
+import { CBattleRole } from '../character/battlerole';
 
 const { ccclass, property } = _decorator;
 
@@ -56,27 +57,61 @@ export class CBattleRoom extends CBaseRoom {
     charArcher: CCharacter = null;
     charMage: CCharacter = null;
 
-    private roleVersions = { charGuard: 0, charSoldier: 0, charArcher: 0, charMage: 0 };
+    private formation: CBattleFormation = null;
+    private slotIds = { charGuard: eCCharacterID.eciNone, charSoldier: eCCharacterID.eciNone,
+        charArcher: eCCharacterID.eciNone, charMage: eCCharacterID.eciNone };
 
-    private async replaceRole(slot: 'charGuard' | 'charSoldier' | 'charArcher' | 'charMage', id: eCCharacterID, pos: number) {
-        const version = ++this.roleVersions[slot];
-        if (this[slot]) {
-            CCharactersManager.instance.DeleteCharater(this[slot]);
+    private getFormation(): CBattleFormation {
+        if (!this.formation) {
+            const position = (id: eCCharacterID) => id === eCCharacterID.eciSkullSoldier ? SOLDIER_POS
+                : id === eCCharacterID.eciSkullArcher ? ARCHER_POS
+                : id === eCCharacterID.eciSkullMage ? MAGE_POS : GUARD_POS;
+            this.formation = new CBattleFormation(this, eBattleCamp.ebcDemon, position, (char, replacement) => {
+                const slot = Object.keys(this.slotIds).find(key => this.slotIds[key] === char.eCharId);
+                if (slot) this[slot] = char;
+                if (replacement) (char as CBattleRole).reinforcementTargetX = position(char.eCharId);
+                else char.playEffect();
+            }, (id, count) => {
+                const data = CGlobalData.instance.getRoomDataByIndex(this.index);
+                if (id === eCCharacterID.eciSkullSoldier) {
+                    this.charSoldier = null;
+                    this.nSoldierNum = count;
+                    if (data) data.nSoldierNum = count;
+                } else if (id === eCCharacterID.eciSkullArcher) {
+                    this.charArcher = null;
+                    this.nArcherNum = count;
+                    if (data) data.nArcherNum = count;
+                } else if (id === eCCharacterID.eciSkullMage) {
+                    this.charMage = null;
+                    this.nMageNum = count;
+                    if (data) data.nMageNum = count;
+                } else if (id === this.eGuardId) {
+                    this.charGuard = null;
+                    this.eGuardId = eCCharacterID.eciNone;
+                    if (data) data.eGuardId = eCCharacterID.eciNone;
+                }
+                this.refreshCombatInfo();
+            });
+        }
+        return this.formation;
+    }
+
+    private async replaceRole(slot: 'charGuard' | 'charSoldier' | 'charArcher' | 'charMage', id: eCCharacterID) {
+        const formation = this.getFormation();
+        const oldId = this.slotIds[slot];
+        this.slotIds[slot] = id;
+        if (oldId !== id && oldId !== eCCharacterID.eciNone) {
+            void formation.setCount(oldId, 0);
             this[slot] = null;
         }
         if (id === eCCharacterID.eciNone) return;
-        try {
-            const char = await this.addRole(id, pos);
-            if (!isValid(this.node, true) || version !== this.roleVersions[slot]) {
-                CCharactersManager.instance.DeleteCharater(char);
-                return;
-            }
-            this[slot] = char;
-            char.playEffect();
-            char.setDirection2Left();
-        } catch (error) {
-            console.error('创建房间守军失败', error);
-        }
+        const count = slot === 'charSoldier' ? this.nSoldierNum : slot === 'charArcher' ? this.nArcherNum
+            : slot === 'charMage' ? this.nMageNum : 1;
+        await formation.setCount(id, count);
+    }
+
+    protected onDestroy() {
+        this.formation?.dispose();
     }
 
     start() {
@@ -87,19 +122,19 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     async refreshGuardRole() {
-        await this.replaceRole('charGuard', this.eGuardId, GUARD_POS);
+        await this.replaceRole('charGuard', this.eGuardId);
     }
 
     async refreshSoldierRole() {
-        await this.replaceRole('charSoldier', this.nSoldierNum > 0 ? eCCharacterID.eciSkullSoldier : eCCharacterID.eciNone, SOLDIER_POS);
+        await this.replaceRole('charSoldier', this.nSoldierNum > 0 ? eCCharacterID.eciSkullSoldier : eCCharacterID.eciNone);
     }
 
     async refreshArcherRole() {
-        await this.replaceRole('charArcher', this.nArcherNum > 0 ? eCCharacterID.eciSkullArcher : eCCharacterID.eciNone, ARCHER_POS);
+        await this.replaceRole('charArcher', this.nArcherNum > 0 ? eCCharacterID.eciSkullArcher : eCCharacterID.eciNone);
     }
 
     async refreshMageRole() {
-        await this.replaceRole('charMage', this.nMageNum > 0 ? eCCharacterID.eciSkullMage : eCCharacterID.eciNone, MAGE_POS);
+        await this.replaceRole('charMage', this.nMageNum > 0 ? eCCharacterID.eciSkullMage : eCCharacterID.eciNone);
     }
 
     refreshExpand() {
@@ -129,6 +164,10 @@ export class CBattleRoom extends CBaseRoom {
 
 
 
+        this.refreshCombatInfo();
+    }
+
+    private refreshCombatInfo() {
         //模拟一下血量，后续可以根据兵营里的兵种信息获取真实的血量
         let nSoldierHp = 200;
         let nArcherHp = 100;

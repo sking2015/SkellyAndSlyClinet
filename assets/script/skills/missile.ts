@@ -1,5 +1,6 @@
-import { _decorator, Component, Node, tween, Animation, Vec3, math, misc, Collider2D, IPhysics2DContact, Contact2DType, ParticleSystem2D } from 'cc';
+import { _decorator, Component, Node, tween, Animation, Vec3, math, misc, UITransform, ParticleSystem2D, isValid } from 'cc';
 import { CBattleRole } from '../character/battlerole';
+import { CCharactersManager } from '../CharacaterMannager';
 const { ccclass, property } = _decorator;
 
 @ccclass('CMissile')
@@ -27,6 +28,7 @@ export class CMissile extends Component {
     caster: CBattleRole = null;
 
     bFinishe: boolean = false;
+    private finishing = false;
 
     start() {
         //打开飞行节点，隐藏爆炸节点
@@ -47,12 +49,7 @@ export class CMissile extends Component {
             this.nodeExplode.active = false;
         }
 
-        // 获取子弹上的碰撞组件
-        let collider = this.getComponent(Collider2D);
-        if (collider) {
-            // 监听触发器事件（因为勾选了 IsTrigger）
-            collider.on(Contact2DType.BEGIN_CONTACT, this.onBeginContact, this);
-        }
+
     }
 
     public init(isFaceRight: boolean) {
@@ -95,6 +92,11 @@ export class CMissile extends Component {
     }
 
     onFinished() {
+        if (this.finishing) return;
+        this.finishing = true;
+        this._isMoving = false;
+        if (this.nodeFly) this.nodeFly.active = false;
+        this.p2dFly?.stopSystem();
         if (this.p2dFly) {
             //如果有飞行拖尾，两秒后结束，让拖尾表现完
             this.scheduleOnce(() => {
@@ -103,13 +105,13 @@ export class CMissile extends Component {
         } else {
             this.bFinishe = true;
         }
-        this.caster.onMissileFinished();
+        if (isValid(this.caster)) this.caster.onMissileFinished();
     }
 
     doExplode() {
         tween(this.nodeFly).to(0.1, { scale: new Vec3(0.1, 0.1, 0.1) }).call(() => {
             this.nodeFly.active = false;
-            this.p2dFly.stopSystem();
+            this.p2dFly?.stopSystem();
             if (this.nodeExplode) {
                 this.nodeExplode.active = true;
                 const ani = this.nodeExplode.getComponent(Animation);
@@ -119,24 +121,20 @@ export class CMissile extends Component {
                         //表现全部完成。。。
                         this.onFinished();
                     })
-                }
+                } else this.onFinished();
             }
 
         }).start();
     }
 
-    /**
-     * 当子弹碰到任何配置了碰撞体的物体时触发
-     */
-    private onBeginContact(selfCollider: Collider2D, otherCollider: Collider2D, contact: IPhysics2DContact | null) {
-        // 获取被击中节点的标签或名字，或者获取其身上的组件
-        // console.log("开始碰撞~!!");
-
-        let otherNode = otherCollider.node;
-        const role: CBattleRole = otherNode.getComponent(CBattleRole);
+    // ?????????????????????????????????
+    private hitTarget(role: CBattleRole) {
+        if (!role || !this.caster || role.getRoom() !== this.caster.getRoom()) return;
 
         // 判断字弹是还在移动，是否不同阵营，当然，以后如果是子弹加血，就反过来
         if (this._isMoving && role.getBattleCamp() != this.caster.getBattleCamp() && role.IsAlive() && role.getInBattle()) {
+            // 先停止命中判定，避免同一物理帧中的多个碰撞重复伤害/结算。
+            this._isMoving = false;
             if (this.nodeExplode) {
                 this.doExplode();
             } else {
@@ -148,37 +146,8 @@ export class CMissile extends Component {
             role.onHitedReady(this.caster);
             role.onHited(this.caster);
 
-            this._isMoving = false;
         }
     }
-
-    // 别忘了在节点销毁时注销事件，防止内存泄漏
-    onDestroy() {
-        let collider = this.getComponent(Collider2D);
-        if (collider) {
-            collider.off(Contact2DType.BEGIN_CONTACT, this.onBeginContact, this);
-        }
-    }
-
-    // Launche(tar: CBattleRole) {
-    //     tween(this.node).to(0.8, { position: tar.node.position }).call(() => {
-    //         tween(this.nodeFly).to(0.3, { scale: new Vec3(0.1, 0.1, 0.1) }).call(() => {
-    //             this.nodeFly.active = false;
-    //             if (this.nodeExplode) {
-    //                 this.nodeFly.active = true;
-    //                 const ani = this.nodeExplode.getComponent(Animation);
-    //                 if (ani) {
-    //                     ani.play(ani.clips[0].name);
-    //                     ani.on(Animation.EventType.FINISHED, () => {
-    //                         //表现全部完成。。。
-    //                         this.bFinishe = true;
-    //                     })
-    //                 }
-    //             }
-
-    //         }).start();
-    //     }).start();
-    // }
 
     update(deltaTime: number) {
         if (this._isMoving) {
@@ -188,18 +157,34 @@ export class CMissile extends Component {
             let moveX = currentPos.x + this._direction.x * this.speed * deltaTime;
             let moveY = currentPos.y + this._direction.y * this.speed * deltaTime;
 
+            const layer = this.caster.getRoom().nodeCharLayer.getComponent(UITransform);
+            const parent = this.node.parent.getComponent(UITransform);
+            const toBattleX = (p: Vec3) => layer.convertToNodeSpaceAR(parent.convertToWorldSpaceAR(p)).x;
+            const startX = toBattleX(currentPos);
+            const endX = toBattleX(new Vec3(moveX, moveY, currentPos.z));
+            const blocker = CCharactersManager.instance.getFirstEnemyOnPath(this.caster, startX, endX);
+            if (blocker) {
+                const direction = endX >= startX ? 1 : -1;
+                const contactX = blocker.getPosition() - direction * blocker.getRoleHalfWidth();
+                const t = Math.abs(endX - startX) < 0.001 ? 0
+                    : Math.max(0, Math.min(1, (contactX - startX) / (endX - startX)));
+                this.node.setPosition(currentPos.x + (moveX - currentPos.x) * t,
+                    currentPos.y + (moveY - currentPos.y) * t, currentPos.z);
+                this.hitTarget(blocker as CBattleRole);
+                return;
+            }
             this.node.setPosition(moveX, moveY, currentPos.z);
 
             // 飞出太远自动销毁
             if (Math.abs(this.node.position.x) > 1000 || Math.abs(this.node.position.y) > 500) {
-                this.node.destroy();
+                this.onFinished();
             }
         }
 
 
         if (this.bFinishe) {
             // console.log("生命周期完成~!删除子弹")
-            this.node.removeFromParent();
+            this.node.destroy();
         }
     }
 }

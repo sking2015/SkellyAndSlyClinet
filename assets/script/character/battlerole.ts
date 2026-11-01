@@ -1,4 +1,4 @@
-import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, director, Prefab, instantiate, tween, Tween, Canvas, ParticleSystem2D } from 'cc';
+import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, director, Prefab, instantiate, tween, Tween, Canvas, ParticleSystem2D, isValid } from 'cc';
 import { COverseer } from './overseer';
 import { eBattleCamp, eCCharacterID, eDirction, eMissileId } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
@@ -62,10 +62,42 @@ export class CBattleRole extends COverseer {
 
     // 仅小入侵角色设置：没有存活守军时继续走出右边界。
     invasionExitX: number | null = null;
+    reinforcementTargetX: number | null = null;
 
     private shouldLeaveInvasion(): boolean {
         return this.invasionExitX !== null && this.bInBattle &&
             !CCharactersManager.instance.hasLivingEnemy(this, eBattleCamp.ebcDemon);
+    }
+
+    // 用房间横向边界判断入场，不依赖镜头纵向位置，避免滚动楼层影响后台战斗。
+    // 返回角色父节点坐标系中的入场目标 X；身体完整进入战场后返回 null。
+    private getBattlefieldEntryX(): number | null {
+        const bounds = this.room?.tfBase;
+        const body = this.node?.getComponent(UITransform);
+        const parent = this.node?.parent?.getComponent(UITransform);
+        if (!bounds || !body || !parent) return null;
+
+        const toRoomX = (x: number) => bounds.convertToNodeSpaceAR(
+            body.convertToWorldSpaceAR(new Vec3(x, 0, 0))).x;
+        const a = toRoomX(-body.width * body.anchorX);
+        const b = toRoomX(body.width * (1 - body.anchorX));
+        const left = -bounds.width * bounds.anchorX;
+        const right = bounds.width * (1 - bounds.anchorX);
+        const offset = Math.min(a, b) < left ? left - Math.min(a, b)
+            : Math.max(a, b) > right ? right - Math.max(a, b) : 0;
+        if (Math.abs(offset) < 0.01) return null;
+
+        const center = bounds.convertToNodeSpaceAR(this.node.worldPosition);
+        center.x += offset;
+        return parent.convertToNodeSpaceAR(bounds.convertToWorldSpaceAR(center)).x;
+    }
+
+    private enterBattlefield(targetX: number) {
+        this.moveDirection = targetX > this.getPosition() ? eDirction.edRight : eDirction.edLeft;
+        if (this.eState !== eBattleState.ebsRun) {
+            this.eState = eBattleState.ebsRun;
+            this.playRun();
+        }
     }
 
     //当前目标
@@ -294,6 +326,7 @@ export class CBattleRole extends COverseer {
                     skill.nCD = 2000;
                     this.skills.push(skill);
                 }
+                break;
             case eCCharacterID.eciTauren:
                 {
                     this.setMaxHP(20000);
@@ -358,9 +391,14 @@ export class CBattleRole extends COverseer {
         // console.log("发射物完全命中目标，生命周期结束");
     }
 
-    LauncheMissile(id: eMissileId) {
+    LauncheMissile(id: eMissileId, target: CCharacter = this.charTar) {
+        if (!this.IsAlive() || !target?.IsAlive() || !isValid(target.node) || !this.nodeLaunchePos) return;
         console.log("LauncheMissile", id);
         const prefabMissile: Prefab = CResManager.instance.getMissilePrefab(id);
+        if (!prefabMissile) {
+            console.error('飞行物预制体未配置', id, '角色', this.eCharId);
+            return;
+        }
         const nodeMissile: Node = instantiate(prefabMissile);
         //const posMissile = this.node.position.clone().add(this.nodeLaunchePos.position);
         const posLaunche = this.nodeLaunchePos.worldPosition;
@@ -370,20 +408,20 @@ export class CBattleRole extends COverseer {
         this.room.addMissile(nodeMissile);
         const comMissile: CMissile = nodeMissile.getComponent(CMissile);
         comMissile.setCaster(this);
-        comMissile.LauncheWithTarget(posLaunche, this.charTar.getCenterPosByWorld());
+        comMissile.LauncheWithTarget(posLaunche, target.getCenterPosByWorld());
     }
 
     onLauncheMissile() {
         //只有还活着才发射
         if (this.IsAlive()) {
-            this.curSkill.LauncheMissile();
+            this.curSkill?.LauncheMissile();
         }
     }
 
     onStrikeTargets() {
         for (let i = 0; i < this.arrTargets.length; ++i) {
             const char = this.arrTargets[i];
-            char.onHited(this);
+            if (char?.IsAlive() && isValid(char.node)) char.onHited(this);
         }
     }
 
@@ -474,6 +512,7 @@ export class CBattleRole extends COverseer {
         if (this.eState != eBattleState.ebsDead) {
             this.eState = eBattleState.ebsDead;
             this.bIsAlive = false;
+            this.onBattleDeath?.(this);
 
 
             if (this.nodeImpact) {
@@ -587,18 +626,18 @@ export class CBattleRole extends COverseer {
     maxSkillRange: number = 0;
     //选择一个技能
     onSelectSkill() {
-        //角色现在优先使用技能范围最远的距离，以后再来细调AI，如果有敌人在附近，切换使用近程技能        
+        // 施法过程中锁定技能，动画关键帧始终交给本次施放的技能处理。
+        if (this.eState === eBattleState.ebsSkill) return;
+        let selected: CSkillBase = null;
         for (let i = 0; i < this.skills.length; ++i) {
             const skill = this.skills[i];
-            if (skill.nSkillRange > this.maxSkillRange) {
-                if (skill.IsCoolDown()) {
-                    // console.log("设置技能", skill);
-                    this.curSkill = skill;
-                    this.maxSkillRange = skill.nSkillRange;
-                }
+            // 射程决定站位；冷却只决定何时施法，不能让远程角色转为追赶近战目标。
+            if (!selected || skill.nSkillRange > selected.nSkillRange) {
+                selected = skill;
             }
         }
-
+        if (selected) this.curSkill = selected;
+        this.maxSkillRange = this.curSkill?.nSkillRange || 0;
     }
 
     //检查自身跟前是否有敌对目标，不能穿过敌对目标
@@ -610,6 +649,7 @@ export class CBattleRole extends COverseer {
 
     //选择一个目标
     onSelectTarget() {
+        if (this.eState === eBattleState.ebsSkill) return;
         //如果有技能，并且没有目标或目标已失效。要重新选择目标
         if (this.curSkill) {
             if (this.curSkill.IsRangeAffect()) {
@@ -682,13 +722,22 @@ export class CBattleRole extends COverseer {
     }
 
     async CastSkill() {
+        if (this.reinforcementTargetX !== null) {
+            this.enterBattlefield(this.reinforcementTargetX);
+            return;
+        }
+        const entryX = this.getBattlefieldEntryX();
+        if (entryX !== null) {
+            this.enterBattlefield(entryX);
+            return;
+        }
         //如果是飞行，先尝试结束飞行
         if (this.eFlystate == eFlyState.efsFly) {
             await this.EndFly();
         }
 
         //要不在飞行状态才开始播技能
-        if (this.eFlystate == eFlyState.efsNone) {
+        if (this.eFlystate == eFlyState.efsNone && this.getBattlefieldEntryX() === null) {
             // console.log("准备放技能");
             if (this.eState != eBattleState.ebsSkill && this.curSkill.IsCoolDown()) {
                 this.eState = eBattleState.ebsSkill;
@@ -729,6 +778,15 @@ export class CBattleRole extends COverseer {
             }
             return;
         }
+        if (this.reinforcementTargetX !== null) {
+            this.enterBattlefield(this.reinforcementTargetX);
+            return;
+        }
+        const entryX = this.getBattlefieldEntryX();
+        if (entryX !== null) {
+            this.enterBattlefield(entryX);
+            return;
+        }
         //选择技能
         this.onSelectSkill();
 
@@ -761,7 +819,8 @@ export class CBattleRole extends COverseer {
 
                         //距离之内，向目标移动
                         if (this.curSkill.IsCanCastByDistance()) {
-                            this.CastSkill();
+                            if (this.curSkill.IsCoolDown()) this.CastSkill();
+                            else this.SwitchToStand();
                         } else {
                             //如果是距离不够，要向目标靠近
                             this.CloseToTarget();
@@ -817,7 +876,7 @@ export class CBattleRole extends COverseer {
             pos += speed * this.moveDirection * dt;
 
             // console.log("重新设置pos坐标", pos);
-            this.setPosition(pos);
+            this.setPosition(CCharactersManager.instance.getBlockedPosition(this, pos));
         }
     }
 
@@ -840,9 +899,32 @@ export class CBattleRole extends COverseer {
             this.setPosition(Math.min(this.invasionExitX, this.getPosition() + this.runSpeed * deltaTime));
             return;
         }
+        if (this.reinforcementTargetX !== null) {
+            const targetX = this.reinforcementTargetX;
+            this.enterBattlefield(targetX);
+            const delta = targetX - this.getPosition();
+            const desired = this.getPosition() + Math.sign(delta) * Math.min(Math.abs(delta), this.runSpeed * deltaTime);
+            const blocked = CCharactersManager.instance.getBlockedPosition(this, desired);
+            this.setPosition(blocked);
+            // 补位途中接敌就结束跑位命令，转入正常寻敌战斗，不能硬穿到预设站位。
+            if (blocked !== desired || Math.abs(targetX - blocked) < 0.01) this.reinforcementTargetX = null;
+            return;
+        }
+        const entryX = this.bInBattle ? this.getBattlefieldEntryX() : null;
+        if (entryX !== null) {
+            this.enterBattlefield(entryX);
+            const delta = entryX - this.getPosition();
+            const desired = this.getPosition() + Math.sign(delta) * Math.min(Math.abs(delta), this.runSpeed * deltaTime);
+            this.setPosition(CCharactersManager.instance.getBlockedPosition(this, desired));
+            return;
+        }
         //有指定位置要优先处理
         if (this.bNeedRun2Pos) {
+            const start = this.getPosition();
             this.handleRun2PositionMovement(deltaTime);
+            const desired = this.getPosition();
+            this.setPosition(start);
+            this.setPosition(CCharactersManager.instance.getBlockedPosition(this, desired));
         } else if (this.charTar) {
             //然后才是朝向目标移动
             this.handleMove(deltaTime);

@@ -10,6 +10,7 @@ export class CSkillLanche extends CSkillBase {
     bReadyLaunche: boolean = false;
 
     eMissile: eMissileId = eMissileId.emiNone;
+    private launchTarget: CCharacter = null;
 
     Init() {
     }
@@ -30,7 +31,9 @@ export class CSkillLanche extends CSkillBase {
         if (this.bReadyLaunche) {
             //有可能在关键帧和动画播放完调用，但只是执行一次，所以拦一下
             this.bReadyLaunche = false;
-            this.caster.LauncheMissile(this.eMissile);
+            // 使用起手时的目标，避免 AI 后续寻敌改变弹道。
+            this.caster.LauncheMissile(this.eMissile, this.launchTarget);
+            this.launchTarget = null;
         }
     }
 
@@ -39,6 +42,7 @@ export class CSkillLanche extends CSkillBase {
             super.doCast(cb);
             // console.log("释放技能 CSkillLanuche");
             this.bReadyLaunche = true;
+            this.launchTarget = this.target;
 
             if (this.target.getPosition() < this.caster.getPosition()) {
                 this.caster.moveDirection = eDirction.edLeft;
