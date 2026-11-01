@@ -1,5 +1,5 @@
 import { isValid, UITransform, Vec3 } from 'cc';
-import { eBattleCamp, eCCharacterID, eRoomType } from './BaseDef';
+import { eBattleCamp, eCCharacterID, eRoomType, eDirction } from './BaseDef';
 import { CBattleRole } from './character/battlerole';
 import { CCharacter } from './character/character';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
@@ -9,6 +9,7 @@ import { TeamConfigData } from './config/TeamConfig';
 import { CGlobalData } from './GlobalData';
 import { CBaseRoom } from './room/BaseRoom';
 import { CBattleFormation } from './BattleFormation';
+import { CBattleRoom } from './room/BattleRoom';
 
 // 小入侵只在城外运行；大入侵的推进和惩罚以后独立接入。
 export class CInvasionManager {
@@ -21,9 +22,9 @@ export class CInvasionManager {
     maxInterval = 40;
     readonly teamId = 1;
 
-    private room: CBaseRoom = null;
+    private room: CBattleRoom = null;
     private remaining = 0;
-    private state: 'waiting' | 'spawning' | 'active' = 'waiting';
+    private state: 'waiting' | 'preparing' | 'spawning' | 'entering' | 'active' = 'waiting';
     private formation: CBattleFormation = null;
     private get enemies(): CCharacter[] { return this.formation?.getActiveCharacters() || []; }
     private escaped = false;
@@ -32,7 +33,7 @@ export class CInvasionManager {
 
     init(rooms: CBaseRoom[]) {
         this.stop();
-        this.room = rooms.find(room => room.roomType === eRoomType.ertCastleOutSide) || null;
+        this.room = rooms.find(room => room.roomType === eRoomType.ertCastleOutSide) as CBattleRoom || null;
         this.resetTimer();
     }
 
@@ -40,6 +41,7 @@ export class CInvasionManager {
         ++this.generation;
         this.formation?.dispose();
         this.formation = null;
+        if (this.room && isValid(this.room.node, true)) this.room.endMinorInvasion();
         this.room = null;
         this.state = 'waiting';
     }
@@ -54,13 +56,31 @@ export class CInvasionManager {
         if (!this.room || !isValid(this.room.node) || !this.room.node.activeInHierarchy || this.room.roomLevel <= 0) return;
         if (this.state === 'waiting') {
             this.remaining -= dt;
-            if (this.remaining <= 0) void this.spawn();
+            if (this.remaining <= 0) {
+                this.state = 'preparing';
+                this.room.beginMinorInvasion();
+            }
+            return;
+        }
+        if (this.state === 'preparing') {
+            if (this.room.areDefendersReady()) void this.spawn();
+            return;
+        }
+        if (this.state === 'entering') {
+            if (this.room.areDefendersReady() && !this.formation.isLoading()
+                && this.enemies.every(char => (char as CBattleRole).isDeploymentReady())) {
+                // 同一帧放开双方 AI，英雄入场途中不能被远程技能提前攻击。
+                this.room.startMinorBattle();
+                for (const char of this.enemies) (char as CBattleRole).startDeploymentBattle();
+                this.state = 'active';
+            }
             return;
         }
         if (this.state !== 'active') return;
         if (this.formation.failed) {
             this.formation.dispose();
             this.formation = null;
+            this.room.endMinorInvasion();
             this.resetTimer();
             return;
         }
@@ -83,6 +103,7 @@ export class CInvasionManager {
             if (!this.escaped) this.grantReward();
             this.formation.dispose();
             this.formation = null;
+            this.room.endMinorInvasion();
         }
     }
 
@@ -109,21 +130,27 @@ export class CInvasionManager {
                 const role = char as CBattleRole;
                 role.invasionExitX = this.exitX;
                 if (replacement) role.reinforcementTargetX = 0;
+                else role.holdDeployment();
             });
             this.formation = formation;
             for (const [heroId, count] of members) {
                 const id = (eCCharacterID.eciHerosStart + heroId) as eCCharacterID;
-                positions.set(id, left - index++ * 65);
+                if (!positions.has(id)) positions.set(id, left - index++ * 100);
                 await formation.setCount(id, formation.getCount(id) + count);
                 if (generation !== this.generation) return;
                 if (formation.failed) throw new Error('入侵队伍创建失败');
             }
-            this.state = 'active';
+            const lineup = formation.getLineupPositions();
+            for (const char of this.enemies) {
+                (char as CBattleRole).marchToDeployment(lineup.get(char.eCharId), eDirction.edRight);
+            }
+            this.state = 'entering';
         } catch (error) {
             if (generation !== this.generation) return;
             console.error('[小入侵] 创建队伍失败', error);
             this.formation?.dispose();
             this.formation = null;
+            this.room.endMinorInvasion();
             this.resetTimer();
         }
     }

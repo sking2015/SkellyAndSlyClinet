@@ -70,6 +70,16 @@ export class CSkillRepeatedly extends CSkillBase {
         return this.bInStrike;
     }
 
+    CancelCast() {
+        super.CancelCast();
+        this.bInStrike = false;
+        this.nLeftStrikeNum = 0;
+        const cb = this.cbSkillEnd;
+        this.cbSkillEnd = null;
+        // 大招演出等待此回调恢复房间遮罩和其他角色，取消时也必须结算。
+        cb?.();
+    }
+
     nInterval: number = 0;
 
     //每4个tick才发挥一次作用

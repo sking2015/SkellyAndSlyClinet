@@ -1,10 +1,10 @@
-import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, Label } from 'cc';
+import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, SpriteFrame, Label, UITransform, Vec3 } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { fadeInOut } from '../common/common';
 import { CTroopInfo } from '../TroopInfo';
 import { CLordInfo } from '../LordInfo';
-import { eCCharacterID, eBattleCamp } from '../BaseDef';
+import { eCCharacterID, eBattleCamp, eDirction } from '../BaseDef';
 import { CGlobalData } from '../GlobalData';
 import { CCharacter } from '../character/character';
 import { CBattleFormation } from '../BattleFormation';
@@ -32,6 +32,9 @@ export class CBattleRoom extends CBaseRoom {
 
     @property({ type: Label, tooltip: "当前房间部署的守卫和全部部队总战力" })
     lblCombatNum: Label = null;
+
+    @property({ type: SpriteFrame, tooltip: "小入侵警觉图标" })
+    sfExclamation: SpriteFrame = null;
 
     @property({ type: CLordInfo, tooltip: "房间领主信息" })
     lordInfo: CLordInfo = null;
@@ -62,6 +65,8 @@ export class CBattleRoom extends CBaseRoom {
     charMage: CCharacter = null;
 
     private formation: CBattleFormation = null;
+    private defensePhase: 'patrol' | 'alert' | 'forming' | 'ready' | 'battle' = 'patrol';
+    private alertRemaining = 0;
     private slotIds = { charGuard: eCCharacterID.eciNone, charSoldier: eCCharacterID.eciNone,
         charArcher: eCCharacterID.eciNone, charMage: eCCharacterID.eciNone };
 
@@ -73,8 +78,17 @@ export class CBattleRoom extends CBaseRoom {
             this.formation = new CBattleFormation(this, eBattleCamp.ebcDemon, position, (char, replacement) => {
                 const slot = Object.keys(this.slotIds).find(key => this.slotIds[key] === char.eCharId);
                 if (slot) this[slot] = char;
-                if (replacement) (char as CBattleRole).reinforcementTargetX = position(char.eCharId);
-                else char.playEffect();
+                const role = char as CBattleRole;
+                if (this.defensePhase === 'battle') {
+                    if (replacement) role.reinforcementTargetX = position(char.eCharId);
+                } else if (this.defensePhase === 'patrol') {
+                    this.startPatrol(role);
+                } else {
+                    role.holdDeployment();
+                    role.showExclamation(this.sfExclamation);
+                    if (this.defensePhase !== 'alert') this.formDefenders();
+                }
+                if (!replacement) char.playEffect();
             }, (id, count) => {
                 const data = CGlobalData.instance.getRoomDataByIndex(this.index);
                 if (id === eCCharacterID.eciSkullSoldier) {
@@ -100,6 +114,60 @@ export class CBattleRoom extends CBaseRoom {
         return this.formation;
     }
 
+    private getDefenders(): CBattleRole[] {
+        const ids = [this.eGuardId, eCCharacterID.eciSkullSoldier, eCCharacterID.eciSkullArcher, eCCharacterID.eciSkullMage];
+        return ids.filter(id => id !== eCCharacterID.eciNone)
+            .map(id => this.formation?.getActive(id) as CBattleRole).filter(role => role?.IsAlive());
+    }
+
+    private startPatrol(role: CBattleRole) {
+        const layer = this.nodeCharLayer.getComponent(UITransform);
+        const toLayer = (x: number) => layer.convertToNodeSpaceAR(this.tfBase.convertToWorldSpaceAR(new Vec3(x, 0, 0))).x;
+        const half = role.node.getComponent(UITransform).width * Math.abs(role.node.scale.x) / 2;
+        role.startDeploymentPatrol(toLayer(-this.tfBase.width * this.tfBase.anchorX) + half + 24,
+            toLayer(this.tfBase.width * (1 - this.tfBase.anchorX)) - half - 24);
+    }
+
+    beginMinorInvasion() {
+        this.defensePhase = 'alert';
+        this.alertRemaining = 1.2;
+        for (const role of this.getDefenders()) {
+            role.holdDeployment();
+            role.showExclamation(this.sfExclamation);
+        }
+    }
+
+    private formDefenders() {
+        this.defensePhase = 'forming';
+        const defenders = this.getDefenders();
+        const positions = this.formation?.getLineupPositions(defenders);
+        for (const role of defenders) role.marchToDeployment(positions.get(role.eCharId), eDirction.edLeft);
+    }
+
+    areDefendersReady(): boolean { return this.defensePhase === 'ready' && !this.formation?.isLoading(); }
+
+    startMinorBattle() {
+        this.defensePhase = 'battle';
+        for (const role of this.getDefenders()) role.startDeploymentBattle();
+    }
+
+    endMinorInvasion() {
+        this.defensePhase = 'patrol';
+        for (const role of this.getDefenders()) this.startPatrol(role);
+    }
+
+    update(dt: number) {
+        if (this.defensePhase === 'alert') {
+            this.alertRemaining -= dt;
+            if (this.alertRemaining <= 0 && this.getDefenders().every(role => !role.isShowingExclamation())) {
+                this.formDefenders();
+            }
+        } else if (this.defensePhase === 'forming' && !this.formation?.isLoading()
+            && this.getDefenders().every(role => role.isDeploymentReady())) {
+            this.defensePhase = 'ready';
+        }
+    }
+
     private async replaceRole(slot: 'charGuard' | 'charSoldier' | 'charArcher' | 'charMage', id: eCCharacterID) {
         const formation = this.getFormation();
         const oldId = this.slotIds[slot];
@@ -108,10 +176,15 @@ export class CBattleRoom extends CBaseRoom {
             void formation.setCount(oldId, 0);
             this[slot] = null;
         }
-        if (id === eCCharacterID.eciNone) return;
+        if (id === eCCharacterID.eciNone) {
+            if (this.defensePhase === 'forming' || this.defensePhase === 'ready') this.formDefenders();
+            return;
+        }
         const count = slot === 'charSoldier' ? this.nSoldierNum : slot === 'charArcher' ? this.nArcherNum
             : slot === 'charMage' ? this.nMageNum : 1;
         await formation.setCount(id, count);
+        const role = formation.getActive(id) as CBattleRole;
+        if (role && this.defensePhase === 'patrol') this.startPatrol(role);
     }
 
     protected onDestroy() {

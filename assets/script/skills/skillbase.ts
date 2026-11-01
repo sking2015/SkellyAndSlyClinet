@@ -170,4 +170,11 @@ export class CSkillBase {
     Tick() {
 
     }
+
+    // 离开战斗时清理目标，保留技能冷却。
+    CancelCast() {
+        this.target = null;
+        this.arrTargets = [];
+        this.bCastByDistance = false;
+    }
 }

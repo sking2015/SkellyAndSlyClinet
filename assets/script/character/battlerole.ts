@@ -1,4 +1,4 @@
-import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, director, Prefab, instantiate, tween, Tween, Canvas, ParticleSystem2D, isValid } from 'cc';
+import { _decorator, Vec3, Enum, Component, Animation, Node, NodePool, Color, bits, UITransform, UIOpacity, director, Prefab, instantiate, tween, Tween, Canvas, ParticleSystem2D, isValid, Sprite, SpriteFrame } from 'cc';
 import { COverseer } from './overseer';
 import { eBattleCamp, eCCharacterID, eDirction, eMissileId, eSkillActionType } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
@@ -39,6 +39,7 @@ enum eKeyFrameEvent {
 }
 
 const { ccclass, property } = _decorator;
+const exclamationPool = new NodePool();
 
 @ccclass('CBattleRole')
 export class CBattleRole extends COverseer {
@@ -62,6 +63,167 @@ export class CBattleRole extends COverseer {
     // 仅小入侵角色设置：没有存活守军时继续走出右边界。
     invasionExitX: number | null = null;
     reinforcementTargetX: number | null = null;
+
+    // 部署演出独立于战斗 AI，双方列阵完毕前不参与选敌、施法和碰撞。
+    private deploymentMode: 'patrol' | 'hold' | 'march' | null = null;
+    private deploymentDelay = 0;
+    private deploymentTargetX = 0;
+    private deploymentFace: eDirction = eDirction.edLeft;
+    private patrolLeft = 0;
+    private patrolRight = 0;
+    private exclamation: Node = null;
+
+    private resetDeployment() {
+        this.setInBattle(false);
+        this.nodeChar?.getComponent(Animation)?.off(Animation.EventType.FINISHED);
+        for (const skill of this.skills) skill.CancelCast();
+        this.stopSkillEffect();
+        this.bHited = false;
+        this.bCasting = false;
+        this.bUninterruptible = false;
+        if (this.sprChar) this.blinkRestore();
+        this.bNeedRun2Pos = false;
+        this.cbRun2Position = null;
+        this.reinforcementTargetX = null;
+        this.curSkill = null;
+        this.charTar = null;
+        this.arrTargets = [];
+        this.eState = eBattleState.ebsStand;
+        this.playStand();
+    }
+
+    startDeploymentPatrol(left: number, right: number) {
+        this.resetDeployment();
+        this.hideExclamation();
+        this.deploymentMode = 'patrol';
+        this.deploymentDelay = 2;
+        this.patrolLeft = left;
+        this.patrolRight = Math.max(left, right);
+        this.moveDirection = Math.random() < 0.5 ? eDirction.edLeft : eDirction.edRight;
+    }
+
+    holdDeployment() {
+        this.resetDeployment();
+        this.deploymentMode = 'hold';
+    }
+
+    marchToDeployment(x: number, face: eDirction) {
+        this.resetDeployment();
+        this.deploymentMode = 'march';
+        this.deploymentTargetX = x;
+        this.deploymentFace = face;
+    }
+
+    isDeploymentReady(): boolean { return this.deploymentMode === 'hold'; }
+
+    startDeploymentBattle() {
+        this.hideExclamation();
+        this.deploymentMode = null;
+        this.setInBattle(true);
+        this.aiBoostTime = 0;
+        this.SwitchToStand();
+    }
+
+    showExclamation(frame: SpriteFrame) {
+        this.setDirection2Left();
+        if (!frame) return;
+        if (this.exclamation && isValid(this.exclamation, true)) {
+            this.exclamation.getComponent(Sprite).spriteFrame = frame;
+            this.syncExclamationFacing();
+            return;
+        }
+        let node = exclamationPool.get();
+        if (!node) {
+            node = new Node('Exclamation');
+            const sprite = node.addComponent(Sprite);
+            sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+            node.getComponent(UITransform).setContentSize(42, 39);
+            node.addComponent(UIOpacity);
+        }
+        node.layer = this.node.layer;
+        node.parent = this.node;
+        node.active = true;
+        node.getComponent(Sprite).spriteFrame = frame;
+        this.exclamation = node;
+        this.syncExclamationFacing();
+        const sign = this.node.scale.x < 0 ? -1 : 1;
+        const opacity = node.getComponent(UIOpacity);
+        opacity.opacity = 255;
+        node.setScale(0, 0, 1);
+        // 0.3 秒放大到 1.2 倍，随后 0.9 秒缩回原尺寸并同时渐隐。
+        tween(node).to(0.3, { scale: new Vec3(sign * 1.2, 1.2, 1) }, { easing: 'quadOut' })
+            .to(0.9, { scale: new Vec3(sign, 1, 1) }, {
+                onUpdate: (_target, ratio) => { opacity.opacity = 255 * (1 - ratio); }
+            })
+            .call(() => this.hideExclamation()).start();
+    }
+
+    isShowingExclamation(): boolean { return !!this.exclamation && isValid(this.exclamation, true); }
+
+    private syncExclamationFacing() {
+        const node = this.exclamation;
+        if (!node || !isValid(node, true)) return;
+        const body = this.node.getComponent(UITransform);
+        // 跑位会改变父节点朝向，持续抵消翻转，使图标始终位于屏幕右上方。
+        const sign = this.node.scale.x < 0 ? -1 : 1;
+        node.setPosition(sign * (body.width * 0.3 + 12), body.height * (1 - body.anchorY) + 18, 0);
+        node.setScale(sign * Math.abs(node.scale.x), node.scale.y, 1);
+    }
+
+    private hideExclamation() {
+        if (this.exclamation && isValid(this.exclamation, true)) {
+            Tween.stopAllByTarget(this.exclamation);
+            this.exclamation.active = false;
+            this.exclamation.getComponent(Sprite).spriteFrame = null;
+            exclamationPool.put(this.exclamation);
+        }
+        this.exclamation = null;
+    }
+
+    static clearExclamationPool() { exclamationPool.clear(); }
+
+    Release() {
+        this.hideExclamation();
+        super.Release();
+    }
+
+    private updateDeployment(dt: number) {
+        if (this.deploymentMode === 'hold') return;
+        // 晚部署的角色也必须等自己的警觉演出完成，不能带着感叹号跑位。
+        if (this.deploymentMode === 'march' && this.isShowingExclamation()) return;
+        if (this.deploymentMode === 'patrol') {
+            if (this.deploymentDelay > 0) {
+                this.deploymentDelay = Math.max(0, this.deploymentDelay - dt);
+                return;
+            }
+            if (this.eState !== eBattleState.ebsRun) {
+                this.eState = eBattleState.ebsRun;
+                this.play(this.hasWalkAnimation() ? 'walk' : 'run');
+            }
+            let x = this.getPosition() + this.moveDirection * this.runSpeed * 0.5 * dt;
+            if (x >= this.patrolRight) { x = this.patrolRight; this.setDirection2Left(); }
+            if (x <= this.patrolLeft) { x = this.patrolLeft; this.setDirection2Right(); }
+            this.setPosition(x);
+            return;
+        }
+        const delta = this.deploymentTargetX - this.getPosition();
+        const step = this.runSpeed * dt;
+        if (Math.abs(delta) <= step) {
+            this.setPosition(this.deploymentTargetX);
+            this.deploymentMode = 'hold';
+            this.moveDirection = this.deploymentFace;
+            this.eState = eBattleState.ebsStand;
+            this.playStand();
+        } else {
+            this.moveDirection = delta > 0 ? eDirction.edRight : eDirction.edLeft;
+            if (this.eState !== eBattleState.ebsRun) { this.eState = eBattleState.ebsRun; this.playRun(); }
+            this.setPosition(this.getPosition() + Math.sign(delta) * step);
+        }
+    }
+
+    private hasWalkAnimation(): boolean {
+        return !!this.nodeChar?.getComponent(Animation)?.getState('walk');
+    }
 
     private shouldLeaveInvasion(): boolean {
         return this.invasionExitX !== null && this.bInBattle &&
@@ -573,6 +735,7 @@ export class CBattleRole extends COverseer {
     }
 
     onDisable() {
+        this.hideExclamation();
         this.stopListnerEvent();
     }
 
@@ -832,6 +995,7 @@ export class CBattleRole extends COverseer {
     }
 
     AITick() {
+        if (this.deploymentMode) return;
         if (this.IsAlive()) {
             if (this.bInBattle) {
                 this.BattleAITick();
@@ -845,6 +1009,11 @@ export class CBattleRole extends COverseer {
 
     UpdateMove(deltaTime: number) {
         if (!this.IsAlive()) return;
+        if (this.deploymentMode) {
+            this.updateDeployment(deltaTime);
+            this.syncExclamationFacing();
+            return;
+        }
         if (this.shouldLeaveInvasion()) {
             this.setDirection2Right();
             this.setPosition(Math.min(this.invasionExitX, this.getPosition() + this.runSpeed * deltaTime));

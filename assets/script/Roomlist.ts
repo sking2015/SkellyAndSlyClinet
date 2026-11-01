@@ -6,6 +6,7 @@ import { eCCharacterID } from './BaseDef';
 import { CRoomData, CGlobalData } from './GlobalData';
 import { CInvasionManager } from './InvasionManager';
 import { CCharactersManager } from './CharacaterMannager';
+import { CBattleRole } from './character/battlerole';
 const { ccclass, property } = _decorator;
 
 @ccclass('Roomlist')
@@ -148,6 +149,7 @@ export class Roomlist extends Component {
         for (const room of this.rooms) {
             CCharactersManager.instance.clearRoomCharacters(room.index);
         }
+        CBattleRole.clearExclamationPool();
     }
 }
 

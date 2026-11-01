@@ -27,6 +27,25 @@ export class CBattleFormation {
     getActive(id: eCCharacterID): CCharacter { return this.slots.get(id)?.active || null; }
     getCount(id: eCCharacterID): number { return this.slots.get(id)?.count || 0; }
     getActiveCharacters(): CCharacter[] { return Array.from(this.slots.values()).map(slot => slot.active).filter(Boolean); }
+    isLoading(): boolean { return Array.from(this.slots.values()).some(slot => slot.loading); }
+
+    // order 按前排到后排排列；我方朝左，英雄朝右。以身体宽度留出间隔。
+    getLineupPositions(order: CCharacter[] = this.getActiveCharacters()): Map<eCCharacterID, number> {
+        const bounds = this.room.tfBase;
+        const layer = this.room.nodeCharLayer.getComponent(UITransform);
+        const hero = this.camp === eBattleCamp.ebcHero;
+        const edge = hero ? -bounds.width * bounds.anchorX : bounds.width * (1 - bounds.anchorX);
+        let cursor = layer.convertToNodeSpaceAR(bounds.convertToWorldSpaceAR(new Vec3(edge, 0, 0))).x
+            + (hero ? 16 : -16);
+        const positions = new Map<eCCharacterID, number>();
+        for (const char of [...order].reverse()) {
+            const half = char.node.getComponent(UITransform).width * Math.abs(char.node.scale.x) / 2;
+            cursor += hero ? half : -half;
+            positions.set(char.eCharId, cursor);
+            cursor += hero ? half + 10 : -half - 10;
+        }
+        return positions;
+    }
     hasForces(): boolean {
         return !this.disposed && Array.from(this.slots.values())
             .some(slot => slot.count > 0 && (slot.loading || slot.active?.IsAlive()));

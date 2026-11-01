@@ -10324,6 +10324,10 @@
     "lblCombatNum": {
       "__id__": 47
     },
+    "sfExclamation": {
+      "__uuid__": "46f4a70f-26e6-4e9c-bf5f-b1d4bb83f6c3@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
     "lordInfo": {
       "__id__": 245
     },
