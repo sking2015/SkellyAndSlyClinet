@@ -40,6 +40,7 @@ export interface IHeros {
     readonly Ability7: string;
     readonly Ability8: string;
     readonly Race: number;
+    readonly Dropid: number;
 }
 
 export const HerosData: Record<string | number, IHeros> = {
@@ -82,7 +83,8 @@ export const HerosData: Record<string | number, IHeros> = {
         "Ability6": "1006,60",
         "Ability7": "1007,70",
         "Ability8": "1008,80",
-        "Race": 10
+        "Race": 10,
+        "Dropid": 13
     },
     2: {
         "ID": 2,
@@ -123,7 +125,8 @@ export const HerosData: Record<string | number, IHeros> = {
         "Ability6": "1006,60",
         "Ability7": "1007,70",
         "Ability8": "1008,80",
-        "Race": 11
+        "Race": 11,
+        "Dropid": 3
     },
     3: {
         "ID": 3,
@@ -164,7 +167,8 @@ export const HerosData: Record<string | number, IHeros> = {
         "Ability6": "1006,60",
         "Ability7": "1007,70",
         "Ability8": "1008,80",
-        "Race": 10
+        "Race": 10,
+        "Dropid": 1
     },
     4: {
         "ID": 4,
@@ -205,6 +209,7 @@ export const HerosData: Record<string | number, IHeros> = {
         "Ability6": "1006,60",
         "Ability7": "1007,70",
         "Ability8": "1008,80",
-        "Race": 10
+        "Race": 10,
+        "Dropid": 15
     }
 };
