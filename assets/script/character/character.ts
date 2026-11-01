@@ -1,4 +1,5 @@
 import { CkeyValuePair } from '../KeyValuePair';
+import type { ISkillEffectData } from '../skills/skillbase';
 import { _decorator, Component, UITransform, Node, Animation, error, warn, Enum, math, Prefab, Sprite, color, ColorKey, Tween, isValid } from 'cc';
 import { eCharPlace, eBattleCamp, eDirction, eCCharacterID } from '../BaseDef';
 import { fadeInOut } from '../common/common';
@@ -603,11 +604,11 @@ export class CCharacter extends Component {
         console.log("受击准备")
     }
 
-    onHeal() {
+    onHeal(cure: number) {
 
     }
 
-    onHited(caster: CCharacter) {
+    onHited(caster: CCharacter, effect: ISkillEffectData) {
         console.log("受击事件");
     }
 

@@ -1,21 +1,17 @@
 import { CCharacter } from "../character/character";
 import { CSkillRepeatedly } from "./skillRepeatedly";
 import { eSkillTargetType } from "../BaseDef";
+import { ISkillsCfg } from "../config/SkillsCfg";
 
 //多段范围伤害类技能
 export class CSkillRepeatRange extends CSkillRepeatedly {
 
-    LoadData() {
-        this.actStart = "skillstart";
-        this.actLoop = "skillloop";
-        this.actEnd = "skillend";
+    LoadData(cfg: ISkillsCfg) {
+        super.LoadData(cfg);
+    }
 
-        this.eTarType = eSkillTargetType.estEnemies;
-        this.nSkillRange = 330;
-        this.nStrikeNum = 10;
-        this.nCD = 10000;
-        this.bIsUltimate = true;
-        this.nTargetsLimit = 999;           //最多作用目标999，就是没上限，范围内全部可以打击
+    IsRangeAffect(): boolean {
+        return true;
     }
 
     hasValidTarget(): boolean {
@@ -25,8 +21,9 @@ export class CSkillRepeatRange extends CSkillRepeatedly {
     StrikeOnce() {
         for (let i = 0; i < this.arrTargets.length; ++i) {
             const tar = this.arrTargets[i];
+            if (!tar.IsAlive() || !tar.getInBattle()) continue;
             tar.onHitedReady(this.caster);
-            tar.onHited(this.caster);
+            tar.onHited(this.caster, this.GetEffectData());
         }
     }
 }

@@ -1,6 +1,7 @@
 import { CCharacter } from "../character/character";
 import { CSkillBase } from "./skillbase";
 import { eSkillTargetType, eMissileId, eDirction } from "../BaseDef";
+import { ISkillsCfg } from "../config/SkillsCfg";
 
 //发射类技能，技能会发射飞行子弹脱手打击敌对目标
 export class CSkillLanche extends CSkillBase {
@@ -15,14 +16,16 @@ export class CSkillLanche extends CSkillBase {
     Init() {
     }
 
-    LoadData() {
-        //以后这里改成读表
+    LoadData(cfg: ISkillsCfg) {
+        super.LoadData(cfg);
 
         this.act = "attack";                //视情况不播放不同动作
         this.eTarType = eSkillTargetType.estEnemies;
-        this.nSkillRange = 500;
-
-        this.eMissile = eMissileId.emiFireball;
+        if (!Number.isInteger(cfg.AddData) || cfg.AddData <= eMissileId.emiNone ||
+            eMissileId[cfg.AddData] === undefined) {
+            throw new Error(`Invalid missile ID ${cfg.AddData} for skill ${cfg.ID}`);
+        }
+        this.eMissile = cfg.AddData; // 发射类的附加数据仅作为 eMissileId 使用。
     }
 
 
@@ -32,7 +35,7 @@ export class CSkillLanche extends CSkillBase {
             //有可能在关键帧和动画播放完调用，但只是执行一次，所以拦一下
             this.bReadyLaunche = false;
             // 使用起手时的目标，避免 AI 后续寻敌改变弹道。
-            this.caster.LauncheMissile(this.eMissile, this.launchTarget);
+            this.caster.LauncheMissile(this.eMissile, this.launchTarget, this.GetEffectData());
             this.launchTarget = null;
         }
     }

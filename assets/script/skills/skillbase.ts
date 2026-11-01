@@ -1,10 +1,19 @@
-import { eSkillTargetType, eBattleCamp } from "../BaseDef";
+import { eSkillTargetType, eBattleCamp, eSkillActionType } from "../BaseDef";
 import { CBattleRole } from "../character/battlerole";
 import { CCharactersManager } from "../CharacaterMannager";
 import { CCharacter } from "../character/character";
+import { ISkillsCfg } from "../config/SkillsCfg";
+
+// 施放时的数值快照，飞行物命中时不依赖施法者的当前技能。
+export interface ISkillEffectData {
+    readonly skillType: number;
+    readonly power: number;
+}
 
 //技能基类,所有技能从此派生
 export class CSkillBase {
+    config: ISkillsCfg = null;
+    private effectData: ISkillEffectData = null;
     eTarType: eSkillTargetType = eSkillTargetType.estNone;
 
     caster: CBattleRole = null;
@@ -38,8 +47,12 @@ export class CSkillBase {
     Init() {
     }
 
-    LoadData() {
-        this.nSkillRange = 30;
+    LoadData(cfg: ISkillsCfg) {
+        this.config = cfg;
+        this.nSkillRange = cfg.SkillRange;
+        this.nCD = cfg.CoolDown * 1000; // 配置单位为秒，运行时使用毫秒。
+        this.bIsUltimate = cfg.IsUltimate > 0;
+        this.nTargetsLimit = cfg.TargetsLimit;
     }
 
     //是否范围生效
@@ -84,8 +97,8 @@ export class CSkillBase {
 
     //如果是范围内伤害，确认范围内有无目标
     onConfirmTargets() {
-        const eTarCamp: eBattleCamp = eBattleCamp.ebcNone;
-        this.arrTargets = CCharactersManager.instance.GetCharsByRange(this.caster, this.getTargetCamp(), this.nSkillRange);
+        this.arrTargets = CCharactersManager.instance.GetCharsByRange(this.caster, this.getTargetCamp(), this.nSkillRange)
+            .slice(0, this.nTargetsLimit);
     }
 
     OnSelectTarget() {
@@ -102,6 +115,7 @@ export class CSkillBase {
 
 
     OnCheckTargetDistance() {
+        this.bCastByDistance = false;
         if (this.target) {
             const distance = this.caster.getDistance(this.target);
             // console.log("看一下距离", distance, this, this.nSkillRange);
@@ -114,12 +128,34 @@ export class CSkillBase {
     }
 
     doCast(cb?: Function) {
+        this.effectData = this.CreateEffectData();
         this.nLastCastTime = Date.now();
         // console.log("释放技能,开始冷却...");
     }
 
+    private CreateEffectData(): ISkillEffectData {
+        let power = this.config.BaseData;
+        switch (this.config.SkillType) {
+            case eSkillActionType.esatPyhsisc:
+                power += this.caster.ATK;
+                break;
+            case eSkillActionType.esatMagic:
+                power += this.caster.INT;
+                break;
+            // 直接类型使用 BaseData，不附加攻击或智力。
+        }
+        return { skillType: this.config.SkillType, power };
+    }
+
+    GetEffectData(): ISkillEffectData {
+        return this.effectData || this.CreateEffectData();
+    }
+
     LauncheMissile() {
 
+    }
+
+    OnAnimationHit() {
     }
 
     hasValidTarget(): boolean {

@@ -1,6 +1,7 @@
 import { CCharacter } from "../character/character";
 import { CSkillBase } from "./skillbase";
 import { eSkillTargetType } from "../BaseDef";
+import { ISkillsCfg } from "../config/SkillsCfg";
 
 //多段伤害类技能，短时间内多次作用
 export class CSkillRepeatedly extends CSkillBase {
@@ -17,32 +18,32 @@ export class CSkillRepeatedly extends CSkillBase {
 
     //打击次数
     nStrikeNum: number = 0;
-    LoadData() {
+    LoadData(cfg: ISkillsCfg) {
+        super.LoadData(cfg);
         this.actStart = "skillstart";
         this.actLoop = "skillloop";
         this.actEnd = "skillend";
 
         this.eTarType = eSkillTargetType.estEnemies;
-        this.nSkillRange = 330;
         this.nStrikeNum = 10;
-        this.nCD = 10000;
-        this.bIsUltimate = true;
     }
 
 
     StrikeOnce() {
+        if (!this.hasValidTarget()) return;
         this.target.onHitedReady(this.caster);
-        this.target.onHited(this.caster);
+        this.target.onHited(this.caster, this.GetEffectData());
     }
 
     bInStrike: boolean = false;
     cbSkillEnd: Function = null;
 
-    doCast(cb: Function) {
+    doCast(cb?: Function) {
         super.doCast(cb);   //父类主要是计时开始冷却,所以需要在这里调用
 
         //重置打击次数
         this.nLeftStrikeNum = this.nStrikeNum;
+        this.nInterval = 0;
         this.cbSkillEnd = cb;
 
         console.log("释放技能 CSkillRepeatedly", this.nLeftStrikeNum);

@@ -91,7 +91,12 @@ export class CCharactersManager {
         comChar.index = this.nAutoCharIdx;
         comChar.eCharId = eID;
         comChar.init();
-        comChar.loadData();
+        try {
+            comChar.loadData();
+        } catch (error) {
+            nodeChar.destroy();
+            throw error;
+        }
         this.allChars.add(comChar);
         return comChar;
     }
@@ -154,40 +159,13 @@ export class CCharactersManager {
 
     //取得距src范围内的合法目标个数
     GetCharsByRange(src: CCharacter, eCamp: eBattleCamp, nRange: number): CCharacter[] {
-        let container: CCharacterContainer = this.mapCharInRoom.get(src.getRoom().index);
-        let chars: CCharacter[] = container.getAllChars();
-        let targets: CCharacter[] = [];
-        const posSrc: number = src.getPosition();
-
-        //范围判断要分一下左右
-        if (src.IsToDirRight()) {
-
-            const posLimit: number = src.getPosition() + nRange;
-            for (let i = 0; i < chars.length; ++i) {
-                let char: CCharacter = chars[i];
-                if (char.node && isValid(char.node) && char.node.activeInHierarchy && char.getInBattle() && char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
-                    const posTar: number = char.getPosition();
-                    //在源角色位置和目标位之间
-                    if (posTar > posSrc && posTar < posLimit) {
-                        targets.push(char);
-                    }
-                }
-            }
-        } else {
-            const posLimit: number = src.getPosition() - nRange;
-            for (let i = 0; i < chars.length; ++i) {
-                let char: CCharacter = chars[i];
-                if (char.node && isValid(char.node) && char.node.activeInHierarchy && char.getInBattle() && char.IsAlive() && (eCamp == eBattleCamp.ebcAll || char.getBattleCamp() == eCamp)) {
-                    const posTar: number = char.getPosition();
-                    //在源角色位置和目标位之间
-                    if (posTar < posSrc && posTar > posLimit) {
-                        targets.push(char);
-                    }
-                }
-            }
-        }
-
-        return targets;
+        const direction = src.IsToDirRight() ? 1 : -1;
+        return this.getRoomCharacters(src.getRoom().index)
+            .filter(char => char !== src && char.getInBattle() && char.IsAlive() &&
+                (eCamp === eBattleCamp.ebcAll || char.getBattleCamp() === eCamp) &&
+                (char.getPosition() - src.getPosition()) * direction >= 0 &&
+                src.getDistance(char) <= nRange)
+            .sort((a, b) => Math.abs(a.getPosition() - src.getPosition()) - Math.abs(b.getPosition() - src.getPosition()));
     }
 
     FindNearestChar(src: CCharacter, eCamp: eBattleCamp): CCharacter {

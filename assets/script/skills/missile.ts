@@ -1,6 +1,7 @@
 import { _decorator, Component, Node, tween, Animation, Vec3, math, misc, UITransform, ParticleSystem2D, isValid } from 'cc';
 import { CBattleRole } from '../character/battlerole';
 import { CCharactersManager } from '../CharacaterMannager';
+import type { ISkillEffectData } from './skillbase';
 const { ccclass, property } = _decorator;
 
 @ccclass('CMissile')
@@ -26,6 +27,7 @@ export class CMissile extends Component {
     private _isMoving: boolean = false;
 
     caster: CBattleRole = null;
+    private effectData: ISkillEffectData = null;
 
     bFinishe: boolean = false;
     private finishing = false;
@@ -87,8 +89,9 @@ export class CMissile extends Component {
         this._isMoving = true;
     }
 
-    setCaster(role: CBattleRole) {
+    setCaster(role: CBattleRole, effect: ISkillEffectData) {
         this.caster = role;
+        this.effectData = { ...effect };
     }
 
     onFinished() {
@@ -129,7 +132,7 @@ export class CMissile extends Component {
 
     // ?????????????????????????????????
     private hitTarget(role: CBattleRole) {
-        if (!role || !this.caster || role.getRoom() !== this.caster.getRoom()) return;
+        if (!role || !this.caster || !this.effectData || role.getRoom() !== this.caster.getRoom()) return;
 
         // 判断字弹是还在移动，是否不同阵营，当然，以后如果是子弹加血，就反过来
         if (this._isMoving && role.getBattleCamp() != this.caster.getBattleCamp() && role.IsAlive() && role.getInBattle()) {
@@ -144,7 +147,7 @@ export class CMissile extends Component {
             }
 
             role.onHitedReady(this.caster);
-            role.onHited(this.caster);
+            role.onHited(this.caster, this.effectData);
 
         }
     }

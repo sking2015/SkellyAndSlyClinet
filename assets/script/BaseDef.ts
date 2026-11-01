@@ -132,6 +132,25 @@ export enum eDirction {
     edRight = 1,                    //向向
 }
 
+//
+export enum eSkillClass {
+    estNone = 0,
+    estOnce = 1,                    //单体技能
+    estCure = 2,                    //治疗类技能
+    estRange = 3,                   //范围技能
+    estLanche = 4,                   //发射类技能
+    estRepeatedly = 5,               //持续释放类技能
+    estRepeatRange = 6,                 //持续范围类技能
+}
+
+export enum eSkillActionType {
+    esatNone = 0,
+    esatPyhsisc = 1,                 //物理类型，作用数值取决于攻击力,如果是伤害类技能需要减去目标的防御力
+    esatMagic = 2,                  //魔法类型，作用数值取决于智力，如果是伤害类技能需要减去目标的魔法防御力
+    esatDirect = 3,                 //直接类型，作用数值取决于技能自身数值
+    esatSpecial = 4,                //特殊类型，作用数值取决于技能自身定义
+}
+
 //所有飞行物定义
 export enum eMissileId {
     emiNone = 0,

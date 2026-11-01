@@ -1,20 +1,19 @@
 import { _decorator, Vec3, Enum, Component, Animation, Node, Color, bits, UITransform, director, Prefab, instantiate, tween, Tween, Canvas, ParticleSystem2D, isValid } from 'cc';
 import { COverseer } from './overseer';
-import { eBattleCamp, eCCharacterID, eDirction, eMissileId } from '../BaseDef';
+import { eBattleCamp, eCCharacterID, eDirction, eMissileId, eSkillActionType } from '../BaseDef';
 import { CCharactersManager } from '../CharacaterMannager';
 import { CSkillBase } from '../skills/skillbase';
-import { CSkillOnce } from '../skills/skillonce';
-import { CSkillLanche } from '../skills/skillLanche';
-import { CSkillCure } from '../skills/skillcure';
+import type { ISkillEffectData } from '../skills/skillbase';
 import { fadeInOut, waitFadeInout } from '../common/common';
-import { CSkillRepeatedly } from '../skills/skillRepeatedly';
-import { CSkillRepeatRange } from '../skills/skillRepeatRange';
 import { CCharacter } from './character';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CResManager } from '../ResManager';
 import { CMissile } from '../skills/missile';
 import { CPopInfo } from '../PopInfo';
 import { CStatuBar } from '../StatuBar';
+import { CSkillFactory } from '../skills/gskillFactroy';
+import { IHeros, HerosData } from '../config/Heros';
+import { IMonsters, MonstersData } from '../config/Monsters';
 
 
 
@@ -226,120 +225,69 @@ export class CBattleRole extends COverseer {
         }
     }
 
+    config: IHeros | IMonsters = null;
+    ATK: number = 0;
+    DEF: number = 0;
+    MDF: number = 0;
+    INT: number = 0;
+    SPD: number = 0;
+    LCA: number = 0;
+    ResisFire: number = 0;
+    ResisIce: number = 0;
+    ResisWind: number = 0;
+    ResisThunder: number = 0;
+    ResisDark: number = 0;
+    ResisShine: number = 0;
+
+    loadSkillData(nSkillId: number): CSkillBase {
+        const skill = CSkillFactory.CreateSkill(this, nSkillId);
+        this.skills.push(skill);
+        return skill;
+    }
+
     loadData() {
-        if (this.getBattleCamp() == eBattleCamp.ebcHero) {
-            const skill = new CSkillOnce(this);
-            skill.LoadData();
-            this.skills.push(skill);
-
-            this.setMaxHP(10000);
-            this.setHP(10000);
-            this.setMaxMP(1000);
-            this.setMP(1000);
+        const isHero = this.eCharId > eCCharacterID.eciHerosStart;
+        const configId = isHero ? this.eCharId - eCCharacterID.eciHerosStart : this.eCharId;
+        const cfg = isHero ? HerosData[configId] : MonstersData[configId];
+        if (!cfg) {
+            throw new Error(`Missing ${isHero ? 'hero' : 'monster'} config for character ${this.eCharId}`);
         }
 
-
-        switch (this.eCharId) {
-            case eCCharacterID.eciMageHF:
-                {
-                    const skill = new CSkillLanche(this);
-                    skill.LoadData();
-                    skill.eMissile = eMissileId.emiFireball;
-                    this.skills.push(skill);
-                }
-
-                break;
-            case eCCharacterID.eciArcherEM:
-                {
-                    const skill = new CSkillLanche(this);
-                    skill.LoadData();
-                    skill.eMissile = eMissileId.emiArrow;
-                    skill.nCD = 2000;
-                    this.skills.push(skill);
-                }
-                break;
-            case eCCharacterID.eciPriestHF:
-                {
-                    const skill = new CSkillCure(this);
-                    skill.LoadData();
-                    skill.nCD = 5000;
-                    this.skills.push(skill);
-                }
-                break;
-            case eCCharacterID.eciDragon:
-                {
-                    // this.bUninterruptible = true;
-                    //const skill = new CSkillRepeatRange(this);
-                    const skill = new CSkillOnce(this);
-                    this.setMaxHP(50000);
-                    this.setHP(50000);
-
-                    skill.LoadData();
-                    this.skills.push(skill);
-                }
-                break;
-            case eCCharacterID.eciEyetyarnt:
-                {
-                    const skill = new CSkillOnce(this);
-                    this.setMaxHP(10000);
-                    this.setHP(10000);
-
-                    skill.LoadData();
-                    this.skills.push(skill);
-                }
-                break;
-            case eCCharacterID.eciSkullSoldier:
-                {
-                    this.setMaxHP(10000);
-                    this.setHP(10000);
-
-                    const skill = new CSkillOnce(this);
-
-                    skill.LoadData();
-                    this.skills.push(skill);
-                }
-                break;
-            case eCCharacterID.eciSkullArcher:
-                {
-                    this.setMaxHP(5000);
-                    this.setHP(5000);
-                    // this.bUninterruptible = true;
-                    //const skill = new CSkillRepeatRange(this);
-                    const skill = new CSkillLanche(this);
-
-                    skill.LoadData();
-                    skill.eMissile = eMissileId.emiArrowSkull;
-                    skill.nCD = 2000;
-                    this.skills.push(skill);
-                }
-                break;
-            case eCCharacterID.eciSkullMage:
-                {
-                    this.setMaxHP(5000);
-                    this.setHP(5000);
-                    // this.bUninterruptible = true;
-                    //const skill = new CSkillRepeatRange(this);
-                    const skill = new CSkillLanche(this);
-
-                    skill.LoadData();
-                    skill.eMissile = eMissileId.emiDarkMagic;
-                    skill.nCD = 2000;
-                    this.skills.push(skill);
-                }
-                break;
-            case eCCharacterID.eciTauren:
-                {
-                    this.setMaxHP(20000);
-                    this.setHP(20000);
-
-                    const skill = new CSkillOnce(this);
-
-                    skill.LoadData();
-                    this.skills.push(skill);
-                }
-                break;
+        // 先生成全部技能，配置错误时不覆盖现有角色数据。
+        const skills: CSkillBase[] = [];
+        for (const value of [cfg.Skill1, cfg.Skill2, cfg.Skill3]) {
+            const text = String(value ?? '').trim();
+            if (!text || text === 'undefined' || text === 'null' || text === '0') continue;
+            const id = Number(text);
+            if (!Number.isInteger(id) || id <= 0) {
+                throw new Error(`Invalid skill ID "${text}" for character ${this.eCharId}`);
+            }
+            skills.push(CSkillFactory.CreateSkill(this, id));
         }
 
+        this.config = cfg;
+        this.nCamp = isHero ? eBattleCamp.ebcHero : eBattleCamp.ebcDemon;
+        this.setMaxHP(cfg.HP);
+        this.setHP(cfg.HP);
+        this.setMaxMP(cfg.MP);
+        this.setMP(cfg.MP);
+        this.ATK = cfg.ATK;
+        this.DEF = cfg.DEF;
+        this.MDF = cfg.MDF;
+        this.INT = cfg.INT;
+        this.SPD = cfg.SPD;
+        this.LCA = cfg.LCA;
+        this.ResisFire = cfg.ResisFire;
+        this.ResisIce = cfg.ResisIce;
+        this.ResisWind = cfg.ResisWind;
+        this.ResisThunder = cfg.ResisThunder;
+        this.ResisDark = cfg.ResisDark;
+        this.ResisShine = cfg.ResisShine;
+        this.skills = skills;
+        this.curSkill = null;
+        this.charTar = null;
+        this.arrTargets = [];
+        this.maxSkillRange = 0;
     }
 
     playFlash(cb: Function) {
@@ -348,6 +296,8 @@ export class CBattleRole extends COverseer {
             this.aniFlash.once(Animation.EventType.FINISHED, () => {
                 cb();
             })
+        } else {
+            cb();
         }
 
     }
@@ -391,7 +341,7 @@ export class CBattleRole extends COverseer {
         // console.log("发射物完全命中目标，生命周期结束");
     }
 
-    LauncheMissile(id: eMissileId, target: CCharacter = this.charTar) {
+    LauncheMissile(id: eMissileId, target: CCharacter, effect: ISkillEffectData) {
         if (!this.IsAlive() || !target?.IsAlive() || !isValid(target.node) || !this.nodeLaunchePos) return;
         console.log("LauncheMissile", id);
         const prefabMissile: Prefab = CResManager.instance.getMissilePrefab(id);
@@ -407,7 +357,7 @@ export class CBattleRole extends COverseer {
         nodeMissile.setPosition(posMissileLocal);
         this.room.addMissile(nodeMissile);
         const comMissile: CMissile = nodeMissile.getComponent(CMissile);
-        comMissile.setCaster(this);
+        comMissile.setCaster(this, effect);
         comMissile.LauncheWithTarget(posLaunche, target.getCenterPosByWorld());
     }
 
@@ -418,10 +368,10 @@ export class CBattleRole extends COverseer {
         }
     }
 
-    onStrikeTargets() {
+    onStrikeTargets(effect: ISkillEffectData) {
         for (let i = 0; i < this.arrTargets.length; ++i) {
             const char = this.arrTargets[i];
-            if (char?.IsAlive() && isValid(char.node)) char.onHited(this);
+            if (char?.IsAlive() && isValid(char.node)) char.onHited(this, effect);
         }
     }
 
@@ -430,7 +380,7 @@ export class CBattleRole extends COverseer {
         switch (event.detail.para) {
             case eKeyFrameEvent.ekeHited:
                 // this.charTar.onHited();
-                this.onStrikeTargets();
+                this.curSkill?.OnAnimationHit();
                 break;
             case eKeyFrameEvent.ekeLaunche:
                 this.onLauncheMissile();
@@ -542,8 +492,8 @@ export class CBattleRole extends COverseer {
 
     }
 
-    onDamage() {
-        let damage: number = 999;
+    onDamage(damage: number) {
+        damage = Math.max(0, damage);
         this._HP -= damage;
         this.popDamage(damage);
         if (this._HP <= 0) {
@@ -554,7 +504,7 @@ export class CBattleRole extends COverseer {
     }
 
     refreshHPBar() {
-        this.comStatuBar.setHP(this._HP);
+        this.comStatuBar?.setHP(this._HP);
     }
 
     popHealPoint(hp: number) {
@@ -574,8 +524,9 @@ export class CBattleRole extends COverseer {
         nodePopInfo.y += posY;
     }
 
-    onHeal() {
-        let cure = 999;
+    onHeal(cure: number) {
+        if (!this.IsAlive()) return;
+        cure = Math.min(Math.max(0, cure), this._MaxHP - this._HP);
         this._HP += cure;
         this.popHealPoint(cure);
         this.refreshHPBar();
@@ -587,7 +538,7 @@ export class CBattleRole extends COverseer {
 
     //受击表现，可能在两个时机播放，一时如果配置了关键帧，那么在关键就会执行这个函数。
     //如果攻击动作没配置关键帧，将在攻击动画完毕后调用这个函数
-    onHited(caster: CCharacter) {
+    onHited(caster: CCharacter, effect: ISkillEffectData) {
         if (!this.IsAlive()) return;
 
         if (caster) {
@@ -609,7 +560,10 @@ export class CBattleRole extends COverseer {
                     return true;
                 });
             }
-            this.onDamage();
+            let damage = effect.power;
+            if (effect.skillType === eSkillActionType.esatPyhsisc) damage -= this.DEF;
+            else if (effect.skillType === eSkillActionType.esatMagic) damage -= this.MDF;
+            this.onDamage(damage);
         }
 
     }
@@ -626,21 +580,30 @@ export class CBattleRole extends COverseer {
     maxSkillRange: number = 0;
     //选择一个技能
     onSelectSkill() {
-        // 施法过程中锁定技能，动画关键帧始终交给本次施放的技能处理。
         if (this.eState === eBattleState.ebsSkill) return;
-        let selected: CSkillBase = null;
-        for (let i = 0; i < this.skills.length; ++i) {
-            const skill = this.skills[i];
-            // 射程决定站位；冷却只决定何时施法，不能让远程角色转为追赶近战目标。
-            if (!selected || skill.nSkillRange > selected.nSkillRange) {
-                selected = skill;
+        let movementSkill: CSkillBase = null;
+        let readySkill: CSkillBase = null;
+        for (const skill of this.skills) {
+            skill.OnSelectTarget();
+            if (skill.IsRangeAffect()) {
+                if (skill.target) this.moveDirection = skill.target.getPosition() < this.getPosition()
+                    ? eDirction.edLeft : eDirction.edRight;
+                skill.onConfirmTargets();
+            }
+            skill.OnCheckTargetDistance();
+            if (skill.target && (!movementSkill || skill.nSkillRange > movementSkill.nSkillRange)) {
+                movementSkill = skill;
+            }
+            const inRange = skill.IsRangeAffect() ? skill.arrTargets.length > 0 : skill.IsCanCastByDistance();
+            if (skill.IsCoolDown() && skill.hasValidTarget() && inRange &&
+                (!readySkill || (skill.bIsUltimate && !readySkill.bIsUltimate))) {
+                readySkill = skill;
             }
         }
-        if (selected) this.curSkill = selected;
+        this.curSkill = readySkill || movementSkill;
         this.maxSkillRange = this.curSkill?.nSkillRange || 0;
     }
 
-    //检查自身跟前是否有敌对目标，不能穿过敌对目标
     onCheckFaceTarget() {
         if (this.IsToDirRight()) {
 
@@ -650,28 +613,13 @@ export class CBattleRole extends COverseer {
     //选择一个目标
     onSelectTarget() {
         if (this.eState === eBattleState.ebsSkill) return;
-        //如果有技能，并且没有目标或目标已失效。要重新选择目标
-        if (this.curSkill) {
-            if (this.curSkill.IsRangeAffect()) {
-                //范围内只有cd到了才确认目标，并且稍后马上施放技能
-                if (this.curSkill.IsCoolDown()) {
-                    this.curSkill.onConfirmTargets();
-                    this.arrTargets = this.curSkill.arrTargets;
-                    //还是要个最近的目标好持续接近
-                    this.charTar = this.curSkill.SearchNearestTarget();
-                }
-            } else {
-                //if (!this.curSkill.hasTarget() || !this.curSkill.hasValidTarget()) {
-                this.curSkill.OnSelectTarget();
-                this.arrTargets = [];
-                this.charTar = this.curSkill.target;
-                this.arrTargets.push(this.curSkill.target);
-                //}
-            }
-        }
-        // this.charTar = this.curSkill.SearchNearestTarget();
+        this.charTar = this.curSkill?.target || null;
+        this.arrTargets = this.curSkill
+            ? (this.curSkill.IsRangeAffect() ? this.curSkill.arrTargets : (this.charTar ? [this.charTar] : []))
+            : [];
+        if (this.charTar) this.moveDirection = this.charTar.getPosition() < this.getPosition()
+            ? eDirction.edLeft : eDirction.edRight;
     }
-
 
     playSkillEffect() {
         if (this.nodeSkillCast) {
@@ -708,7 +656,7 @@ export class CBattleRole extends COverseer {
 
 
     async CastUltimateSkill() {
-        let affectChars = this.arrTargets;
+        const affectChars = [...this.arrTargets];
         affectChars.push(this);
         this.room.ShowRoleAction(affectChars, () => {
             return new Promise((resolve) => {
@@ -804,13 +752,16 @@ export class CBattleRole extends COverseer {
             } else if (this.eState != eBattleState.ebsSkill) {
                 //范围技能和单体技能走不同流程
                 if (this.curSkill.IsRangeAffect()) {
-                    //范围技能至少要有两个目标才释放
+                    // 范围技能有一个有效目标即可释放。
                     //console.log("看一下现在的目标组", this.arrTargets)
-                    if (this.arrTargets.length > 1) {
-                        this.CastSkill()
-                    } else {
+                    if (this.arrTargets.length > 0) {
+                        if (this.curSkill.IsCoolDown()) this.CastSkill();
+                        else this.SwitchToStand();
+                    } else if (this.charTar) {
                         //否则继续向目标靠近
                         this.CloseToTarget();
+                    } else {
+                        this.SwitchToStand();
                     }
                 } else {
                     //否则检查有无目标，有目标走索敌流程

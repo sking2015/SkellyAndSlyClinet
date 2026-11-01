@@ -1,6 +1,7 @@
 import { CCharacter } from "../character/character";
 import { CSkillBase } from "./skillbase";
 import { eSkillTargetType } from "../BaseDef";
+import { ISkillsCfg } from "../config/SkillsCfg";
 
 //单体类技能，只对一个目标生效
 export class CSkillCure extends CSkillBase {
@@ -10,21 +11,16 @@ export class CSkillCure extends CSkillBase {
     Init() {
     }
 
-    LoadData() {
+    LoadData(cfg: ISkillsCfg) {
+        super.LoadData(cfg);
         this.act = "action";
         this.eTarType = eSkillTargetType.estAlly;
-        this.nSkillRange = 1000;
     }
 
     OnSelectTarget() {
 
-        if (this.hasValidTarget()) return;
-
         const tar = this.SearchLowestHPTarget();
-
-        if (!tar) return;
-
-        if (tar.getHPPer() < 0.9) {
+        if (tar && tar.getHPPer() < 0.9) {
             this.target = tar;
         } else {
             this.target = null
@@ -38,7 +34,7 @@ export class CSkillCure extends CSkillBase {
         // console.log("###释放技能 CSkillCure....", this.target);
         this.caster.onBeforeCastSkill();
         this.caster.onCastSkillToTarget(this.target);
-        this.target.onHeal();
+        this.target.onHeal(this.GetEffectData().power);
         this.caster.play(this.act, () => {
             // console.log("###释放技能 CSkillCure完毕");
             // console.log("技能播放完毕", this.caster);
