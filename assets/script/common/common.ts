@@ -10,19 +10,22 @@ import { CButtonCooldown } from './ButtonCooldown';
 const BUTTON_COOLDOWN_TIME = 500; // 冷却时间，单位：毫秒
 
 const fadeVisibility = new WeakMap<Node, boolean>();
+const fadeShownOpacity = new WeakMap<Node, number>();
 
 // 可反向打断的显隐过渡：从当前透明度继续，淡出完成后才停用节点。
 export function setNodeVisibleWithFade(node: Node, visible: boolean, duration = 0.3) {
     if (!node || !isValid(node, true) || fadeVisibility.get(node) === visible) return;
     fadeVisibility.set(node, visible);
-    if (!node.active && !visible) return;
     const opacity = node.getComponent(UIOpacity) || node.addComponent(UIOpacity);
+    // 在首次过渡前记住编辑器配置，避免淡出或中途反向时丢失目标透明度。
+    if (!fadeShownOpacity.has(node)) fadeShownOpacity.set(node, opacity.opacity);
+    if (!node.active && !visible) return;
     Tween.stopAllByTarget(opacity);
     if (visible && !node.active) {
         opacity.opacity = 0;
         node.active = true;
     }
-    tween(opacity).to(duration, { opacity: visible ? 255 : 0 }).call(() => {
+    tween(opacity).to(duration, { opacity: visible ? fadeShownOpacity.get(node) : 0 }).call(() => {
         if (!visible && isValid(node, true)) node.active = false;
     }).start();
 }

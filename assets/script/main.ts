@@ -10,6 +10,7 @@ import { CTroopDeployPanel } from './TroopDeployPanel';
 import { CMonsterDetailPanel } from './MonsterDetailPanel';
 import { CCharactersManager } from './CharacaterMannager';
 import { CTroopUpgrade } from './TroopUpgrade';
+import { CItemsPanel } from './ItemsPanel';
 
 import { Roomlist } from './Roomlist';
 import { eRoomType, eTroopType } from './BaseDef';
@@ -45,6 +46,10 @@ export class main extends Component {
 
     @property({ type: CMonsterDetailPanel, tooltip: "魔物属性界面" })
     comMDPanel: CMonsterDetailPanel = null;
+
+    private get comItemsPanel(): CItemsPanel {
+        return this.node.getChildByPath('PopPanelLayer/ItemsPanel').getComponent(CItemsPanel);
+    }
 
     @property({ type: Node, tooltip: "tips节点" })
     nodeTips: Node = null;
@@ -124,6 +129,11 @@ export class main extends Component {
 
     onTroopUpgrade() {
 
+    }
+
+    onOpenItemsPanel() {
+        setNodeVisibleWithFade(this.nodeMask, true);
+        this.comItemsPanel.Show(true);
     }
 
     onPopTroopUpgradePanel(event: CustomEvent) {
@@ -288,6 +298,7 @@ export class main extends Component {
         this.comMALPanel.Show(false);
         this.comMDPanel.Close();
         this.comTroopDeployPanel.Show(false);
+        this.comItemsPanel.node.active = false;
 
         PhysicsSystem2D.instance.enable = true;
 
