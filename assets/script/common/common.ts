@@ -1,8 +1,21 @@
 
-import { tween, Tween, UIOpacity, Animation, Component, isValid } from "cc";
+import { tween, Tween, UIOpacity, Animation, Component, UITransform, Vec3, isValid } from "cc";
 import { Node } from "cc";
 import { Button } from 'cc';
 import { CButtonCooldown } from './ButtonCooldown';
+
+// 采集与战利品共用：弹出、飞向资源栏、缩小。到达时立即结算数量。
+export function flyResourceToIcon(node: Node, target: Node, onArrive: () => void, onComplete: () => void) {
+    node.once(Node.EventType.NODE_DESTROYED, () => Tween.stopAllByTarget(node));
+    const scale = node.scale.clone();
+    const end = node.parent.getComponent(UITransform).convertToNodeSpaceAR(target.worldPosition);
+    node.setScale(scale.x * 0.1, scale.y * 0.1, scale.z);
+    tween(node).to(0.3, { scale }, { easing: 'backOut' })
+        .to(0.5, { position: end }, { easing: 'expoOut' })
+        .call(onArrive)
+        .to(0.3, { scale: new Vec3(0, 0, scale.z) }, { easing: 'backIn' })
+        .call(onComplete).start();
+}
 
 /**
  * 全局按钮点击冷却配置

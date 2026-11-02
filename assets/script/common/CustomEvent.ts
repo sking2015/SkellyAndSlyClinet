@@ -10,6 +10,7 @@ export class CustomEvent extends Event {
 
 
 export enum UniEvent {
+    on_drop_loot = "onDropLoot",                               // 按掉落表生成道具和资源
     on_collect_loot = "onCollectLoot",                          // 点击掉落或战斗结束，飞向背包收取
     on_room_expand = "onRoomExpand",                            //展开房间扩展界面
     on_room_restore = "onRoomRestore",                            //房间恢复，关闭扩展界面

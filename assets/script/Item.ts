@@ -1,6 +1,14 @@
-import { _decorator, Component, Node } from 'cc';
 import { IItemFeedCfg, ItemFeedCfgData } from './config/ItemFeedCfg';
 import { DropConfigData } from './config/DropConfig';
+
+export type LootResourceType = 'Coin' | 'Food' | 'Soul';
+
+export interface CResourceDrop {
+    resourceType: LootResourceType;
+    amount: number;
+}
+
+export type CLootDrop = CItem | CResourceDrop;
 
 
 export class CItem {
@@ -27,12 +35,14 @@ export class CItem {
 export class CItemManager {
     mapItems: Map<number, CItem> = new Map<number, CItem>();
 
-    // 掉落实例与背包数据分离，落地前不改变已有数量。
+    // 掉落实例与背包数据分离，收取到位前不改变已有数量。
     public static getDropItems(dropId: number): CItem[] {
         if (!dropId) return [];
         const config = DropConfigData[dropId];
         if (!config) throw new Error(`掉落配置不存在: ${dropId}`);
-        return config.DropContent.split(',').map(entry => {
+        const content = String(config.DropContent ?? '').trim();
+        if (!content || content === 'undefined' || content === 'null' || content === '0') return [];
+        return content.split(',').map(entry => {
             const pair = entry.split(':').map(Number);
             if (pair.length !== 2 || !pair.every(value => Number.isSafeInteger(value) && value > 0)
                 || !ItemFeedCfgData[pair[0]]?.icon_spr) {
@@ -43,6 +53,20 @@ export class CItemManager {
             item.itemNum = pair[1];
             return item;
         });
+    }
+
+    public static getDrops(dropId: number): CLootDrop[] {
+        const drops: CLootDrop[] = this.getDropItems(dropId);
+        if (!dropId) return drops;
+        const config = DropConfigData[dropId];
+        for (const resourceType of ['Coin', 'Food', 'Soul'] as LootResourceType[]) {
+            const amount = config[resourceType] ?? 0;
+            if (!Number.isSafeInteger(amount) || amount < 0) {
+                throw new Error(`资源掉落数量无效: ${dropId}, ${resourceType}: ${amount}`);
+            }
+            if (amount > 0) drops.push({ resourceType, amount });
+        }
+        return drops;
     }
 
     public addItem(itemId: number, num: number): CItem {

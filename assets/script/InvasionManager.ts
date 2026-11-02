@@ -3,10 +3,8 @@ import { eBattleCamp, eCCharacterID, eRoomType, eDirction } from './BaseDef';
 import { CBattleRole } from './character/battlerole';
 import { CCharacter } from './character/character';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
-import { DropConfigData } from './config/DropConfig';
 import { HerosData } from './config/Heros';
 import { TeamConfigData } from './config/TeamConfig';
-import { CGlobalData } from './GlobalData';
 import { CBaseRoom } from './room/BaseRoom';
 import { CBattleFormation } from './BattleFormation';
 import type { FormationSlotKey } from './BattleFormation';
@@ -172,22 +170,12 @@ export class CInvasionManager {
     }
 
     private grantReward() {
-        try {
-            const dropId = TeamConfigData[this.teamId].DropID;
-            const drop = DropConfigData[dropId];
-            if (!drop) throw new Error(`掉落配置不存在: ${dropId}`);
-            const rewards = this.parsePairs(drop.DropContent);
-            const items = CGlobalData.instance.mgrItem;
-            for (const [id, count] of rewards) {
-                const item = items.getItem(id);
-                if (item) item.itemNum += count;
-                else items.createItem(id, count);
-            }
-            this.room.node.dispatchEvent(new CustomEvent(UniEvent.on_resource_change, true));
-            console.log('[小入侵] 剿灭奖励已入包', rewards);
-        } catch (error) {
-            console.error('[小入侵] 奖励配置错误', error);
-        }
+        const layer = this.room.nodeCharLayer.getComponent(UITransform);
+        this.room.node.dispatchEvent(new CustomEvent(UniEvent.on_drop_loot, true, {
+            dropId: TeamConfigData[this.teamId].DropID, room: this.room,
+            ground: layer.convertToWorldSpaceAR(new Vec3()),
+            start: layer.convertToWorldSpaceAR(new Vec3(0, 40, 0)),
+        }));
     }
 
 }

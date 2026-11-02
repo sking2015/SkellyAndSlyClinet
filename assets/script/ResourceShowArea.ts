@@ -1,7 +1,7 @@
-import { _decorator, Component, Label, Node, Sprite, UITransform, math, tween } from 'cc';
-import { formatCompactNumber } from './common/common';
+import { _decorator, Component, Label, Node, Sprite, UITransform } from 'cc';
+import { flyResourceToIcon, formatCompactNumber } from './common/common';
+import type { LootResourceType } from './Item';
 import { CGlobalData } from './GlobalData';
-import { UniEvent } from './common/CustomEvent';
 import { CResManager } from './ResManager';
 import { eRoomType } from './BaseDef';
 
@@ -34,6 +34,17 @@ export class ResourceShowArea extends Component {
     @property({ type: Label, tooltip: "金币资源显示文本" })
     labelGold: Label = null;
 
+    @property(Node)
+    nodeCoinIcon: Node = null;
+    @property(Node)
+    nodeFoodIcon: Node = null;
+    @property(Node)
+    nodeSoulIcon: Node = null;
+
+    getLootResourceIcon(type: LootResourceType): Node {
+        return type === 'Coin' ? this.nodeCoinIcon : type === 'Food' ? this.nodeFoodIcon : this.nodeSoulIcon;
+    }
+
     start() {
         this.refreshResource();
     }
@@ -42,51 +53,43 @@ export class ResourceShowArea extends Component {
 
         const worldPos = nodeSrc.getWorldPosition();
         const localPos = this.node.getComponent(UITransform).convertToNodeSpaceAR(worldPos);
-        let targetPos = math.v3(0, 0, 0);
+        let target: Node;
 
         let nodeRes = new Node();
         let sprRes = nodeRes.addComponent(Sprite);
         switch (roomType) {
             case eRoomType.ertCrystalMine:
                 sprRes.spriteFrame = CResManager.instance.getRoomResIcon(eRoomType.ertCrystalMine);
-                targetPos = this.nodeCrystalIcon.getWorldPosition();
+                target = this.nodeCrystalIcon;
                 break;
             case eRoomType.ertLumberMill:
                 sprRes.spriteFrame = CResManager.instance.getRoomResIcon(eRoomType.ertLumberMill);
-                targetPos = this.nodeWoodIcon.getWorldPosition();
+                target = this.nodeWoodIcon;
                 break;
             case eRoomType.ertMetalWorkshop:
                 sprRes.spriteFrame = CResManager.instance.getRoomResIcon(eRoomType.ertMetalWorkshop);
-                targetPos = this.nodeMetalIcon.getWorldPosition();
+                target = this.nodeMetalIcon;
                 break;
         }
 
-        //从世界坐标转换到当前节点的本地坐标系
-        targetPos = this.node.getComponent(UITransform).convertToNodeSpaceAR(targetPos);
-
-        console.log("targetPos", targetPos);
-
+        if (!target) { nodeRes.destroy(); return; }
+        nodeRes.layer = this.node.layer;
         nodeRes.parent = this.node;
         nodeRes.setPosition(localPos);
-        nodeRes.setScale(math.v3(0.1, 0.1, 0.1));
-
-        tween(nodeRes).to(0.3, { scale: math.v3(1, 1, 1) }, { easing: 'backOut' })
-            .to(0.5, { position: targetPos }, { easing: 'expoOut' })
-            .to(0.3, { scale: math.v3(0, 0, 0) }, { easing: 'backIn' }).call(() => {
-                switch (roomType) {
-                    case eRoomType.ertCrystalMine:
-                        CGlobalData.instance.nCrystal += amount;
-                        break;
-                    case eRoomType.ertLumberMill:
-                        CGlobalData.instance.nWood += amount;
-                        break;
-                    case eRoomType.ertMetalWorkshop:
-                        CGlobalData.instance.nMetal += amount;
-                        break;
-                }
-                this.refreshResource();
-                nodeRes.destroy();
-            }).start();
+        flyResourceToIcon(nodeRes, target, () => {
+            switch (roomType) {
+                case eRoomType.ertCrystalMine:
+                    CGlobalData.instance.nCrystal += amount;
+                    break;
+                case eRoomType.ertLumberMill:
+                    CGlobalData.instance.nWood += amount;
+                    break;
+                case eRoomType.ertMetalWorkshop:
+                    CGlobalData.instance.nMetal += amount;
+                    break;
+            }
+            this.refreshResource();
+        }, () => nodeRes.destroy());
 
     }
 
