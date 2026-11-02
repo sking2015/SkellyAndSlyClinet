@@ -110,6 +110,16 @@ export class UIItem extends Component {
     // start/end 均使用道具父节点坐标系，落点 Y 为英雄脚下水平线。
     dropItem(item: CLootDrop, start: Vec3, end: Vec3, resourceIcon?: SpriteFrame) {
         this.loadItem('resourceType' in item ? null : item);
+        // 场景掉落以图标底部贴地，根节点同步调整以匹配点击区域。
+        const rootTransform = this.node.getComponent(UITransform);
+        rootTransform.setAnchorPoint(rootTransform.anchorX, 0);
+        const iconTransform = this.iconNode.getComponent(UITransform);
+        const labelPosition = this.numNode.node.position.clone();
+        labelPosition.y += iconTransform.height * iconTransform.anchorY;
+        this.numNode.node.setPosition(labelPosition);
+        iconTransform.setAnchorPoint(iconTransform.anchorX, 0);
+        const effectTransform = this.node.getChildByName('looteffect')?.getComponent(UITransform);
+        if (effectTransform) effectTransform.setAnchorPoint(effectTransform.anchorX, 0);
         if ('resourceType' in item) {
             this.iconNode.spriteFrame = resourceIcon;
             this.numNode.string = item.amount.toString();

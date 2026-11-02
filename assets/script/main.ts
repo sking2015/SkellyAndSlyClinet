@@ -104,7 +104,7 @@ export class main extends Component {
             drops.forEach((drop, index) => {
                 const x = this.randomLootX(groundPos.x, minX, maxX, Math.max(160, drops.length * 48), occupied);
                 occupied.push(x);
-                const end = new Vec3(x, groundPos.y + Math.random() * 20 - 10, groundPos.z);
+                const end = new Vec3(x, groundPos.y, groundPos.z);
                 const node = instantiate(prefab);
                 node.setScale(node.scale.x * 0.75, node.scale.y * 0.75, node.scale.z);
                 node.parent = parent;
