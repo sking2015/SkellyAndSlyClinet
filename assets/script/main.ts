@@ -11,6 +11,7 @@ import { CMonsterDetailPanel } from './MonsterDetailPanel';
 import { CCharactersManager } from './CharacaterMannager';
 import { CTroopUpgrade } from './TroopUpgrade';
 import { CItemsPanel } from './ItemsPanel';
+import { UIItem } from './UIItem';
 
 import { Roomlist } from './Roomlist';
 import { eRoomType, eTroopType } from './BaseDef';
@@ -22,6 +23,18 @@ const { ccclass, property } = _decorator;
 
 @ccclass('main')
 export class main extends Component {
+    private lootFlyLayer: Node = null;
+
+    private onCollectLoot(event: CustomEvent) {
+        const target = this.node.getChildByPath('MainButtons/Items Button');
+        if (!target || !this.lootFlyLayer) {
+            console.error('[掉落] 缺少背包按钮或飞行层');
+            return;
+        }
+        const items: UIItem[] = event.detail.item ? [event.detail.item]
+            : event.detail.root.getComponentsInChildren(UIItem);
+        for (const item of items) item.collect(this.lootFlyLayer, target);
+    }
 
     @property({ type: Node, tooltip: "所有弹出面板底层遮罩" })
     nodeMask: Node = null;
@@ -76,6 +89,7 @@ export class main extends Component {
 
 
     startListnerEvent() {
+        this.node.on(UniEvent.on_collect_loot, this.onCollectLoot, this);
         // 监听子节点冒泡上来的事件
         this.node.on(UniEvent.on_open_ospanel, this.onPopOverseerPanel, this);
         this.node.on(UniEvent.on_change_overseer, this.onChangeOverseer, this);
@@ -97,6 +111,7 @@ export class main extends Component {
     }
 
     stopListnerEvent() {
+        this.node.off(UniEvent.on_collect_loot, this.onCollectLoot, this);
         this.node.off(UniEvent.on_open_ospanel, this.onPopOverseerPanel, this);
         this.node.off(UniEvent.on_change_overseer, this.onChangeOverseer, this);
         this.node.off(UniEvent.on_open_room_upgrade, this.onPopRoomUpgrade, this);
@@ -289,6 +304,10 @@ export class main extends Component {
 
     protected onLoad(): void {
         initGlobalButtonCooldown();
+        this.lootFlyLayer = new Node('LootFlyLayer');
+        this.lootFlyLayer.layer = this.node.layer;
+        this.lootFlyLayer.addComponent(UITransform);
+        this.lootFlyLayer.parent = this.node;
     }
 
     start() {

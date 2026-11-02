@@ -14,6 +14,8 @@ import { CStatuBar } from '../StatuBar';
 import { CSkillFactory } from '../skills/gskillFactroy';
 import { IHeros, HerosData } from '../config/Heros';
 import { IMonsters, MonstersData } from '../config/Monsters';
+import { CItemManager } from '../Item';
+import { UIItem } from '../UIItem';
 
 
 
@@ -620,10 +622,47 @@ export class CBattleRole extends COverseer {
     }
 
 
+    private dropLoot() {
+        if (this.eCharId <= eCCharacterID.eciHerosStart || !this.room) return;
+        const dropId = (this.config as IHeros)?.Dropid;
+        if (!dropId) return;
+        try {
+            const items = CItemManager.getDropItems(dropId);
+            if (!items.length) return;
+            const prefab = CResManager.instance?.itemPrefab;
+            if (!prefab?.data?.getComponent(UIItem)) throw new Error('掉落 Item prefab 未配置 UIItem');
+            const parent = this.room.nodeCharLayer;
+            const layer = parent.getComponent(UITransform);
+            const ground = layer.convertToNodeSpaceAR(this.node.worldPosition);
+            const body = this.node.getComponent(UITransform);
+            const start = layer.convertToNodeSpaceAR(body.convertToWorldSpaceAR(
+                new Vec3(0, body.height * 0.5, 0)));
+            const bounds = this.room.tfBase;
+            const left = layer.convertToNodeSpaceAR(bounds.convertToWorldSpaceAR(
+                new Vec3(-bounds.width * bounds.anchorX, 0, 0))).x;
+            const right = layer.convertToNodeSpaceAR(bounds.convertToWorldSpaceAR(
+                new Vec3(bounds.width * (1 - bounds.anchorX), 0, 0))).x;
+            const margin = Math.min(40, Math.abs(right - left) / 2);
+            const firstDirection = Math.random() < 0.5 ? -1 : 1;
+            items.forEach((item, index) => {
+                const direction = index % 2 === 0 ? firstDirection : -firstDirection;
+                const x = ground.x + direction * (55 + Math.random() * 65 + Math.floor(index / 2) * 35);
+                const end = new Vec3(Math.max(Math.min(left, right) + margin,
+                    Math.min(Math.max(left, right) - margin, x)), ground.y, ground.z);
+                const node = instantiate(prefab);
+                node.parent = parent;
+                node.getComponent(UIItem).dropItem(item, start, end);
+            });
+        } catch (error) {
+            console.error(`[掉落] 英雄 ${this.eCharId}, Dropid ${dropId}`, error);
+        }
+    }
+
     onDead() {
         if (this.eState != eBattleState.ebsDead) {
             this.eState = eBattleState.ebsDead;
             this.bIsAlive = false;
+            this.dropLoot();
             this.onBattleDeath?.(this);
 
 

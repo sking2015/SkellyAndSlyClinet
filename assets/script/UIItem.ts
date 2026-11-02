@@ -1,5 +1,7 @@
-import { _decorator, Component, Node, Sprite, Label, SpriteFrame, assetManager, AssetManager, isValid } from 'cc';
+import { _decorator, Animation, Component, EventTouch, Node, Sprite, Label, SpriteFrame, UITransform, Vec3, assetManager, AssetManager, isValid } from 'cc';
 import { CItem } from './Item';
+import { CGlobalData } from './GlobalData';
+import { CustomEvent, UniEvent } from './common/CustomEvent';
 const { ccclass, property } = _decorator;
 
 @ccclass('UIItem')
@@ -11,11 +13,44 @@ export class UIItem extends Component {
     @property({ type: Label, tooltip: "数量标签" })
     numNode: Label = null;
 
+    @property({ tooltip: "掉落飞行时长（秒）", min: 0.1 })
+    dropDuration = 0.65;
 
+    @property({ tooltip: "掉落抛物线额外高度", min: 0 })
+    dropHeight = 90;
+
+    @property({ tooltip: "收取飞向背包的时长（秒）", min: 0.1 })
+    collectDuration = 0.6;
 
     private iconLoadVersion: number = 0;
+    private droppingItem: CItem = null;
+    private dropStart = new Vec3();
+    private dropEnd = new Vec3();
+    private dropElapsed = 0;
+    private lootState: 'none' | 'dropping' | 'ground' | 'flying' = 'none';
+    private collectLayer: Node = null;
+    private collectTarget: Node = null;
+    private collectStartScale = new Vec3();
+
+    private setSceneMode(inScene: boolean) {
+        const background = this.node.getChildByName('BG');
+        const effect = this.node.getChildByName('looteffect');
+        if (background) background.active = !inScene;
+        if (effect) {
+            effect.active = inScene;
+            const animation = effect.getComponent(Animation);
+            if (inScene) animation?.play();
+            else animation?.stop();
+        }
+    }
 
     loadItem(item: CItem) {
+        this.node.off(Node.EventType.TOUCH_END, this.onClickLoot, this);
+        this.lootState = 'none';
+        this.collectLayer = null;
+        this.collectTarget = null;
+        this.droppingItem = null;
+        this.setSceneMode(false);
         const loadVersion = ++this.iconLoadVersion;
         this.iconNode.spriteFrame = null;
         this.iconNode.grayscale = !!item && item.itemNum < 1;
@@ -59,11 +94,93 @@ export class UIItem extends Component {
         }
     }
 
-    start() {
+    // start/end 均使用道具父节点坐标系，落点 Y 为英雄脚下水平线。
+    dropItem(item: CItem, start: Vec3, end: Vec3) {
+        this.loadItem(item);
+        this.droppingItem = item;
+        this.lootState = 'dropping';
+        this.dropStart.set(start);
+        this.dropEnd.set(end);
+        this.dropElapsed = 0;
+        this.node.setPosition(start);
+        this.setSceneMode(true);
+        this.node.on(Node.EventType.TOUCH_END, this.onClickLoot, this);
+    }
+
+    private onClickLoot(event: EventTouch) {
+        if (this.lootState !== 'ground') return;
+        event.propagationStopped = true;
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_collect_loot, true, { item: this }));
+    }
+
+    collect(layer: Node, target: Node) {
+        if (!this.droppingItem || this.lootState === 'flying'
+            || !isValid(layer, true) || !isValid(target, true)) return;
+        this.collectLayer = layer;
+        this.collectTarget = target;
+        // 最后一名英雄死亡时可能仍有道具在空中，等它落地再收取。
+        if (this.lootState === 'dropping') return;
+        this.beginCollect();
+    }
+
+    private beginCollect() {
+        if (!isValid(this.collectLayer, true) || !isValid(this.collectTarget, true)) return;
+        // 脱离房间和 ScrollView 的裁剪、缩放与滚动，保留屏幕上的位置和大小。
+        this.node.setParent(this.collectLayer, true);
+        this.collectLayer.setSiblingIndex(this.collectLayer.parent.children.length - 1);
+        this.node.setSiblingIndex(this.collectLayer.children.length - 1);
+        this.dropStart.set(this.node.position);
+        this.collectStartScale.set(this.node.scale);
+        this.dropElapsed = 0;
+        this.lootState = 'flying';
+        this.node.off(Node.EventType.TOUCH_END, this.onClickLoot, this);
+    }
+
+    private finishCollect() {
+        const item = this.droppingItem;
+        this.droppingItem = null;
+        this.lootState = 'none';
+        CGlobalData.instance.mgrItem.addItem(item.id, item.itemNum);
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_resource_change, true));
+        this.node.active = false;
+        this.node.destroy();
+    }
+
+    protected onDestroy() {
+        this.node.off(Node.EventType.TOUCH_END, this.onClickLoot, this);
     }
 
     update(deltaTime: number) {
-
+        if (!this.droppingItem) return;
+        if (this.lootState === 'ground') return;
+        this.dropElapsed += deltaTime;
+        if (this.lootState === 'flying') {
+            if (!isValid(this.collectTarget, true)) {
+                this.finishCollect();
+                return;
+            }
+            const t = Math.min(1, this.dropElapsed / Math.max(0.1, this.collectDuration));
+            const ratio = t * t;
+            const end = this.collectLayer.getComponent(UITransform).convertToNodeSpaceAR(this.collectTarget.worldPosition);
+            this.node.setPosition(
+                this.dropStart.x + (end.x - this.dropStart.x) * ratio,
+                this.dropStart.y + (end.y - this.dropStart.y) * ratio,
+                this.dropStart.z + (end.z - this.dropStart.z) * ratio,
+            );
+            const scale = 1 - 0.65 * ratio;
+            this.node.setScale(this.collectStartScale.x * scale, this.collectStartScale.y * scale, this.collectStartScale.z);
+            if (t === 1) this.finishCollect();
+            return;
+        }
+        const t = Math.min(1, this.dropElapsed / Math.max(0.1, this.dropDuration));
+        this.node.setPosition(
+            this.dropStart.x + (this.dropEnd.x - this.dropStart.x) * t,
+            this.dropStart.y + (this.dropEnd.y - this.dropStart.y) * t + 4 * this.dropHeight * t * (1 - t),
+            this.dropStart.z + (this.dropEnd.z - this.dropStart.z) * t,
+        );
+        if (t < 1) return;
+        this.lootState = 'ground';
+        if (this.collectLayer && this.collectTarget) this.beginCollect();
     }
 }
 

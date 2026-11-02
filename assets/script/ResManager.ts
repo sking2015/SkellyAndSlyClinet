@@ -38,6 +38,9 @@ export class CResManager extends Component {
     @property({ type: Prefab, tooltip: "弹出信息，主要是伤害" })
     popInfo: Prefab = null;
 
+    @property({ type: Prefab, tooltip: "场景掉落道具" })
+    itemPrefab: Prefab = null;
+
 
     private mapMonsters: Map<eCCharacterID, CCharacterCfg> = new Map();
 

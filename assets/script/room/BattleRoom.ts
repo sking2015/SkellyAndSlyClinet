@@ -161,6 +161,7 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     endMinorInvasion() {
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_collect_loot, true, { root: this.nodeCharLayer }));
         this.defensePhase = 'patrol';
         setNodeVisibleWithFade(this.nodeSwitchExpand, true);
         for (const role of this.getDefenders()) this.startPatrol(role);
