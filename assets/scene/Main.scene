@@ -1465,7 +1465,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Merge Button",
+    "_name": "Shop Button",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": {
@@ -1509,7 +1509,7 @@
       "y": 0,
       "z": 0
     },
-    "_id": "0e+ZOAbnFELJ1K7Rm5s1NA"
+    "_id": "5e2jYvGWREvr06kOelZWar"
   },
   {
     "__type__": "cc.UITransform",
@@ -1524,14 +1524,14 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 150,
-      "height": 135
+      "height": 137
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
       "x": 0.5,
       "y": 0.5
     },
-    "_id": "20eM8OgnlNPZE09owlUh3j"
+    "_id": "23c962XlhI77L8c0EyjCpJ"
   },
   {
     "__type__": "cc.Sprite",
@@ -1554,7 +1554,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "9124d0f9-508e-4187-999e-ce25a1c22c24@f9941",
+      "__uuid__": "beeb239e-9b73-44ef-9857-7be5cdaa7504@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -1570,11 +1570,11 @@
     "_isTrimmedMode": true,
     "_useGrayscale": false,
     "_atlas": null,
-    "_id": "aeE6Iuat5L1a07k2e4NiPh"
+    "_id": "69wt3cjbtKI7QulH5cvvKA"
   },
   {
     "__type__": "cc.Node",
-    "_name": "Shop Button",
+    "_name": "Items Button",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": {
@@ -1618,7 +1618,7 @@
       "y": 0,
       "z": 0
     },
-    "_id": "5e2jYvGWREvr06kOelZWar"
+    "_id": "840RkYB5xOAonXoxdNHZiE"
   },
   {
     "__type__": "cc.UITransform",
@@ -1633,14 +1633,14 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 150,
-      "height": 137
+      "height": 136
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
       "x": 0.5,
       "y": 0.5
     },
-    "_id": "23c962XlhI77L8c0EyjCpJ"
+    "_id": "f4yBt3qopFnKMwUhhlrBx2"
   },
   {
     "__type__": "cc.Sprite",
@@ -1663,7 +1663,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "beeb239e-9b73-44ef-9857-7be5cdaa7504@f9941",
+      "__uuid__": "48a727f0-5e5b-4886-8999-36d3238f67c6@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -1679,7 +1679,7 @@
     "_isTrimmedMode": true,
     "_useGrayscale": false,
     "_atlas": null,
-    "_id": "69wt3cjbtKI7QulH5cvvKA"
+    "_id": "8f9rqWERVB9rkJJ4udHaDi"
   },
   {
     "__type__": "cc.UITransform",

@@ -17,6 +17,7 @@ export interface IItemFeedCfg {
     readonly gene_legion: number;
     readonly gene_flesh: number;
     readonly mut_points: number;
+    readonly desc: string;
 }
 
 export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
@@ -36,7 +37,8 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "gene_abyss": 0,
         "gene_legion": 0,
         "gene_flesh": -5,
-        "mut_points": 10
+        "mut_points": 10,
+        "desc": "basic physic"
     },
     1002: {
         "item_id": 1002,
@@ -54,7 +56,8 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "gene_abyss": 15,
         "gene_legion": 0,
         "gene_flesh": 0,
-        "mut_points": 10
+        "mut_points": 10,
+        "desc": "basic magic"
     },
     1003: {
         "item_id": 1003,
@@ -72,7 +75,8 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "gene_abyss": 0,
         "gene_legion": -5,
         "gene_flesh": 15,
-        "mut_points": 10
+        "mut_points": 10,
+        "desc": "basic shield"
     },
     1004: {
         "item_id": 1004,
@@ -90,7 +94,8 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "gene_abyss": -5,
         "gene_legion": 15,
         "gene_flesh": 0,
-        "mut_points": 10
+        "mut_points": 10,
+        "desc": "basic domination"
     },
     8001: {
         "item_id": 8001,
@@ -108,7 +113,8 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "gene_abyss": 5,
         "gene_legion": 5,
         "gene_flesh": 5,
-        "mut_points": 5
+        "mut_points": 5,
+        "desc": "free adjust"
     },
     8002: {
         "item_id": 8002,
@@ -126,6 +132,7 @@ export const ItemFeedCfgData: Record<string | number, IItemFeedCfg> = {
         "gene_abyss": 20,
         "gene_legion": 20,
         "gene_flesh": 20,
-        "mut_points": 50
+        "mut_points": 50,
+        "desc": "full ability"
     }
 };
