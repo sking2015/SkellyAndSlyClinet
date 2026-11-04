@@ -72,6 +72,26 @@ export class CResManager extends Component {
     private monstersBundle: AssetManager.Bundle = null;
 
     //为了兼容以前的写法，写个异步加载的函数方便使用
+    private characterBundleLoads = new Map<string, Promise<AssetManager.Bundle>>();
+    private async getCharacterBundle(hero: boolean): Promise<AssetManager.Bundle> {
+        const existing = hero ? this.herosBundle : this.monstersBundle;
+        if (existing) return existing;
+        const name = hero ? HEROS_BUNDLE : MONSTER_BUNDLE;
+        let pending = this.characterBundleLoads.get(name);
+        if (!pending) {
+            pending = new Promise<AssetManager.Bundle>((resolve, reject) => {
+                assetManager.loadBundle(name, (error, bundle) => error ? reject(error) : resolve(bundle));
+            });
+            this.characterBundleLoads.set(name, pending);
+        }
+        try {
+            const bundle = await pending;
+            if (hero) this.herosBundle = bundle;
+            else this.monstersBundle = bundle;
+            return bundle;
+        } finally { this.characterBundleLoads.delete(name); }
+    }
+
     async getAsyncCharPrefab(eID: eCCharacterID): Promise<Prefab> {
         console.log("异步读取角色", eID);
         let nCharID = eID;
@@ -88,6 +108,7 @@ export class CResManager extends Component {
             bundle = this.monstersBundle;
         }
 
+        bundle = await this.getCharacterBundle(bHero);
         const path = CCharactersData.instance.GetCharPrefabPath(nCharID, bHero);
 
 

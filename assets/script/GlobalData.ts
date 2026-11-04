@@ -125,7 +125,7 @@ export class CGlobalData {
         }
     }
 
-    //遍历所有监工
+    //遍历所有魔物数据
     foreachMonsters(callback: Function) {
         this.mapMonsters.forEach((data, eType) => {
             callback(data);
@@ -445,11 +445,13 @@ export class CGlobalData {
             else this.mgrItem.createItem(item.item_id, item.count);
         });
         const f = data.feed;
-        Object.assign(this.dataFeed, f.attributes, { model_id: f.model_id,
+        Object.assign(this.dataFeed, f.attributes, {
+            model_id: f.model_id,
             mutLevel: f.mutation_level, mutType: f.mutation_type, mutPoints: f.mutation_points,
             nBeastPoint: f.beast_points, nAbyssPoint: f.abyss_points,
             nLegionPoint: f.legion_points, nFleshPoint: f.flesh_points,
-            MaxHP: f.attributes.HP, MaxMP: f.attributes.MP });
+            MaxHP: f.attributes.HP, MaxMP: f.attributes.MP
+        });
         this.nCurStageId = data.progress.current_stage_id;
     }
 

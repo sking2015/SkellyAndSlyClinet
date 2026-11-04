@@ -149,7 +149,17 @@ export class Roomlist extends Component {
     }
 
     private appliedRoomVersions = new Map<number, number>();
+    private expirySyncPending = false;
+    private expiryRetryAt = 0;
     update(deltaTime: number) {
+        const battle = gameStateMgr.activeBattle;
+        if (gameStateMgr.online && battle && gameStateMgr.serverNow >= battle.expires_at
+            && !this.expirySyncPending && gameStateMgr.serverNow >= this.expiryRetryAt) {
+            this.expirySyncPending = true;
+            this.expiryRetryAt = gameStateMgr.serverNow + 5000;
+            void gameStateMgr.syncState().then(() => { this.expirySyncPending = false; },
+                () => { this.expirySyncPending = false; });
+        }
         if (gameStateMgr.online) {
             for (const room of this.rooms) {
                 if (this.appliedRoomVersions.get(room.index) === gameStateMgr.stateVersion) continue;

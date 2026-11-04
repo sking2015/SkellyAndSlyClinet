@@ -203,10 +203,13 @@ export class CBarrackRoom extends CBaseRoom {
 
     genOneTroop() {
         let role = instantiate(this.charTroop.node);
+        let char = role.getComponent(CCharacter);
+        // Training copies are presentation characters, not battlefield participants.
+        char.setRoom(this);
+        char.setInBattle(false);
+        char.SetPlace(eCharPlace.ecpInRoom);
         role.parent = this.nodeCharLayer;
         role.setPosition(this.troopBornPos.getPosition());
-        let char = role.getComponent(CCharacter);
-        char.SetPlace(eCharPlace.ecpInRoom);
         char.run2PositionV2(this.troopBornPos.getPosition().x - 50, this.troopBornPos.getPosition().y - 15, () => {
             char.run2PositionV2(-400, char.node.y, () => {
                 char.node.destroy();

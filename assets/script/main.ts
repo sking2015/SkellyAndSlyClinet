@@ -258,7 +258,9 @@ export class main extends Component {
                 RECOVERED_PENDING: '已恢复上一笔操作，请确认最新数据后再操作',
                 STATE_CONFLICT: '数据已更新，请重新确认操作',
                 INSUFFICIENT_RESOURCE: '资源不足', INSUFFICIENT_ITEM: '道具不足',
-                UNIT_BUSY: '角色或房间正在使用中', CAPACITY_EXCEEDED: '容量不足',
+                UNIT_BUSY: gameStateMgr.activeBattle
+                    ? '服务器仍有未结束战斗，房间暂不可配置，请等待结算'
+                    : '角色或房间正在使用中', CAPACITY_EXCEEDED: '容量不足',
             };
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, {
                 tips: messages[code] || `操作未完成：${code}`,

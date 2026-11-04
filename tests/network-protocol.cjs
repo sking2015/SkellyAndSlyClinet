@@ -84,6 +84,11 @@ async function main() {
     assert.equal(applied.at(-1), 97);
     const roomCalls = calls.filter(call => call.body.action === 'room-lv-up');
     assert.equal(typeof roomCalls[0].body.data, 'string');
+    mgr.latest.active_battle = { status: 'active' };
+    assert.equal(mgr.isRoomBattleLocked(0), true, 'orphaned minor battle locks its server room');
+    assert.equal(mgr.isRoomBattleLocked(1), false, 'other rooms are not locked');
+    mgr.latest.active_battle = null;
+    assert.equal(mgr.isRoomBattleLocked(0), false, 'server settlement clears the lock');
     console.log('PASS: signing, routes, serial versions, persisted unknown outcomes, idempotent retry, stale snapshots');
 
     const battleStorage = storage();
@@ -263,5 +268,69 @@ async function main() {
     assert.equal(barrack.checkGroup.index, 0);
     assert.equal(barrack.nCurTroopId, 910);
     console.log('PASS: existing-account barrack initialization works before checkbox start without aborting room creation');
+
+    const movementLoad = loader({
+        cc: { isValid: () => true }, './character/character': {}, './ResManager': {},
+        './room/BaseRoom': {}, './BattleFormation': {},
+    });
+    const movement = movementLoad('CharacaterMannager.ts').CCharactersManager.instance;
+    const training = { getRoom: () => null, getInBattle: () => false,
+        getPosition: () => 0, getRoleHalfWidth: () => 10 };
+    assert.equal(movement.getBlockedPosition(training, -50), -50, 'unassigned training copy cannot crash movement');
+    training.getRoom = () => ({ index: 2 });
+    movement.getRoomCharacters = () => { throw new Error('noncombat movement must not query battlefield enemies'); };
+    assert.equal(movement.getBlockedPosition(training, -50), -50);
+    const enemy = { IsAlive: () => true, getInBattle: () => true, getBattleCamp: () => 2,
+        getRoleHalfWidth: () => 10, getPosition: () => -40 };
+    training.getInBattle = () => true;
+    training.getBattleCamp = () => 1;
+    movement.getRoomCharacters = () => [enemy];
+    assert.equal(movement.getBlockedPosition(training, -50), -18, 'actual combat movement still respects enemies');
+    console.log('PASS: roomless/noncombat training movement is safe while battlefield blocking remains enabled');
+
+    let bundleCallback, bundleRequests = 0;
+    const assetLoad = loader({
+        cc: { Component: class {}, assetManager: { loadBundle(_name, cb) { ++bundleRequests; bundleCallback = cb; } },
+            _decorator: { ccclass: () => value => value, property: () => () => {} } },
+        './KeyValuePair': {},
+        './CharacatersData': { CCharactersData: { instance: { GetCharPrefabPath: id => String(id) } } },
+    });
+    const assets = new (assetLoad('ResManager.ts').CResManager)();
+    const lordPrefab = assets.getAsyncCharPrefab(1), soldierPrefab = assets.getAsyncCharPrefab(911);
+    assert.equal(bundleRequests, 1, 'concurrent saved defenders share bundle loading');
+    bundleCallback(null, { load: (name, _type, cb) => cb(null, { name }) });
+    assert.equal((await lordPrefab).name, '1'); assert.equal((await soldierPrefab).name, '911');
+    console.log('PASS: saved lord and soldier creation waits for the shared character bundle');
+
+    const roster = { nSoldierLevel: 2, nArcherLevel: 2, nMageLevel: 2,
+        getRoomGuardIdByIndex: () => 1, getRoomSoldierNumByIndex: () => 2,
+        getRoomArcherNumByIndex: () => 3, getRoomMageNumByIndex: () => 4 };
+    const battleRoomLoad = loader({
+        cc: { _decorator: { ccclass: () => value => value, property: () => () => {} } },
+        '../BattleSync': {}, '../GameStateMgr': {}, './BaseRoom': { CBaseRoom: class {} },
+        '../common/CustomEvent': {}, '../common/common': {}, '../TroopInfo': {}, '../LordInfo': {},
+        '../character/character': {}, '../BattleFormation': {}, '../character/battlerole': {}, '../CombatPower': {},
+        '../GlobalData': { CGlobalData: { instance: roster } },
+    });
+    const restored = new (battleRoomLoad('room/BattleRoom.ts').CBattleRoom)();
+    const active = new Map(), loading = new Set(), creations = [];
+    Object.assign(restored, { slotIds: { charGuard: 1, charSoldier: 911, charArcher: 921, charMage: 931 },
+        eGuardId: 1, nSoldierNum: 2, nArcherNum: 3, nMageNum: 4,
+        formation: { getCount: id => ({ 1: 1, 911: 2, 921: 3, 931: 4 })[id],
+            getActive: id => active.get(id), isSlotLoading: id => loading.has(id) },
+        refreshCombatInfo() {},
+    });
+    for (const [method, id] of [['refreshGuardRole', 1], ['refreshSoldierRole', 911],
+        ['refreshArcherRole', 921], ['refreshMageRole', 931]]) {
+        restored[method] = () => { creations.push(id); active.set(id, {}); };
+    }
+    restored.refreshExpand();
+    assert.deepEqual(creations, [1, 911, 921, 931], 'equal data still rebuilds missing lord and all soldier types');
+    restored.refreshExpand(); assert.equal(creations.length, 4, 'existing defenders are preserved');
+    active.delete(1); loading.add(1); restored.refreshExpand(); assert.equal(creations.length, 4);
+    loading.delete(1); restored.refreshExpand(); assert.equal(creations.length, 5, 'failed creation can retry');
+    active.delete(911); restored.defensePhase = 'battle'; restored.refreshExpand();
+    assert.equal(creations.length, 5, 'snapshot refresh cannot revive battle casualties');
+    console.log('PASS: all saved defenders reconcile missing entities without duplicating loads or reviving casualties');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

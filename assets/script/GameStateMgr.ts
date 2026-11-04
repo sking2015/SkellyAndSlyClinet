@@ -25,6 +25,12 @@ class GameStateMgr {
     get serverNow() { return Date.now() + this.clockOffset; }
     get stateVersion() { return this.version; }
     get activeBattle(): BattleState { return this.latest?.active_battle || null; }
+    isRoomBattleLocked(index: number): boolean {
+        const battle = this.activeBattle;
+        if (!battle || battle.status !== 'active') return false;
+        // Protocol v1 currently starts minor invasions only in the exterior (0).
+        return index === (battle.room_index == null ? 0 : battle.room_index);
+    }
     get authority() { return this.latest; }
     onState(listener: () => void) { this.listeners.add(listener); return () => this.listeners.delete(listener); }
     onError(listener: (code: string) => void) { this.errorListeners.add(listener); return () => this.errorListeners.delete(listener); }

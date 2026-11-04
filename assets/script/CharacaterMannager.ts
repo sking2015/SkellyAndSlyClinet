@@ -195,10 +195,12 @@ export class CCharactersManager {
 
     // 一维战场：返回运动线段上首先接触的存活敌人，忽略视觉高度。
     getFirstEnemyOnPath(src: CCharacter, startX: number, endX: number, padding = 0): CCharacter {
+        const room = src.getRoom();
+        if (!room || !src.getInBattle()) return null;
         const direction = endX >= startX ? 1 : -1;
         let first: CCharacter = null;
         let nearest = Infinity;
-        for (const char of this.getRoomCharacters(src.getRoom().index)) {
+        for (const char of this.getRoomCharacters(room.index)) {
             if (!char.IsAlive() || !char.getInBattle() || char.getBattleCamp() === src.getBattleCamp()) continue;
             const half = char.getRoleHalfWidth() + padding;
             const far = (char.getPosition() + direction * half - startX) * direction;

@@ -71,7 +71,10 @@ export class CBattleRoom extends CBaseRoom {
     private alertRemaining = 0;
     private configurationVersion = 0;
 
-    get isConfigurationLocked(): boolean { return this.defensePhase !== 'patrol'; }
+    get isConfigurationLocked(): boolean {
+        return this.defensePhase !== 'patrol'
+            || !!(gameStateMgr.online && gameStateMgr.isRoomBattleLocked(this.index));
+    }
     private slotIds = { charGuard: eCCharacterID.eciNone, charSoldier: eCCharacterID.eciNone,
         charArcher: eCCharacterID.eciNone, charMage: eCCharacterID.eciNone };
 
@@ -232,36 +235,34 @@ export class CBattleRoom extends CBaseRoom {
         await this.replaceRole('charMage', this.nMageNum > 0 ? mapTroop2ID[3][CGlobalData.instance.nMageLevel - 1] : eCCharacterID.eciNone);
     }
 
+    private needsRoleRefresh(slot: 'charGuard' | 'charSoldier' | 'charArcher' | 'charMage',
+        id: eCCharacterID, count: number): boolean {
+        if (this.slotIds[slot] !== id) return true;
+        if (id === eCCharacterID.eciNone) return false;
+        if (this.formation?.getCount(id) !== count) return true;
+        return !this.formation?.getActive(id) && !this.formation?.isSlotLoading(id);
+    }
+
     refreshExpand() {
-        console.log("刷新房间扩展面板显示，房间索引", this.index, "守卫角色ID", this.eGuardId);
-
-        if (this.eGuardId != CGlobalData.instance.getRoomGuardIdByIndex(this.index)) {
-            this.eGuardId = CGlobalData.instance.getRoomGuardIdByIndex(this.index);
-            this.refreshGuardRole();
+        // Reading the same snapshot again must still repair a missing scene entity.
+        // During battle only the formation may change its living roster.
+        if (this.defensePhase === 'patrol') {
+            const data = CGlobalData.instance;
+            this.eGuardId = data.getRoomGuardIdByIndex(this.index);
+            this.nSoldierNum = data.getRoomSoldierNumByIndex(this.index);
+            this.nArcherNum = data.getRoomArcherNumByIndex(this.index);
+            this.nMageNum = data.getRoomMageNumByIndex(this.index);
+            if (this.needsRoleRefresh('charGuard', this.eGuardId, this.eGuardId ? 1 : 0)) void this.refreshGuardRole();
+            const troops = [
+                { slot: 'charSoldier' as const, type: 1, count: this.nSoldierNum, level: data.nSoldierLevel, refresh: () => this.refreshSoldierRole() },
+                { slot: 'charArcher' as const, type: 2, count: this.nArcherNum, level: data.nArcherLevel, refresh: () => this.refreshArcherRole() },
+                { slot: 'charMage' as const, type: 3, count: this.nMageNum, level: data.nMageLevel, refresh: () => this.refreshMageRole() },
+            ];
+            for (const troop of troops) {
+                const id = troop.count > 0 ? mapTroop2ID[troop.type][troop.level - 1] : eCCharacterID.eciNone;
+                if (this.needsRoleRefresh(troop.slot, id, troop.count)) void troop.refresh();
+            }
         }
-
-
-
-        if (this.nSoldierNum != CGlobalData.instance.getRoomSoldierNumByIndex(this.index)
-            || (this.nSoldierNum > 0 && this.slotIds.charSoldier !== mapTroop2ID[1][CGlobalData.instance.nSoldierLevel - 1])) {
-            this.nSoldierNum = CGlobalData.instance.getRoomSoldierNumByIndex(this.index);
-            this.refreshSoldierRole();
-        }
-
-        if (this.nArcherNum != CGlobalData.instance.getRoomArcherNumByIndex(this.index)
-            || (this.nArcherNum > 0 && this.slotIds.charArcher !== mapTroop2ID[2][CGlobalData.instance.nArcherLevel - 1])) {
-            this.nArcherNum = CGlobalData.instance.getRoomArcherNumByIndex(this.index);
-            this.refreshArcherRole();
-        }
-
-        if (this.nMageNum != CGlobalData.instance.getRoomMageNumByIndex(this.index)
-            || (this.nMageNum > 0 && this.slotIds.charMage !== mapTroop2ID[3][CGlobalData.instance.nMageLevel - 1])) {
-            this.nMageNum = CGlobalData.instance.getRoomMageNumByIndex(this.index);
-            this.refreshMageRole();
-        }
-
-
-
         this.refreshCombatInfo();
     }
 
@@ -319,7 +320,14 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     onClickTroop(event: EventTouch, customEventData: string) {
-        if (this.isConfigurationLocked) return;
+        if (this.isConfigurationLocked) {
+            if (gameStateMgr.online && gameStateMgr.isRoomBattleLocked(this.index)) {
+                this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, {
+                    tips: '服务器仍有未结束战斗，房间暂不可配置，请等待结算',
+                }));
+            }
+            return;
+        }
         console.log("点击了房间的小兵按钮", customEventData);
 
         // this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_room_panel, true, { roomType: this.roomType, roomIndex: this.index }));

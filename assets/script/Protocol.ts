@@ -6,6 +6,7 @@ export interface BattleUnit {
     source_room_index: number|null; alive: boolean; life_no: number;
 }
 export interface BattleState {
+    room_index?: number;
     battle_id: string; encounter_id: string; status: 'active'|'won'|'lost';
     started_at: number; expires_at: number; last_event_seq: number;
     units: BattleUnit[]; events: Array<{ event_id: string; seq: number }>;

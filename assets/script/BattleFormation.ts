@@ -31,6 +31,7 @@ export class CBattleFormation {
     getActive(key: FormationSlotKey): CCharacter { return this.slots.get(key)?.active || null; }
     getCount(key: FormationSlotKey): number { return this.slots.get(key)?.count || 0; }
     getActiveCharacters(): CCharacter[] { return Array.from(this.slots.values()).map(slot => slot.active).filter(Boolean); }
+    isSlotLoading(key: FormationSlotKey): boolean { return this.slots.get(key)?.loading || false; }
     isLoading(): boolean { return Array.from(this.slots.values()).some(slot => slot.loading); }
 
     // order 按前排到后排排列；我方朝左，英雄朝右。
