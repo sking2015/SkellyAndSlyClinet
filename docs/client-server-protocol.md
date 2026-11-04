@@ -19,6 +19,14 @@
 
 本文未给出现有服务端实现保证。新增接口、字段、返回结构均是双方需要按本文实现的目标协议。
 
+实现补充（2026-11-04，后端 Agent 请同时参阅）：state-sync 的 result 需要返回 `encounters: Array<{ encounter_id: string; team_id: number; room_index: number; available_at: number }>`，用于客户端取得服务器认可的普通小入侵，available_at 为 Unix 毫秒。没有到期遭遇时返回空数组。battle-start 返回的敌方实例 config_id 使用实际运行时角色 ID（英雄表 ID 加 1000），己方士兵使用当前等级对应的角色 ID。此补充不涉及大入侵。
+
+本次客户端配置版本固定为 `2026-11-04.1`（GameConfig.CONFIG_VERSION）；后端使用对应配置并返回相同 config_version，变更数值配置时双方一起升级此值。客户端拒绝加载不匹配的配置版本。
+
+当前界面还存在未招募领主的“重铸/招募”（0→1）入口。原稿 monster-level-up 仅允许已招募对象，无法覆盖该入口；补充 `POST /api/monster`、action=`monster-recruit`、data=`{ monster_id }`，服务器验证未招募和配置招募条件/费用，成功置为等级 1，返回 `{ monster_id, old_level: 0, new_level: 1, cost }`。不得把升级接口当成任意解锁入口。
+
+普通小入侵现有敌方离场逻辑需要在 battle-end 增加 `termination_reason: 'elimination'|'enemy_escape'`。敌方尚存活并逃离时客户端上报 lose/enemy_escape；服务器检查该遭遇允许逃离判负且有存活敌方，无法验证具体移动路线（仍不上传移动事件）。服务端 result.reason 相应允许 enemy_escape。超时仍由服务器判定。
+
 ## 2. HTTP 路由与协议清单
 
 统一 JSON POST。沿用 `/api/login`、`/api/room`；新增分组路由如下。原先预留的 `/api/change_overseer` 不作为本稿目标路由，统一由 `/api/room` 的 action 处理。
@@ -35,6 +43,7 @@
 | /api/troop | troop-train | 批量训练并入账 | 新增 |
 | /api/troop | troop-level-up | 部队升级 | 新增 |
 | /api/monster | monster-level-up | 已招募领主升级 | 新增 |
+| /api/monster | monster-recruit | 未招募领主招募（补充） | 新增 |
 | /api/feed | feed-submit | 喂养并自动连续突变 | 新增 |
 | /api/battle | battle-start | 建立战斗与参战快照 | 新增 |
 | /api/battle | battle-enemy-hero-killed | 敌方英雄死亡及掉落结算 | 新增 |
@@ -90,6 +99,8 @@ interface ResponseEnvelope<R> {
 建议错误码：`INVALID_ARGUMENT`、`UNAUTHORIZED`、`TOKEN_EXPIRED`、`CONFIG_MISMATCH`、`STATE_CONFLICT`、`REQUEST_ID_CONFLICT`、`INSUFFICIENT_RESOURCE`、`INSUFFICIENT_ITEM`、`CAPACITY_EXCEEDED`、`CONDITION_NOT_MET`、`UNIT_BUSY`、`BATTLE_NOT_FOUND`、`BATTLE_CLOSED`、`EVENT_GAP`、`INVALID_BATTLE_EVENT`、`RESULT_MISMATCH`、`INTERNAL_ERROR`。
 
 每个玩家的数据写操作需串行化/事务化。一个成功操作的扣费、发奖、版本更新、幂等记录一起提交；失败全部回滚。持久化变更递增 state_version；纯查询和无变化领取可保持版本。
+
+完整快照中的所有房间库存应结算至本次 server_time，并保留生产周期余量，避免无关操作返回旧库存导致客户端产量显示回退。若本次结算产生持久化变化，同样递增版本。
 
 普通养成操作要求版本匹配，否则返回 STATE_CONFLICT 和最新快照，客户端覆盖后重新确认业务意图。state-sync 不要求匹配。战斗事件按 battle_id/seq 校验，不因全局版本过期丢弃有效死亡事件。两次领取分别使用当时最新版本。
 
@@ -316,3 +327,20 @@ data：`{ battle_id, result: 'win'|'lose', duration_ms, last_event_seq }`。
 ## 10. 实施顺序
 
 先完成通用信封/幂等/完整存档与 state-sync；然后改造既有升级和两次领取；再接配置、训练、升级与喂养；最后接战斗实例、事件队列、掉落和结束校验。客户端与后端同时升级协议版本/签名，联调后再启用联网模式。本稿不授权额外实现任务、签到、邮件、结束奖励或大入侵。
+
+## 11. 本次客户端落地与验证
+
+已接入通用网络层、全量存档覆盖、上述养成入口、普通小入侵开始/死亡/结束及服务器击杀掉落。复活结果入口为 BattleSync.revived；当前游戏尚无实际复活技能流程，未来实现技能时在复活成功处调用，不能在普通治疗处调用。无本地战斗现场时仅补发持久化事件并等待服务端超时，不根据关键事件重建完整战斗。
+
+默认保留 GameConfig.ONLY_DEBUG_CLINTE=true，离线调试不发请求。后端完成后将其设为 false，并设置实际 SERVER_HOST/SERVER_PORT。不要在正式联网存档上使用模拟初始数据。此次上线前仍须完成真实服务端和 Cocos 预览联调。
+
+验证命令（从项目根目录执行，将 TS_PATH 替换为 TypeScript 的 lib/typescript.js 路径；本机可使用 Cocos 编辑器附带版本）：
+
+```text
+node tests/network-protocol.cjs TS_PATH
+node tests/check-client-types.cjs TS_PATH
+```
+
+network-protocol 覆盖签名、串行版本、提交后响应丢失的去重恢复、旧快照保护、角色实例/死亡/复活顺序、结束请求持久化重试、完整存档替换、驻军容量以及两次资源领取。测试使用网络和引擎替身，不代替真实后端验证。
+
+既有 minor-invasion.cjs 和 skill-flow.cjs 在本次修改前的 HEAD 源码上也分别因缺少 beginMinorInvasion/NodePool 引擎替身而失败；本次仅补入新增网络依赖的离线替身，未将这两套旧测试标记为通过。

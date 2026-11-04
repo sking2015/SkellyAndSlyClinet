@@ -1,3 +1,4 @@
+import { gameStateMgr } from './GameStateMgr';
 import { _decorator, Component, instantiate, Label, Node, Prefab, Sprite } from 'cc';
 import { CUIProperty } from './UIProperty';
 import { CUISkillInfo } from './UISkillInfo';
@@ -183,9 +184,21 @@ export class CMonsterDetailPanel extends Component {
         this.doReforge();
     }
 
-    doReforge() {
-        this.nLevel = 1;
-        CGlobalData.instance.setMonsterLevel(this.eCharId, this.nLevel);
+    private submitting = false;
+    async doReforge() {
+        if (this.submitting) return;
+        if (gameStateMgr.online) {
+            this.submitting = true;
+            try {
+                const reply = await gameStateMgr.operation(CGlobalData.instance.getMonsterLevel(this.eCharId) === 0
+                    ? 'monster-recruit' : 'monster-level-up', { monster_id: this.eCharId });
+                if (!reply.ok) return;
+                this.nLevel = CGlobalData.instance.getMonsterLevel(this.eCharId);
+            } finally { this.submitting = false; }
+        } else {
+            this.nLevel = 1;
+            CGlobalData.instance.setMonsterLevel(this.eCharId, this.nLevel);
+        }
 
         this.lblLevel.string = "LV:" + this.data.Level.toString();
 

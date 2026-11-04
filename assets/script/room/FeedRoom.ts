@@ -1,3 +1,5 @@
+import { gameStateMgr } from '../GameStateMgr';
+import { FeedResult } from '../Protocol';
 import { _decorator, Node, Label, Layout, Sprite, Tween, tween, Vec3, EventTouch, Color, ProgressBar, UIOpacity, Prefab, instantiate, isValid, assetManager, AssetManager, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CGlobalData } from '../GlobalData';
@@ -121,8 +123,10 @@ export class CFeedRoom extends CBaseRoom {
         this.refreshFeedData();
     }
 
+    private presentationFeed: CFeedData = null;
+    private get displayedFeed() { return this.presentationFeed || CGlobalData.instance.dataFeed; }
     private refreshFeedData(animate: boolean = false) {
-        const data = CGlobalData.instance.dataFeed;
+        const data = this.displayedFeed;
         if (!data.stageCfg) {
             console.warn(`FeedRoom: missing mutation stage config for level ${data.mutLevel}`);
             return;
@@ -241,14 +245,14 @@ export class CFeedRoom extends CBaseRoom {
 
     private refreshCharacter() {
         if (!this.roleBase) return;
-        const id = CGlobalData.instance.dataFeed.model_id;
+        const id = this.displayedFeed.model_id;
         if (this.shownModel === id) return;
         const prefab = this.modelPrefabs.get(id);
         if (prefab) {
             this.showCharacter(id, prefab);
         } else {
             this.loadModel(id).then(loaded => {
-                if (isValid(this, true) && CGlobalData.instance.dataFeed.model_id === id) {
+                if (isValid(this, true) && this.displayedFeed.model_id === id) {
                     this.showCharacter(id, loaded);
                 }
             }).catch(error => console.error('FeedRoom: failed to load character', error));
@@ -341,6 +345,36 @@ export class CFeedRoom extends CBaseRoom {
             return;
         }
         if (this.feeding) return;
+        if (gameStateMgr.online) {
+            this.feeding = true;
+            const version = ++this.feedVersion;
+            const before = Object.assign(new CFeedData(), CGlobalData.instance.dataFeed);
+            try {
+                const reply = await gameStateMgr.operation<FeedResult>('feed-submit', { item_id: item.id, count: 1 });
+                if (!reply.ok || version !== this.feedVersion || !isValid(this, true)) return;
+                const result = reply.result;
+                await Promise.all([CGlobalData.instance.dataFeed.model_id, ...result.mutations.map(m => m.model_id)]
+                    .map(id => this.loadModel(id)));
+                if (version !== this.feedVersion || !isValid(this, true)) return;
+                for (const attribute of FEED_ATTRIBUTES) before[attribute] += result.feed_attribute_changes[attribute];
+                before.mutPoints += item.feedCfg.mut_points;
+                before.nBeastPoint += item.feedCfg.gene_beast;
+                before.nAbyssPoint += item.feedCfg.gene_abyss;
+                before.nLegionPoint += item.feedCfg.gene_legion;
+                before.nFleshPoint += item.feedCfg.gene_flesh;
+                this.presentationFeed = before;
+                this.refreshItems(); this.refreshFeedData(true);
+                this.showFeedChanges(result.feed_attribute_changes);
+                this.playRemoteMutations(result, 0, version);
+            } catch (error) {
+                console.error('[Feed presentation]', error);
+                this.presentationFeed = null; this.feeding = false;
+                this.refreshFeedData();
+            } finally {
+                if (version === this.feedVersion && !this.presentationFeed) this.feeding = false;
+            }
+            return;
+        }
         const data = CGlobalData.instance.dataFeed;
         // 先验证本次可能跨越的所有阶段并加载形像，失败时不消耗道具。
         const preview = Object.assign(new CFeedData(), data);
@@ -381,6 +415,30 @@ export class CFeedRoom extends CBaseRoom {
         this.refreshFeedData(true);
         this.showFeedChanges(changes);
         this.advanceMutation();
+    }
+
+    private playRemoteMutations(result: FeedResult, index: number, version: number) {
+        if (version !== this.feedVersion) return;
+        const mutation = result.mutations[index];
+        if (!mutation) {
+            const required = this.displayedFeed.stageCfg.req_mutation_points;
+            this.animateMutationProgress(required > 0 ? Math.min(1, this.displayedFeed.mutPoints / required) : 0, () => {
+                if (version !== this.feedVersion) return;
+                this.presentationFeed = null; this.feeding = false; this.refreshFeedData();
+            });
+            return;
+        }
+        this.animateMutationProgress(1, () => {
+            if (version !== this.feedVersion) return;
+            const data = this.presentationFeed;
+            data.mutPoints -= data.stageCfg.req_mutation_points;
+            data.mutLevel = mutation.to_level; data.mutType = mutation.mutation_type;
+            data.model_id = mutation.model_id;
+            for (const attribute of FEED_ATTRIBUTES) data[attribute] += mutation.attribute_changes[attribute];
+            this.refreshFeedData(true); this.character?.playEffect(); this.playUpgradeEffect(false);
+            this.showFeedChanges(mutation.attribute_changes); this.setMutationProgress(0);
+            this.playRemoteMutations(result, index + 1, version);
+        });
     }
 
     private showFeedChanges(changes: Record<FeedAttribute, number>) {
@@ -551,9 +609,10 @@ export class CFeedRoom extends CBaseRoom {
         ++this.feedVersion;
         if (this.mutationTransition) Tween.stopAllByTarget(this.mutationTransition);
         this.mutationTransition = null;
+        this.presentationFeed = null;
         // 离开场景时保留已支付道具的全部结果，下次进入从 dataFeed 恢复。
         const data = CGlobalData.instance.dataFeed;
-        while (data.canMutate && data.mutate()) { /* 每阶段只结算一次 */ }
+        while (!gameStateMgr.online && data.canMutate && data.mutate()) { /* 每阶段只结算一次 */ }
         this.feeding = false;
     }
 

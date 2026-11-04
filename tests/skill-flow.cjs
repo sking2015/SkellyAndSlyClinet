@@ -50,6 +50,7 @@ function load(relative) {
     }).outputText;
     const localRequire = name => {
         if (name === 'cc') return cc;
+        if (name.endsWith('/GameStateMgr')) return { gameStateMgr: { online: false } };
         const target = path.resolve(path.dirname(file), `${name}.ts`);
         if (target === path.join(root, 'character/character.ts')) return { CCharacter: Character };
         if (target === path.join(root, 'character/overseer.ts')) return { COverseer: Character };

@@ -1,3 +1,4 @@
+import { gameStateMgr } from './GameStateMgr';
 import { _decorator, Component, Label, Node, Sprite, SpriteFrame } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { eTroopType } from './BaseDef';
@@ -124,10 +125,21 @@ export class CTroopDeployPanel extends Component {
         this.sprTroop.spriteFrame = this.getTroopTypeSpriteFrame(this.troopIndex);
     }
 
-    onClickDeploy() {
+    private submitting = false;
+    async onClickDeploy() {
+        if (this.submitting) return;
         if (this.closing || !this.node.active || (this.canConfigure && !this.canConfigure())) return;
         console.log("点击了部署按钮");
-        CGlobalData.instance.DeployTroop(this.roomIndex, this.troopIndex, this.currentLocationCurrentTroops);
+        if (gameStateMgr.online) {
+            this.submitting = true;
+            try {
+                const room = CGlobalData.instance.getRoomDataByIndex(this.roomIndex);
+                const target = { room_index: this.roomIndex, soldier_num: room.nSoldierNum,
+                    archer_num: room.nArcherNum, mage_num: room.nMageNum };
+                target[(['', 'soldier_num', 'archer_num', 'mage_num'])[this.troopIndex]] = this.currentLocationCurrentTroops;
+                if (!(await gameStateMgr.operation('room-deploy-troops', target)).ok) return;
+            } finally { this.submitting = false; }
+        } else CGlobalData.instance.DeployTroop(this.roomIndex, this.troopIndex, this.currentLocationCurrentTroops);
 
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_refresh, true, { roomIdx: this.roomIndex }));
 

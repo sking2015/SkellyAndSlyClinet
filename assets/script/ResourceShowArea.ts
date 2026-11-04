@@ -1,3 +1,4 @@
+import { gameStateMgr } from './GameStateMgr';
 import { _decorator, Component, Label, Node, Sprite, UITransform } from 'cc';
 import { flyResourceToIcon, formatCompactNumber } from './common/common';
 import type { LootResourceType } from './Item';
@@ -45,6 +46,10 @@ export class ResourceShowArea extends Component {
         return type === 'Coin' ? this.nodeCoinIcon : type === 'Food' ? this.nodeFoodIcon : this.nodeSoulIcon;
     }
 
+    private gatherPreview = new Map<eRoomType, number>();
+    clearGatherPreviews() { this.gatherPreview.clear(); this.refreshResource(); }
+    beginGatherPreview(type: eRoomType, balance: number) { this.gatherPreview.set(type, balance); this.refreshResource(); }
+    endGatherPreview(type: eRoomType) { this.gatherPreview.delete(type); this.refreshResource(); }
     start() {
         this.refreshResource();
     }
@@ -77,7 +82,10 @@ export class ResourceShowArea extends Component {
         nodeRes.parent = this.node;
         nodeRes.setPosition(localPos);
         flyResourceToIcon(nodeRes, target, () => {
-            switch (roomType) {
+            if (gameStateMgr.online && this.gatherPreview.has(roomType)) {
+                this.gatherPreview.set(roomType, this.gatherPreview.get(roomType) + amount);
+            }
+            if (!gameStateMgr.online) switch (roomType) {
                 case eRoomType.ertCrystalMine:
                     CGlobalData.instance.nCrystal += amount;
                     break;
@@ -95,12 +103,12 @@ export class ResourceShowArea extends Component {
 
     refreshResource() {
         console.log("refreshResource~!!")
-        this.labelCrystal.string = formatCompactNumber(CGlobalData.instance.nCrystal);
+        this.labelCrystal.string = formatCompactNumber(this.gatherPreview.get(eRoomType.ertCrystalMine) ?? CGlobalData.instance.nCrystal);
         this.labelFood.string = formatCompactNumber(CGlobalData.instance.nFood);
         this.labelGold.string = formatCompactNumber(CGlobalData.instance.nCoin);
-        this.labelMetal.string = formatCompactNumber(CGlobalData.instance.nMetal);
+        this.labelMetal.string = formatCompactNumber(this.gatherPreview.get(eRoomType.ertMetalWorkshop) ?? CGlobalData.instance.nMetal);
         this.labelSoul.string = formatCompactNumber(CGlobalData.instance.nSoul);
-        this.labelWood.string = formatCompactNumber(CGlobalData.instance.nWood);
+        this.labelWood.string = formatCompactNumber(this.gatherPreview.get(eRoomType.ertLumberMill) ?? CGlobalData.instance.nWood);
     }
 
     update(deltaTime: number) {

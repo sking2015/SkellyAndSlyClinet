@@ -13,6 +13,8 @@ function load(file, imports = {}) {
     }).outputText;
     vm.runInNewContext(source, { exports, console: { log() {}, error() {} }, require(name) {
         if (name in imports) return imports[name];
+        if (name === './BattleSync') return { BattleSync: { instance: { bind() {}, died() {} } } };
+        if (name === './GameStateMgr') return { gameStateMgr: { online: false } };
         throw new Error(`Unexpected import: ${name}`);
     } }, { filename: file });
     return exports;

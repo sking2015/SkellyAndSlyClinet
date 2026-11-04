@@ -1,3 +1,5 @@
+import { gameStateMgr } from './GameStateMgr';
+import { BattleSync } from './BattleSync';
 import { isValid, UITransform, Vec3 } from 'cc';
 import { eBattleCamp, eCCharacterID, eRoomType, eDirction } from './BaseDef';
 import { CBattleRole } from './character/battlerole';
@@ -23,10 +25,11 @@ export class CInvasionManager {
 
     private room: CBattleRoom = null;
     private remaining = 0;
-    private state: 'waiting' | 'preparing' | 'spawning' | 'entering' | 'active' = 'waiting';
+    private state: 'waiting' | 'preparing' | 'spawning' | 'entering' | 'active' | 'finishing' = 'waiting';
     private formation: CBattleFormation = null;
     private get enemies(): CCharacter[] { return this.formation?.getActiveCharacters() || []; }
     private escaped = false;
+    private finishRetry = 0;
     private generation = 0;
     private exitX = 0;
 
@@ -76,6 +79,7 @@ export class CInvasionManager {
             return;
         }
         if (this.state !== 'active') return;
+        this.finishRetry = Math.max(0, this.finishRetry - dt);
         if (this.formation.failed) {
             this.formation.dispose();
             this.formation = null;
@@ -97,6 +101,7 @@ export class CInvasionManager {
         }
         const alive = this.formation.hasForces();
         if (!alive) {
+            if (gameStateMgr.online) { if (this.finishRetry <= 0) void this.finishOnline(); return; }
             // 先切换状态，保证奖励最多发放一次。死亡演出继续沿用角色原有流程。
             this.resetTimer();
             if (!this.escaped) this.grantReward();
@@ -112,9 +117,19 @@ export class CInvasionManager {
         const generation = this.generation;
         const room = this.room;
         try {
+            if (gameStateMgr.online) {
+                if (!await BattleSync.instance.start(room.index, this.teamId)) {
+                    room.endMinorInvasion(); this.resetTimer(); return;
+                }
+                if (generation !== this.generation) return;
+                room.bindBattleInstances();
+            }
             const team = TeamConfigData[this.teamId];
             if (!team || team.TeamType !== 'Minor') throw new Error('小入侵队伍配置无效');
-            const members = this.parsePairs(team.Members);
+            const members: [number, number][] = gameStateMgr.online
+                ? BattleSync.instance.snapshot.units.filter(u => u.side === 'enemy').map(u =>
+                    [u.config_id - eCCharacterID.eciHerosStart, 1] as [number, number])
+                : this.parsePairs(team.Members);
             for (const [id] of members) {
                 if (!HerosData[id]) throw new Error(`英雄配置不存在: ${id}`);
             }
@@ -157,6 +172,19 @@ export class CInvasionManager {
             this.room.endMinorInvasion();
             this.resetTimer();
         }
+    }
+
+    private async finishOnline() {
+        this.state = 'finishing';
+        const generation = this.generation;
+        if (!await BattleSync.instance.end(!this.escaped)) {
+            // Preserve scene and retry the same pending end request via the manager.
+            if (generation === this.generation) { this.state = 'active'; this.finishRetry = 3; }
+            return;
+        }
+        if (generation !== this.generation) return;
+        this.formation?.dispose(); this.formation = null;
+        this.room.endMinorInvasion(); this.resetTimer();
     }
 
     private parsePairs(content: string): [number, number][] {

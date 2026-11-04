@@ -1,3 +1,4 @@
+import { gameStateMgr } from './GameStateMgr';
 import { _decorator, Animation, Component, EventTouch, Node, Sprite, Label, SpriteFrame, Tween, UITransform, Vec3, assetManager, AssetManager, isValid } from 'cc';
 import { CItem } from './Item';
 import type { CLootDrop, LootResourceType } from './Item';
@@ -171,6 +172,7 @@ export class UIItem extends Component {
         const item = this.droppingItem;
         if (!item) return;
         this.droppingItem = null;
+        if (gameStateMgr.online) return; // Already settled with the confirmed kill.
         const data = CGlobalData.instance;
         if ('resourceType' in item) {
             switch (item.resourceType) {

@@ -1,10 +1,12 @@
+import { BattleSync } from '../BattleSync';
+import { gameStateMgr } from '../GameStateMgr';
 import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, SpriteFrame, Label, UITransform, Vec3 } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { setNodeVisibleWithFade } from '../common/common';
 import { CTroopInfo } from '../TroopInfo';
 import { CLordInfo } from '../LordInfo';
-import { eCCharacterID, eBattleCamp, eDirction, eRoomType } from '../BaseDef';
+import { eCCharacterID, eBattleCamp, eDirction, eRoomType, mapTroop2ID } from '../BaseDef';
 import { CGlobalData } from '../GlobalData';
 import { CCharacter } from '../character/character';
 import { CBattleFormation } from '../BattleFormation';
@@ -75,9 +77,9 @@ export class CBattleRoom extends CBaseRoom {
 
     private getFormation(): CBattleFormation {
         if (!this.formation) {
-            const position = (id: eCCharacterID) => id === eCCharacterID.eciSkullSoldier ? SOLDIER_POS
-                : id === eCCharacterID.eciSkullArcher ? ARCHER_POS
-                : id === eCCharacterID.eciSkullMage ? MAGE_POS : GUARD_POS;
+            const position = (id: eCCharacterID) => (mapTroop2ID[1].indexOf(id) >= 0) ? SOLDIER_POS
+                : (mapTroop2ID[2].indexOf(id) >= 0) ? ARCHER_POS
+                : (mapTroop2ID[3].indexOf(id) >= 0) ? MAGE_POS : GUARD_POS;
             this.formation = new CBattleFormation(this, eBattleCamp.ebcDemon, position, (char, replacement) => {
                 const slot = Object.keys(this.slotIds).find(key => this.slotIds[key] === char.eCharId);
                 if (slot) this[slot] = char;
@@ -94,22 +96,22 @@ export class CBattleRoom extends CBaseRoom {
                 if (!replacement) char.playEffect();
             }, (id, count) => {
                 const data = CGlobalData.instance.getRoomDataByIndex(this.index);
-                if (id === eCCharacterID.eciSkullSoldier) {
+                if ((mapTroop2ID[1].indexOf(id) >= 0)) {
                     this.charSoldier = null;
                     this.nSoldierNum = count;
-                    if (data) data.nSoldierNum = count;
-                } else if (id === eCCharacterID.eciSkullArcher) {
+                    if (data && !gameStateMgr.online) data.nSoldierNum = count;
+                } else if ((mapTroop2ID[2].indexOf(id) >= 0)) {
                     this.charArcher = null;
                     this.nArcherNum = count;
-                    if (data) data.nArcherNum = count;
-                } else if (id === eCCharacterID.eciSkullMage) {
+                    if (data && !gameStateMgr.online) data.nArcherNum = count;
+                } else if ((mapTroop2ID[3].indexOf(id) >= 0)) {
                     this.charMage = null;
                     this.nMageNum = count;
-                    if (data) data.nMageNum = count;
+                    if (data && !gameStateMgr.online) data.nMageNum = count;
                 } else if (id === this.eGuardId) {
                     this.charGuard = null;
                     this.eGuardId = eCCharacterID.eciNone;
-                    if (data) data.eGuardId = eCCharacterID.eciNone;
+                    // A defeated lord remains assigned and returns after battle.
                 }
                 this.refreshCombatInfo();
             });
@@ -118,7 +120,7 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     private getDefenders(): CBattleRole[] {
-        const ids = [this.eGuardId, eCCharacterID.eciSkullSoldier, eCCharacterID.eciSkullArcher, eCCharacterID.eciSkullMage];
+        const ids = Object.keys(this.slotIds).map(key => this.slotIds[key]);
         return ids.filter(id => id !== eCCharacterID.eciNone)
             .map(id => this.formation?.getActive(id) as CBattleRole).filter(role => role?.IsAlive());
     }
@@ -155,6 +157,10 @@ export class CBattleRoom extends CBaseRoom {
 
     areDefendersReady(): boolean { return this.defensePhase === 'ready' && !this.formation?.isLoading(); }
 
+    bindBattleInstances() {
+        for (const char of this.getDefenders()) BattleSync.instance.bind(char, 'own', this.index);
+    }
+
     startMinorBattle() {
         this.defensePhase = 'battle';
         for (const role of this.getDefenders()) role.startDeploymentBattle();
@@ -163,6 +169,7 @@ export class CBattleRoom extends CBaseRoom {
     endMinorInvasion() {
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_collect_loot, true, { root: this.nodeCharLayer }));
         this.defensePhase = 'patrol';
+        this.refreshExpand();
         setNodeVisibleWithFade(this.nodeSwitchExpand, true);
         for (const role of this.getDefenders()) this.startPatrol(role);
     }
@@ -214,15 +221,15 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     async refreshSoldierRole() {
-        await this.replaceRole('charSoldier', this.nSoldierNum > 0 ? eCCharacterID.eciSkullSoldier : eCCharacterID.eciNone);
+        await this.replaceRole('charSoldier', this.nSoldierNum > 0 ? mapTroop2ID[1][CGlobalData.instance.nSoldierLevel - 1] : eCCharacterID.eciNone);
     }
 
     async refreshArcherRole() {
-        await this.replaceRole('charArcher', this.nArcherNum > 0 ? eCCharacterID.eciSkullArcher : eCCharacterID.eciNone);
+        await this.replaceRole('charArcher', this.nArcherNum > 0 ? mapTroop2ID[2][CGlobalData.instance.nArcherLevel - 1] : eCCharacterID.eciNone);
     }
 
     async refreshMageRole() {
-        await this.replaceRole('charMage', this.nMageNum > 0 ? eCCharacterID.eciSkullMage : eCCharacterID.eciNone);
+        await this.replaceRole('charMage', this.nMageNum > 0 ? mapTroop2ID[3][CGlobalData.instance.nMageLevel - 1] : eCCharacterID.eciNone);
     }
 
     refreshExpand() {
@@ -235,17 +242,20 @@ export class CBattleRoom extends CBaseRoom {
 
 
 
-        if (this.nSoldierNum != CGlobalData.instance.getRoomSoldierNumByIndex(this.index)) {
+        if (this.nSoldierNum != CGlobalData.instance.getRoomSoldierNumByIndex(this.index)
+            || (this.nSoldierNum > 0 && this.slotIds.charSoldier !== mapTroop2ID[1][CGlobalData.instance.nSoldierLevel - 1])) {
             this.nSoldierNum = CGlobalData.instance.getRoomSoldierNumByIndex(this.index);
             this.refreshSoldierRole();
         }
 
-        if (this.nArcherNum != CGlobalData.instance.getRoomArcherNumByIndex(this.index)) {
+        if (this.nArcherNum != CGlobalData.instance.getRoomArcherNumByIndex(this.index)
+            || (this.nArcherNum > 0 && this.slotIds.charArcher !== mapTroop2ID[2][CGlobalData.instance.nArcherLevel - 1])) {
             this.nArcherNum = CGlobalData.instance.getRoomArcherNumByIndex(this.index);
             this.refreshArcherRole();
         }
 
-        if (this.nMageNum != CGlobalData.instance.getRoomMageNumByIndex(this.index)) {
+        if (this.nMageNum != CGlobalData.instance.getRoomMageNumByIndex(this.index)
+            || (this.nMageNum > 0 && this.slotIds.charMage !== mapTroop2ID[3][CGlobalData.instance.nMageLevel - 1])) {
             this.nMageNum = CGlobalData.instance.getRoomMageNumByIndex(this.index);
             this.refreshMageRole();
         }
@@ -293,10 +303,14 @@ export class CBattleRoom extends CBaseRoom {
         const version = this.configurationVersion;
         console.log("点击了房间的领主按钮");
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_open_chars_list, true, {
-            roomIndex: this.index, callback: (charId: eCCharacterID) => {
+            roomIndex: this.index, callback: async (charId: eCCharacterID) => {
                 if (this.isConfigurationLocked || version !== this.configurationVersion) return;
                 console.log("选择了领主角色", charId);
-                CGlobalData.instance.setRoomGuardIdByIndex(this.index, charId);
+                if (gameStateMgr.online) {
+                    if (!(await gameStateMgr.operation('room-change-guard', {
+                        room_index: this.index, guard_id: charId,
+                    })).ok) return;
+                } else CGlobalData.instance.setRoomGuardIdByIndex(this.index, charId);
                 this.refreshExpand();
 
                 this.node.dispatchEvent(new CustomEvent(UniEvent.on_close_room_panel, true));

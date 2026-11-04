@@ -2,6 +2,7 @@
  * 游戏配置常量
  */
 export class GameConfig {
+    public static readonly CONFIG_VERSION = '2026-11-04.1';
     // 服务器配置
     public static readonly SERVER_HOST: string = '127.0.0.1';
     public static readonly SERVER_PORT: number = 8080;
@@ -37,7 +38,7 @@ export class GameConfig {
     // 游戏状态键名
     public static readonly GAME_STATE_KEY: string = 'game_state';
 
-    public static readonly ONLY_DEBUG_CLINTE: boolean = true;
+    public static readonly ONLY_DEBUG_CLINTE: boolean = false; // 是否只允许调试客户端连接服务器
 }
 
 /**

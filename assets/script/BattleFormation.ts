@@ -1,3 +1,4 @@
+import { BattleSync } from './BattleSync';
 import { isValid, UITransform, Vec3 } from 'cc';
 import { eBattleCamp, eCCharacterID } from './BaseDef';
 import { CCharactersManager } from './CharacaterMannager';
@@ -124,12 +125,14 @@ export class CBattleFormation {
             char.setInBattle(true);
             char.onBattleDeath = dead => {
                 if (this.disposed || slot.active !== dead) return;
+                BattleSync.instance.died(dead);
                 dead.onBattleDeath = null;
                 slot.active = null;
                 --slot.count;
                 this.onLoss(id, slot.count, key);
                 if (slot.count > 0) void this.spawn(key, slot, true);
             };
+            BattleSync.instance.bind(char, this.camp === eBattleCamp.ebcHero ? 'enemy' : 'own', this.room.index);
             this.configure(char, replacement, key);
         } catch (error) {
             if (!this.disposed && slot.version === version) {

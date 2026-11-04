@@ -1,3 +1,5 @@
+import { gameStateMgr } from './GameStateMgr';
+import { CResRoom } from './room/ResRoom';
 import { _decorator, Component, instantiate, Node, Prefab } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { CResManager } from './ResManager';
@@ -146,7 +148,24 @@ export class Roomlist extends Component {
         // }
     }
 
+    private appliedRoomVersions = new Map<number, number>();
     update(deltaTime: number) {
+        if (gameStateMgr.online) {
+            for (const room of this.rooms) {
+                if (this.appliedRoomVersions.get(room.index) === gameStateMgr.stateVersion) continue;
+                if (room.authorityBusy || (room instanceof CBattleRoom && room.isConfigurationLocked)
+                    || (room instanceof CResRoom && room.isGathering)) { continue; }
+                const data = CGlobalData.instance.getRoomDataByIndex(room.index);
+                if (!data) continue;
+                room.roomLevel = data.level;
+                room.refreshRoomLevel();
+                room.setStock(data.nStock);
+                if (room instanceof CResRoom && room.eCCharacterID !== data.eOSId) void room.setOverseer(data.eOSId);
+                if (data.level > 0) room.refreshRoomData();
+                room.refreshRoomLockShow();
+                this.appliedRoomVersions.set(room.index, gameStateMgr.stateVersion);
+            }
+        }
         CInvasionManager.instance.update(deltaTime);
     }
 

@@ -11,6 +11,7 @@ import { LabelGradient } from '../common/LabelGradient';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { gameStateMgr } from '../GameStateMgr';
 import { SessionResult } from '../GameConfig';
+import { newRequestId } from '../Protocol';
 import { CCharactersManager } from '../CharacaterMannager';
 
 const { ccclass, property } = _decorator;
@@ -205,8 +206,18 @@ export class CResRoom extends CBaseRoom {
 
             //这里是监工动画部份。。。
             this.eCCharacterID = eOverseer;
-            CGlobalData.instance.setRoomOSIdByIndex(this.index, this.eCCharacterID);
+            if (!gameStateMgr.online) CGlobalData.instance.setRoomOSIdByIndex(this.index, this.eCCharacterID);
 
+            if (eOverseer === eCCharacterID.eciNone) {
+                if (this.charOverseer) CCharactersManager.instance.ReleaseChacater(this.charOverseer);
+                this.charOverseer = null;
+                this.sprOSAvart.spriteFrame = null;
+                this.lblOSName.string = '';
+                this.sprOSSkillIcons.forEach(icon => icon.spriteFrame = null);
+                this.lblOSSkillTips.forEach(label => label.string = '');
+                this.refreshRoomData();
+                return;
+            }
             const comOS: CCharacter = await CCharactersManager.instance.CreateChacater4room(this.eCCharacterID, this);
             const nodeOS = comOS.node;
 
@@ -218,7 +229,7 @@ export class CResRoom extends CBaseRoom {
 
 
             //监工只能有一个，设置新的就要把老的释放掉
-            CCharactersManager.instance.ReleaseChacater(this.charOverseer);
+            if (this.charOverseer) CCharactersManager.instance.ReleaseChacater(this.charOverseer);
 
             this.charOverseer = comOS;
             this.charOverseer.setActionRange(-250, 250);
@@ -270,19 +281,27 @@ export class CResRoom extends CBaseRoom {
     //由于采集可能耗时很久，在采集完了时要再发一次采集请求，用服务器最新数据刷新界面显示    
     bGatering: boolean = false;
     nOnceGather: number = 0;
-    startGatherRes() {
-        gameStateMgr.RoomGather(this.index, (result: SessionResult, data: IPlayerData) => {
-            if (SessionResult.SUCCESS == result) {
-                this.bGatering = true;
-                this.enableWorkersWork(true);
-
-                //最多十个飞行图标，让最大一秒钟内收取完毕
-                this.nOnceGather = this.nCurrentStock / MAX_GATHER_TIME;
-                //但如果一个图标的量过小，设为单位产出，量过少可以不满十次
-                this.nOnceGather = this.nOnceGather >= this.nOutputPerTime ? this.nOnceGather : this.nOutputPerTime;
-            }
-        })
-
+    private gatherPending = false;
+    private gatherSession = '';
+    get isGathering() { return this.bGatering || this.gatherPending; }
+    async startGatherRes() {
+        if (this.bGatering || this.gatherPending) return;
+        this.gatherPending = true;
+        this.gatherSession = newRequestId();
+        const global = CGlobalData.instance;
+        const balance = this.roomType === eRoomType.ertLumberMill ? global.nWood
+            : this.roomType === eRoomType.ertMetalWorkshop ? global.nMetal : global.nCrystal;
+        try {
+            const reply = await gameStateMgr.operation('room-gather', {
+                room_index: this.index, gather_session_id: this.gatherSession, phase: 'start',
+            });
+            if (!reply.ok) return;
+            if (gameStateMgr.online) this.node.dispatchEvent(new CustomEvent(UniEvent.on_gather_preview, true,
+                { roomType: this.roomType, balance, finished: false }));
+            this.bGatering = true;
+            this.enableWorkersWork(true);
+            this.nOnceGather = Math.max(this.nCurrentStock / MAX_GATHER_TIME, this.nOutputPerTime);
+        } finally { this.gatherPending = false; }
     }
 
     onceGather() {
@@ -297,22 +316,38 @@ export class CResRoom extends CBaseRoom {
         } else {
             //如果已经不大于零，表示已经采集完毕，需要再向服务器请求一次
             this.bGatering = false;
-            gameStateMgr.RoomGather(this.index, (result: SessionResult, data: IPlayerData) => {
-                if (SessionResult.SUCCESS == result) {
-                    CGlobalData.instance.loadData(data);
-
+            this.gatherPending = true;
+            if (!gameStateMgr.online) CGlobalData.instance.setRoomStockByIndex(this.index, this.nCurrentStock);
+            void gameStateMgr.operation('room-gather', {
+                room_index: this.index, gather_session_id: this.gatherSession, phase: 'finish',
+            }).then(reply => {
+                if (reply.ok) {
                     this.nCurrentStock = CGlobalData.instance.getRoomStockByIndex(this.index);
                     this.refreshCurrentStock();
-
-                    //再通知主界面刷新一次，避免和服务器不同步
-                    this.node.dispatchEvent((new CustomEvent(UniEvent.on_resource_change, true)));
+                    this.node.dispatchEvent(new CustomEvent(UniEvent.on_resource_change, true));
                 }
-            })
+            }).then(() => this.finishGatherDisplay(), () => this.finishGatherDisplay());
         }
     }
 
 
-    onSelectOverseer(eType: eCCharacterID) {
+    private finishGatherDisplay() {
+        this.gatherPending = false;
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_gather_preview, true,
+            { roomType: this.roomType, finished: true }));
+    }
+
+    private overseerPending = false;
+    async onSelectOverseer(eType: eCCharacterID) {
+        if (this.overseerPending) return;
+        if (gameStateMgr.online) {
+            this.overseerPending = true;
+            try {
+                if (!(await gameStateMgr.operation('room-change-os', {
+                    room_index: this.index, overseer_id: eType,
+                })).ok) return;
+            } finally { this.overseerPending = false; }
+        }
         let icon: SpriteFrame = CResManager.instance.getCharHead(eType);
         this.sprOSAvart.spriteFrame = icon;
         this.setOverseer(eType);
@@ -352,7 +387,7 @@ export class CResRoom extends CBaseRoom {
                 this.enableWorkersWork(false);
             }
 
-            CGlobalData.instance.setRoomStockByIndex(this.index, this.nCurrentStock);
+            if (!gameStateMgr.online) CGlobalData.instance.setRoomStockByIndex(this.index, this.nCurrentStock);
             this.refreshCurrentStock();
         }
     }

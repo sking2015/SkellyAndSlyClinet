@@ -1,3 +1,4 @@
+import type { PlayerState } from './Protocol';
 import { eCCharacterID, eRoomType, IPlayer, IPlayerData, IRoom } from './BaseDef';
 import { CCharData, CCharactersData } from './CharacatersData';
 import { GameConfig } from './GameConfig';
@@ -374,15 +375,18 @@ export class CGlobalData {
     }
 
     getSoldierCanTrainNum(): number {
-        return this.nSoldierCapacity - this.nSoldierLeft;
+        return Math.max(0, this.nSoldierCapacity - this.nSoldierLeft
+            - this.listRooms.reduce((sum, room) => sum + room.nSoldierNum, 0));
     }
 
     getArcherCanTrainNum(): number {
-        return this.nArcherCapacity - this.nArcherLeft;
+        return Math.max(0, this.nArcherCapacity - this.nArcherLeft
+            - this.listRooms.reduce((sum, room) => sum + room.nArcherNum, 0));
     }
 
     getMageCanTrainNum(): number {
-        return this.nMageCapacity - this.nMageLeft;
+        return Math.max(0, this.nMageCapacity - this.nMageLeft
+            - this.listRooms.reduce((sum, room) => sum + room.nMageNum, 0));
     }
 
     DeployTroop(idx: number, troopType: eTroopType, newNum: number) {
@@ -416,6 +420,39 @@ export class CGlobalData {
     }
 
     //加载数据
+    playerLevel = 1;
+    loadState(data: PlayerState) {
+        this.nCoin = data.resources.coin; this.nWood = data.resources.wood;
+        this.nMetal = data.resources.metal; this.nCrystal = data.resources.crystal;
+        this.nFood = data.resources.food; this.nSoul = data.resources.soul;
+        this.playerLevel = data.player_level;
+        this.listRooms = [];
+        data.rooms.forEach(room => this.listRooms[room.index] = new CRoomData(room));
+        this.nUnlockRoomNum = data.rooms.filter(room => room.level > 0).length;
+        this.mapMonsters.forEach(monster => { monster.Level = 0; });
+        data.monsters.forEach(monster => this.setMonsterLevel(monster.monster_id, monster.level));
+        this.mapMonsters.forEach(monster => monster.calculateData());
+        for (const [key, prefix] of [['soldier', 'Soldier'], ['archer', 'Archer'], ['mage', 'Mage']]) {
+            const troop = data.troops[key];
+            this['n' + prefix + 'Level'] = troop.level;
+            this['n' + prefix + 'Capacity'] = troop.capacity;
+            this['n' + prefix + 'Left'] = troop.available;
+        }
+        this.mgrItem.mapItems.forEach(item => item.itemNum = 0);
+        data.items.forEach(item => {
+            const existing = this.mgrItem.getItem(item.item_id);
+            if (existing) existing.itemNum = item.count;
+            else this.mgrItem.createItem(item.item_id, item.count);
+        });
+        const f = data.feed;
+        Object.assign(this.dataFeed, f.attributes, { model_id: f.model_id,
+            mutLevel: f.mutation_level, mutType: f.mutation_type, mutPoints: f.mutation_points,
+            nBeastPoint: f.beast_points, nAbyssPoint: f.abyss_points,
+            nLegionPoint: f.legion_points, nFleshPoint: f.flesh_points,
+            MaxHP: f.attributes.HP, MaxMP: f.attributes.MP });
+        this.nCurStageId = data.progress.current_stage_id;
+    }
+
     loadData(data: IPlayerData) {
         if (GameConfig.ONLY_DEBUG_CLINTE) return;
 

@@ -1,3 +1,7 @@
+import { BattleSync } from './BattleSync';
+import { CItem } from './Item';
+import { game, Game } from 'cc';
+import { gameStateMgr } from './GameStateMgr';
 import { _decorator, Component, Node, ScrollView, Prefab, Label, Sprite, UITransform, Vec3, instantiate, isValid, PhysicsSystem2D, EPhysics2DDrawFlags } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import OSSelectPanel from './OSSelectPanel';
@@ -73,10 +77,15 @@ export class main extends Component {
         return best;
     }
 
+    private onGatherPreview(event: CustomEvent) {
+        const { roomType, balance, finished } = event.detail;
+        if (finished) this.comResShowArea.endGatherPreview(roomType);
+        else this.comResShowArea.beginGatherPreview(roomType, balance);
+    }
     private onDropLoot(event: CustomEvent) {
         const { dropId, room, ground, start } = event.detail;
         try {
-            const drops = CItemManager.getDrops(dropId);
+            const drops = event.detail.drops || CItemManager.getDrops(dropId);
             if (!drops.length) return;
             const prefab = CResManager.instance?.itemPrefab;
             if (!prefab?.data?.getComponent(UIItem)) throw new Error('掉落 Item prefab 未配置 UIItem');
@@ -186,6 +195,7 @@ export class main extends Component {
 
 
     startListnerEvent() {
+        this.node.on(UniEvent.on_gather_preview, this.onGatherPreview, this);
         this.node.on(UniEvent.on_drop_loot, this.onDropLoot, this);
         this.node.on(UniEvent.on_collect_loot, this.onCollectLoot, this);
         // 监听子节点冒泡上来的事件
@@ -209,6 +219,7 @@ export class main extends Component {
     }
 
     stopListnerEvent() {
+        this.node.off(UniEvent.on_gather_preview, this.onGatherPreview, this);
         this.node.off(UniEvent.on_drop_loot, this.onDropLoot, this);
         this.node.off(UniEvent.on_collect_loot, this.onCollectLoot, this);
         this.node.off(UniEvent.on_open_ospanel, this.onPopOverseerPanel, this);
@@ -229,11 +240,52 @@ export class main extends Component {
         this.node.off(UniEvent.on_open_troop_upgrade, this.onPopTroopUpgradePanel, this);
     }
 
+    private onResume = () => {
+        this.comResShowArea.clearGatherPreviews();
+        if (gameStateMgr.online) void gameStateMgr.syncState().then(reply => {
+            if (reply.ok) return BattleSync.instance.recover();
+        });
+    };
+    private unsubscribeLoot: () => void;
+    private unsubscribeError: () => void;
+    private unsubscribeState: () => void;
     onEnable() {
+        game.on(Game.EVENT_SHOW, this.onResume, this);
+        this.unsubscribeError = gameStateMgr.onError(code => {
+            const messages = {
+                NETWORK_ERROR: '网络异常，操作结果待确认，请重连后重试',
+                PENDING_REQUEST: '上一笔操作尚未确认，请重连后重试',
+                RECOVERED_PENDING: '已恢复上一笔操作，请确认最新数据后再操作',
+                STATE_CONFLICT: '数据已更新，请重新确认操作',
+                INSUFFICIENT_RESOURCE: '资源不足', INSUFFICIENT_ITEM: '道具不足',
+                UNIT_BUSY: '角色或房间正在使用中', CAPACITY_EXCEEDED: '容量不足',
+            };
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, {
+                tips: messages[code] || `操作未完成：${code}`,
+            }));
+        });
+        this.unsubscribeState = gameStateMgr.onState(() => this.comResShowArea.refreshResource());
+        this.unsubscribeLoot = BattleSync.instance.onLoot((loot, char) => {
+            if (!char?.room || !isValid(char.room.node, true)) return;
+            const drops: any[] = loot.items.map(value => {
+                const item = new CItem(); item.id = value.item_id; item.itemNum = value.count; return item;
+            });
+            for (const key of ['coin', 'food', 'soul']) {
+                if (loot.resources[key] > 0) drops.push({ resourceType: key[0].toUpperCase() + key.slice(1), amount: loot.resources[key] });
+            }
+            const ground = char.room.nodeCharLayer.worldPosition.clone();
+            this.onDropLoot(new CustomEvent(UniEvent.on_drop_loot, false, {
+                drops, room: char.room, ground, start: ground.clone(),
+            }));
+        });
         this.startListnerEvent();
     }
 
     onDisable() {
+        game.off(Game.EVENT_SHOW, this.onResume, this);
+        this.unsubscribeState?.();
+        this.unsubscribeError?.();
+        this.unsubscribeLoot?.();
         this.stopListnerEvent();
     }
 

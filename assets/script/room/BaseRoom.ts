@@ -271,7 +271,13 @@ export class CBaseRoom extends Component {
         this.nodeLocked.active = false;
     }
 
+    authorityBusy = false;
     async onClickUnLock() {
+        if (this.authorityBusy) return;
+        this.authorityBusy = true;
+        try { await this.performUnlock(); } finally { this.authorityBusy = false; }
+    }
+    private async performUnlock() {
         console.log("click unlock");
         if (!this.bUnlockable) {
             console.log("can't unlock,not unlockable");
@@ -365,6 +371,11 @@ export class CBaseRoom extends Component {
     }
 
     async onUpgrade() {
+        if (this.authorityBusy) return;
+        this.authorityBusy = true;
+        try { await this.performUpgrade(); } finally { this.authorityBusy = false; }
+    }
+    private async performUpgrade() {
         console.log("room upgrade~!!!")
         if (this.roomLevel < 9) {
 
@@ -389,14 +400,14 @@ export class CBaseRoom extends Component {
                 await waitUntilAnimationFinished(comUnlock);
                 await delay(0.3, this);
 
-                this.setRoomLevel(this.roomLevel + 1);
+                this.setRoomLevel(GameConfig.ONLY_DEBUG_CLINTE ? this.roomLevel + 1 : CGlobalData.instance.getRoomDataByIndex(this.index).level);
                 this.refreshRoomShow();
 
                 animState.wrapMode = AnimationClip.WrapMode.Normal;
                 comUnlock.play(sAni);
                 await waitUntilAnimationFinished(comUnlock);
             } else {
-                this.setRoomLevel(this.roomLevel + 1);
+                this.setRoomLevel(GameConfig.ONLY_DEBUG_CLINTE ? this.roomLevel + 1 : CGlobalData.instance.getRoomDataByIndex(this.index).level);
                 this.refreshRoomShow();
             }
 

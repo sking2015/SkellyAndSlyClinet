@@ -1,3 +1,4 @@
+import { gameStateMgr } from '../GameStateMgr';
 import { _decorator, Component, Prefab, Node } from 'cc';
 import { CCheckGroup } from '../common/checkGroup';
 import { CBaseRoom } from './BaseRoom';
@@ -138,6 +139,7 @@ export class CBarrackRoom extends CBaseRoom {
     }
 
     onClickTroopBtn(event: Event, customEventData: string) {
+        if (this.bProducingTroop || this.submitting) return;
         console.log("onClickTroopClassBtn", customEventData);
         let nIndex = parseInt(customEventData) - 1;
         this.checkGroup?.setCheckBoxState(nIndex);
@@ -157,7 +159,16 @@ export class CBarrackRoom extends CBaseRoom {
 
 
     bProducingTroop: boolean = false;
-    onClickProduceBtn() {
+    private submitting = false;
+    async onClickProduceBtn() {
+        if (this.submitting || this.bProducingTroop || this.trainingTroopCount <= 0) return;
+        if (gameStateMgr.online) {
+            this.submitting = true;
+            try {
+                if (!(await gameStateMgr.operation('troop-train', { room_index: this.index,
+                    troop_type: this.eCurTroopType, count: this.trainingTroopCount })).ok) return;
+            } finally { this.submitting = false; }
+        }
         console.log("onClickProduceBtn");
         this.bProducingTroop = true;
     }
@@ -180,7 +191,7 @@ export class CBarrackRoom extends CBaseRoom {
         this.genOneTroop();
         this.trainingTroopCount--;
         //实际增加部队
-        CGlobalData.instance.genOneTroop(this.eCurTroopType);
+        if (!gameStateMgr.online) CGlobalData.instance.genOneTroop(this.eCurTroopType);
         this.refreshTrainingTroopCount();
         this.refreshTroopCount();
     }

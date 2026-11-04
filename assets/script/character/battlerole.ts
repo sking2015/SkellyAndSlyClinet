@@ -1,3 +1,4 @@
+import { gameStateMgr } from '../GameStateMgr';
 import { _decorator, Vec3, Enum, Component, Animation, Node, NodePool, Color, bits, UITransform, UIOpacity, director, Prefab, instantiate, tween, Tween, Canvas, ParticleSystem2D, isValid, Sprite, SpriteFrame } from 'cc';
 import { COverseer } from './overseer';
 import { eBattleCamp, eCCharacterID, eDirction, eMissileId, eSkillActionType } from '../BaseDef';
@@ -621,6 +622,7 @@ export class CBattleRole extends COverseer {
 
 
     private dropLoot() {
+        if (gameStateMgr.online) return;
         if (this.eCharId <= eCCharacterID.eciHerosStart || !this.room) return;
         const dropId = (this.config as IHeros)?.Dropid;
         if (!dropId) return;

@@ -1,3 +1,4 @@
+import { GameConfig } from './GameConfig';
 import { _decorator, Color, color, Component, Label, Node, Sprite } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { IResData, getResDataByRoomTypeAndLevel, getDefaultRoomLvUpCfg } from './ConfigInterface';
@@ -227,7 +228,7 @@ export default class CRoomUpgradePanel extends Component {
 
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: tips }));
         } else {
-            this.onCostRes();
+            if (GameConfig.ONLY_DEBUG_CLINTE) this.onCostRes();
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_click_room_upgrade, true, { roomIdx: this.nCurRoomIndex }))
             this.onClose();
         }

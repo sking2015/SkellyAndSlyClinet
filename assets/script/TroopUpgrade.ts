@@ -1,3 +1,4 @@
+import { gameStateMgr } from './GameStateMgr';
 import { _decorator, Component, Node, instantiate, Prefab } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import { eTroopType, mapTroop2ID, eCharPlace } from './BaseDef';
@@ -170,16 +171,25 @@ export class CTroopUpgrade extends Component {
 
     }
 
-    onClickConfirm() {
+    private submitting = false;
+    async onClickConfirm() {
+        if (this.submitting) return;
         if (this.nCurTroopLevel >= mapTroop2ID[this.ett].length) {
             console.log("部队已经满级");
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: getI18nText("MAX_LV_TIP_4_UNIT") }));
 
         } else if (CGlobalData.instance.nCoin >= this.nCostCoin && CGlobalData.instance.nCrystal >= this.nCostCrystal) {
-            CGlobalData.instance.nCoin -= this.nCostCoin;
-            CGlobalData.instance.nCrystal -= this.nCostCrystal;
-
-            CGlobalData.instance.doTroopLvUp(this.ett);
+            this.submitting = true;
+            try {
+                if (gameStateMgr.online) {
+                    const reply = await gameStateMgr.operation('troop-level-up', { troop_type: this.ett });
+                    if (!reply.ok) return;
+                } else {
+                    CGlobalData.instance.nCoin -= this.nCostCoin;
+                    CGlobalData.instance.nCrystal -= this.nCostCrystal;
+                    CGlobalData.instance.doTroopLvUp(this.ett);
+                }
+            } finally { this.submitting = false; }
 
             //再通知主界面刷新一次。。。
             this.node.dispatchEvent((new CustomEvent(UniEvent.on_resource_change, true)));
