@@ -133,7 +133,7 @@ export class CBattleFormation {
                 this.onLoss(id, slot.count, key);
                 if (slot.count > 0) void this.spawn(key, slot, true);
             };
-            BattleSync.instance.bind(char, this.camp === eBattleCamp.ebcHero ? 'enemy' : 'own', this.room.index);
+            BattleSync.instance.bind(char, this.camp === eBattleCamp.ebcHero ? 'enemy' : 'own', this.room.index, key);
             this.configure(char, replacement, key);
         } catch (error) {
             if (!this.disposed && slot.version === version) {

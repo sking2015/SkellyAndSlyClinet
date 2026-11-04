@@ -28,26 +28,50 @@ export class BattleSync {
     async start(roomIndex: number, teamId: number): Promise<boolean> {
         if (!gameStateMgr.online) return true;
         const sync = await gameStateMgr.syncState();
-        if (!sync.ok) return false;
+        if (!sync.ok) {
+            console.warn('[小入侵] state-sync 失败', { room_index: roomIndex, code: sync.code });
+            return false;
+        }
         if (gameStateMgr.activeBattle) {
             // No persisted scene/HP: retain events and wait for the server timeout.
+            console.warn('[小入侵] 服务器已有活动战斗，等待恢复或超时', {
+                room_index: roomIndex, battle_id: gameStateMgr.activeBattle.battle_id,
+                expires_at: gameStateMgr.activeBattle.expires_at });
             await this.recover(); return false;
         }
         const encounter = sync.result.encounters?.find(e => e.room_index === roomIndex
-            && e.team_id === teamId && e.available_at <= gameStateMgr.serverNow);
-        if (!encounter) return false;
+            && e.available_at <= gameStateMgr.serverNow);
+        if (!encounter) {
+            console.warn('[小入侵] 服务器未返回本房间已到期遭遇', { room_index: roomIndex,
+                server_now: gameStateMgr.serverNow, encounters: sync.result.encounters,
+                current_stage_id: gameStateMgr.authority?.progress?.current_stage_id });
+            return false;
+        }
         const reply = await gameStateMgr.operation<{ battle: BattleState }>('battle-start', {
             encounter_id: encounter.encounter_id,
         });
-        if (!reply.ok) return false;
+        if (!reply.ok) {
+            console.warn('[小入侵] 服务器拒绝 battle-start', { room_index: roomIndex,
+                encounter_id: encounter.encounter_id, team_id: encounter.team_id, code: reply.code });
+            return false;
+        }
         this.battle = reply.result.battle;
+        console.log('[小入侵] 服务器确认开战', { room_index: roomIndex,
+            encounter_id: encounter.encounter_id, battle_id: this.battle.battle_id,
+            team_id: this.battle.team_id, enemy_slots: this.battle.enemy_slots,
+            enemy_unit_count: this.battle.units.filter(u => u.side === 'enemy').length });
         this.seq = this.battle.last_event_seq;
         this.assigned.clear(); this.bindings = new WeakMap(); this.queue = [];
         this.persist(); return true;
     }
-    bind(char: CCharacter, side: 'own'|'enemy', roomIndex: number) {
+    bind(char: CCharacter, side: 'own'|'enemy', roomIndex: number, slotKey?: number|string) {
         if (!gameStateMgr.online || !this.active || this.bindings.has(char)) return;
-        const unit = this.battle.units.find(u => u.side === side && u.alive
+        const slot = side === 'enemy' && slotKey != null
+            ? this.battle.enemy_slots?.find(slot => slot.position === slotKey) : null;
+        if (side === 'enemy' && slotKey != null && !slot) throw new Error(`No server enemy slot: ${slotKey}`);
+        const candidates = slot ? slot.unit_instance_ids.map(id => this.battle.units.find(u => u.unit_instance_id === id)).filter(Boolean)
+            : this.battle.units;
+        const unit = candidates.find(u => u.side === side && u.alive
             && u.config_id === char.eCharId && !this.assigned.has(u.unit_instance_id)
             && (side === 'enemy' || u.source_room_index === roomIndex));
         if (!unit) throw new Error(`No server battle instance for ${side}:${char.eCharId}`);
@@ -107,7 +131,12 @@ export class BattleSync {
             if (reply.code === 'BATTLE_CLOSED') {
                 this.battle = null; this.queue = []; localStorage.removeItem(KEY); return true;
             }
-            if (!reply.ok) return false;
+            if (!reply.ok) {
+                console.warn('[小入侵] 战斗事件未确认，保留队列重试', {
+                    battle_id: event.data.battle_id, action: event.action,
+                    seq: event.data.seq, code: reply.code, request_id: event.request_id });
+                return false;
+            }
             if (reply.result?.loot) {
                 const char = this.sources.get(event.data.event_id);
                 this.lootListeners.forEach(fn => {

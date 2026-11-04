@@ -102,9 +102,12 @@ async function main() {
     const battle = { battle_id: 'b1', status: 'active', started_at: Date.now(), last_event_seq: 0, units, events: [] };
     const events = []; let failEnd = true;
     const fakeMgr = { online: true, playerId: 'p', activeBattle: null, get serverNow() { return Date.now(); },
-        syncState: async () => ({ ok: true, result: { encounters: [{ encounter_id: 'e1', room_index: 0, team_id: 1, available_at: 0 }] } }),
+        syncState: async () => ({ ok: true, result: { encounters: [{ encounter_id: 'e1', room_index: 0, team_id: 11, available_at: 0 }] } }),
         async operation(action, data, id) {
-            if (action === 'battle-start') { this.activeBattle = battle; return { ok: true, result: { battle } }; }
+            if (action === 'battle-start') {
+                assert.equal(data.encounter_id, 'e1', 'use server encounter even when its team differs from local team 1');
+                this.activeBattle = battle; return { ok: true, result: { battle } };
+            }
             assert.ok(battleStorage.getItem('battle_events_v1').includes(id), 'event persisted before send');
             events.push({ action, data: { ...data }, id });
             if (action === 'battle-end' && failEnd) { failEnd = false; return { ok: false }; }

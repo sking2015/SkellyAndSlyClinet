@@ -174,7 +174,10 @@ export class CBattleRoom extends CBaseRoom {
         this.defensePhase = 'patrol';
         this.refreshExpand();
         setNodeVisibleWithFade(this.nodeSwitchExpand, true);
-        for (const role of this.getDefenders()) this.startPatrol(role);
+        for (const role of this.getDefenders()) {
+            role.setHP(role._MaxHP);
+            this.startPatrol(role);
+        }
     }
 
     update(dt: number) {
@@ -339,7 +342,15 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     onOpenExpand() {
-        if (this.isConfigurationLocked) return;
+        if (this.isConfigurationLocked) {
+            console.warn('[房间展开] 战斗锁阻止展开', { room_index: this.index,
+                defense_phase: this.defensePhase, battle_id: gameStateMgr.activeBattle?.battle_id,
+                battle_status: gameStateMgr.activeBattle?.status, expires_at: gameStateMgr.activeBattle?.expires_at });
+            this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, {
+                tips: '战斗尚未结束或正在等待服务器结算，房间暂不可展开',
+            }));
+            return;
+        }
         super.onOpenExpand();
         if (this.roomType === eRoomType.ertCastleOutSide) return;
         console.log("点击展开按钮，展开房间的扩展面板");

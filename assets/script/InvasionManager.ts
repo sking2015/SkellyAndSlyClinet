@@ -25,7 +25,7 @@ export class CInvasionManager {
 
     private room: CBattleRoom = null;
     private remaining = 0;
-    private state: 'waiting' | 'preparing' | 'spawning' | 'entering' | 'active' | 'finishing' = 'waiting';
+    private state: 'waiting' | 'checking' | 'preparing' | 'spawning' | 'entering' | 'active' | 'finishing' = 'waiting';
     private formation: CBattleFormation = null;
     private get enemies(): CCharacter[] { return this.formation?.getActiveCharacters() || []; }
     private escaped = false;
@@ -56,11 +56,20 @@ export class CInvasionManager {
 
     update(dt: number) {
         if (!this.room || !isValid(this.room.node) || !this.room.node.activeInHierarchy || this.room.roomLevel <= 0) return;
+        if (gameStateMgr.online && BattleSync.instance.snapshot && !gameStateMgr.activeBattle
+            && (this.state === 'preparing' || this.state === 'entering' || this.state === 'active')) {
+            console.warn('[小入侵] 服务器战斗已关闭，清理客户端残留状态', {
+                state: this.state, battle_id: BattleSync.instance.snapshot.battle_id, room_index: this.room.index });
+            this.formation?.dispose();
+            this.formation = null;
+            this.room.endMinorInvasion();
+            this.resetTimer();
+            return;
+        }
         if (this.state === 'waiting') {
             this.remaining -= dt;
             if (this.remaining <= 0) {
-                this.state = 'preparing';
-                this.room.beginMinorInvasion();
+                void this.prepare();
             }
             return;
         }
@@ -111,6 +120,23 @@ export class CInvasionManager {
         }
     }
 
+    private async prepare() {
+        this.state = 'checking';
+        const generation = this.generation;
+        const room = this.room;
+        try {
+            const ready = !gameStateMgr.online || await BattleSync.instance.start(room.index, this.teamId);
+            if (generation !== this.generation) return;
+            if (!ready) { this.resetTimer(); return; }
+            this.state = 'preparing';
+            room.beginMinorInvasion();
+        } catch (error) {
+            if (generation !== this.generation) return;
+            console.error('[小入侵] 战前请求异常，尚未触发警戒', { room_index: room.index, error });
+            this.resetTimer();
+        }
+    }
+
     private async spawn() {
         this.state = 'spawning';
         this.escaped = false;
@@ -118,17 +144,15 @@ export class CInvasionManager {
         const room = this.room;
         try {
             if (gameStateMgr.online) {
-                if (!await BattleSync.instance.start(room.index, this.teamId)) {
-                    room.endMinorInvasion(); this.resetTimer(); return;
-                }
                 if (generation !== this.generation) return;
                 room.bindBattleInstances();
             }
             const team = TeamConfigData[this.teamId];
-            if (!team || team.TeamType !== 'Minor') throw new Error('小入侵队伍配置无效');
+            if (!gameStateMgr.online && (!team || team.TeamType !== 'Minor')) throw new Error('小入侵队伍配置无效');
+            const enemySlots = BattleSync.instance.snapshot?.enemy_slots;
+            if (gameStateMgr.online && !enemySlots?.length) throw new Error('服务器战斗数据缺少 enemy_slots 编制');
             const members: [number, number][] = gameStateMgr.online
-                ? BattleSync.instance.snapshot.units.filter(u => u.side === 'enemy').map(u =>
-                    [u.config_id - eCCharacterID.eciHerosStart, 1] as [number, number])
+                ? enemySlots.map(slot => [slot.hero_id, slot.count] as [number, number])
                 : this.parsePairs(team.Members);
             for (const [id] of members) {
                 if (!HerosData[id]) throw new Error(`英雄配置不存在: ${id}`);
@@ -151,7 +175,7 @@ export class CInvasionManager {
             this.formation = formation;
             for (const [index, [heroId, count]] of members.entries()) {
                 const id = (eCCharacterID.eciHerosStart + heroId) as eCCharacterID;
-                const key = `member:${index}`;
+                const key = gameStateMgr.online ? enemySlots[index].position : `member:${index}`;
                 positions.set(key, left - index * 100);
                 await formation.setSlotCount(key, id, count);
                 if (generation !== this.generation) return;
@@ -164,9 +188,13 @@ export class CInvasionManager {
                 (char as CBattleRole).marchToDeployment(target, eDirction.edRight);
             }
             this.state = 'entering';
+            console.log('[小入侵] 敌方生成完成', { room_index: room.index,
+                battle_id: BattleSync.instance.snapshot?.battle_id, active_count: this.enemies.length, members });
         } catch (error) {
             if (generation !== this.generation) return;
-            console.error('[小入侵] 创建队伍失败', error);
+            console.error('[小入侵] 客户端创建队伍失败', { room_index: room.index,
+                battle_id: BattleSync.instance.snapshot?.battle_id,
+                enemy_slots: BattleSync.instance.snapshot?.enemy_slots, error });
             this.formation?.dispose();
             this.formation = null;
             this.room.endMinorInvasion();
@@ -177,7 +205,14 @@ export class CInvasionManager {
     private async finishOnline() {
         this.state = 'finishing';
         const generation = this.generation;
-        if (!await BattleSync.instance.end(!this.escaped)) {
+        let ended = false;
+        try {
+            ended = await BattleSync.instance.end(!this.escaped);
+        } catch (error) {
+            console.error('[小入侵] 战斗结算异常，将重试', {
+                battle_id: BattleSync.instance.snapshot?.battle_id, error });
+        }
+        if (!ended) {
             // Preserve scene and retry the same pending end request via the manager.
             if (generation === this.generation) { this.state = 'active'; this.finishRetry = 3; }
             return;
