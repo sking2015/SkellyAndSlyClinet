@@ -99,6 +99,11 @@ export class CBarrackRoom extends CBaseRoom {
     refreshTroopRole(bPlayEffect: boolean = false) {
         this.troopBase.removeAllChildren();
 
+        // An unlocked barrack is restored by Roomlist before child start() runs.
+        // Initialize the selection here instead of relying on CCheckGroup.start().
+        if (this.checkGroup.getCurCheckedIndex() < 0) {
+            this.checkGroup.setCheckBoxState(0);
+        }
         let nTroopIndex = this.checkGroup.getCurCheckedIndex() + 1;
 
         this.eCurTroopType = nTroopIndex as eTroopType;

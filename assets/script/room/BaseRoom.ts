@@ -1,4 +1,4 @@
-import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab, ParticleSystem2D, v3, isValid } from 'cc';
+import { _decorator, instantiate, Component, UITransform, Sprite, Node, Label, Animation, AnimationClip, Prefab, ParticleSystem2D, UIOpacity, v3, isValid } from 'cc';
 import { eRoomType, eCCharacterID, eBattleCamp } from '../BaseDef';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CGlobalData } from '../GlobalData';
@@ -126,6 +126,7 @@ export class CBaseRoom extends Component {
     }
 
     refreshRoomLockShow() {
+        if (this.authorityBusy) return;
         console.log("refreshRoomLockShow~~", this.index);
         this.nodeLocked.active = CGlobalData.instance.getUnlockRoomNum() <= this.index;
         if (this.nodeLockLabel) {
@@ -294,33 +295,36 @@ export class CBaseRoom extends Component {
 
 
 
-        let comUnlock = this.nodeLocked.getComponent(Animation);
-        comUnlock.play(comUnlock.clips[0].name);
-        comUnlock.once(Animation.EventType.FINISHED, () => {
+        if (!isValid(this.node, true)) return;
+        this.nodeLocked.active = true;
+        let opacity = this.nodeLocked.getComponent(UIOpacity);
+        if (!opacity) opacity = this.nodeLocked.addComponent(UIOpacity);
+        opacity.opacity = 255;
 
-            fadeInOut(this.nodeLocked, 0.5, false, () => {
-
-                this.setRoomLevel(1);
-                this.unlock();
-                this.onUnlock();
-            });
-
-
-        });
-
-        this.setRoomLevel(1);
-
-
-        if (GameConfig.ONLY_DEBUG_CLINTE) {
-            CGlobalData.instance.unlockRoom();
-        }
-
-
+        this.setRoomLevel(GameConfig.ONLY_DEBUG_CLINTE ? 1
+            : CGlobalData.instance.getRoomDataByIndex(this.index).level);
+        if (GameConfig.ONLY_DEBUG_CLINTE) CGlobalData.instance.unlockRoom();
         this.playUpgradeEffect(false);
         this.refreshRoomData();
 
+        const animation = this.nodeLocked.getComponent(Animation);
+        const clip = animation?.clips[0];
+        if (clip) {
+            const state = animation.getState(clip.name);
+            state.wrapMode = AnimationClip.WrapMode.Normal;
+            // Hold authorityBusy until both the curtain and fade have finished.
+            const finished = waitUntilAnimationFinished(animation);
+            animation.play(clip.name);
+            await finished;
+            if (!isValid(this.node, true)) return;
+            await waitFadeInout(this.nodeLocked, 0.5, false);
+        }
+        if (!isValid(this.node, true)) return;
+        this.unlock();
+        this.onUnlock();
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_unlock, true, { roomIdx: this.index }));
     }
+
 
     onClickSetting() {
         console.log("click setting");

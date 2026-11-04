@@ -198,5 +198,70 @@ async function main() {
     assert.equal(gatherEvents.filter(event => event.type === 'preview').length, 2);
     assert.equal(resourceRoom.isGathering, false);
     console.log('PASS: two independent gather phases, shared session, double-click lock, no uploaded client amounts');
+
+    let finishCurtain, finishFade, unlockRequests = 0, unlocked = 0;
+    const curtainDone = new Promise(resolve => finishCurtain = resolve);
+    const fadeDone = new Promise(resolve => finishFade = resolve);
+    const opacityType = class {};
+    const animation = { clips: [{ name: 'unlock' }], getState: () => ({}),
+        play() { this.played = true; } };
+    const baseLoad = loader({
+        cc: { Component: class {}, isValid: () => true, UIOpacity: opacityType,
+            AnimationClip: { WrapMode: { Normal: 1 } },
+            _decorator: { ccclass: () => value => value, property: () => () => {} } },
+        '../GlobalData': { CGlobalData: { instance: { getRoomDataByIndex: () => ({ level: 1 }) } } },
+        '../common/common': { waitUntilAnimationFinished: () => curtainDone, waitFadeInout: () => fadeDone },
+        '../GameStateMgr': { gameStateMgr: { async RoomLvUpPromise() { ++unlockRequests; return [0, {}]; } } },
+        '../GameConfig': { GameConfig: { ONLY_DEBUG_CLINTE: false }, SessionResult: { SUCCESS: 0 } },
+        '../common/CustomEvent': { CustomEvent: class {}, UniEvent: { on_room_unlock: 'unlock' } },
+        '../ConfigInterface': {}, '../ResManager': {}, '../i18nLan': {},
+        '../character/character': {}, '../CharacaterMannager': {}, '../CharacatersData': {},
+    });
+    const curtainRoom = new (baseLoad('room/BaseRoom.ts').CBaseRoom)();
+    Object.assign(curtainRoom, { bUnlockable: true, node: { dispatchEvent() {} },
+        nodeLocked: { active: true, getComponent: type => type === opacityType ? { opacity: 0 } : animation,
+            getChildByName: () => ({ active: true }) },
+        setRoomLevel() {}, playUpgradeEffect() {}, refreshRoomData() {}, onUnlock() { ++unlocked; },
+    });
+    const opening = curtainRoom.onClickUnLock();
+    for (let i = 0; i < 4; ++i) await Promise.resolve();
+    assert.equal(animation.played, true);
+    assert.equal(curtainRoom.authorityBusy, true);
+    curtainRoom.refreshRoomLockShow();
+    await curtainRoom.onClickUnLock();
+    assert.equal(unlockRequests, 1);
+    assert.equal(curtainRoom.nodeLocked.active, true, 'snapshot refresh must not hide a playing curtain');
+    finishCurtain();
+    for (let i = 0; i < 4; ++i) await Promise.resolve();
+    assert.equal(curtainRoom.authorityBusy, true, 'fade is also part of the protected presentation');
+    assert.equal(curtainRoom.nodeLocked.active, true);
+    finishFade(); await opening;
+    assert.equal(curtainRoom.nodeLocked.active, false);
+    assert.equal(curtainRoom.authorityBusy, false); assert.equal(unlocked, 1);
+    console.log('PASS: unlock curtain stays visible and locked against refresh until animation and fade complete');
+
+    // Existing accounts initialize an unlocked barrack before its child start() runs.
+    const barrackLoad = loader({
+        cc: { Component: class {}, _decorator: { ccclass: () => value => value, property: () => () => {} } },
+        '../GameStateMgr': { gameStateMgr: { online: true } },
+        './BaseRoom': { CBaseRoom: class {} }, '../common/checkGroup': {}, '../common/CustomEvent': {},
+        '../character/character': {},
+        '../GlobalData': { CGlobalData: { instance: { getTroopLevel(type) {
+            assert.equal(type, 1, 'unstarted checkbox group must default to soldier'); return 1;
+        } } } },
+        '../ResManager': { CResManager: { instance: { dynLoadMonster() {} } } },
+        '../CharacatersData': { CCharactersData: { instance: { GetCharPrefabPath: () => 'soldier' } } },
+    });
+    const barrack = new (barrackLoad('room/BarrackRoom.ts').CBarrackRoom)();
+    Object.assign(barrack, { troopBase: { removeAllChildren() {} },
+        checkGroup: { index: -1, getCurCheckedIndex() { return this.index; }, setCheckBoxState(index) { this.index = index; } },
+    });
+    for (const name of ['lblTrainCoin', 'lblTrainMetal', 'lblTroopLv', 'lblTroopHP', 'lblTroopATK', 'lblTroopDEF']) {
+        barrack[name] = { string: '' };
+    }
+    barrack.onUnlock();
+    assert.equal(barrack.checkGroup.index, 0);
+    assert.equal(barrack.nCurTroopId, 910);
+    console.log('PASS: existing-account barrack initialization works before checkbox start without aborting room creation');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
