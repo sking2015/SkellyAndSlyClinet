@@ -166,6 +166,13 @@ async function main() {
     assert.equal(global.mgrItem.getItem(1002).itemNum, 0, 'absent inventory cannot retain debug quantities');
     assert.equal(global.dataFeed.HP, 10); assert.equal(global.dataFeed.mutPoints, 9);
     assert.equal(global.playerLevel, 5); assert.equal(global.nCurStageId, 3);
+    assert.equal(global.nCurDemonKingCharId, 100, 'king model comes from the server feed snapshot');
+    global.loadState({ ...state, feed: { ...state.feed, model_id: 1 } });
+    assert.equal(global.nCurDemonKingCharId, 1);
+    global.loadState({ ...state, feed: { ...state.feed, model_id: 2 } });
+    assert.equal(global.nCurDemonKingCharId, 2);
+    assert.equal(global.dataFeed.model_id, 2);
+    assert.equal(global.getRoomGuardIdByIndex(0), 1, 'server guard assignments must not be migrated locally');
     console.log('PASS: complete authoritative save, unordered room IDs, inventory replacement, deployed troop capacity');
 
     const gatherCalls = [], gatherEvents = [];

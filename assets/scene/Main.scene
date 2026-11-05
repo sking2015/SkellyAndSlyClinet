@@ -8506,6 +8506,10 @@
       {
         "__uuid__": "c82279e8-895d-4591-af1c-633bfdf2df15@f9941",
         "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "7ac5bd31-fb69-4de0-b29d-ef171a1ceb9c@f9941",
+        "__expectedType__": "cc.SpriteFrame"
       }
     ],
     "popInfo": {

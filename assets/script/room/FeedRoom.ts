@@ -245,14 +245,15 @@ export class CFeedRoom extends CBaseRoom {
 
     private refreshCharacter() {
         if (!this.roleBase) return;
-        const id = this.displayedFeed.model_id;
+        const id = this.presentationFeed ? this.presentationFeed.model_id : CGlobalData.instance.nCurDemonKingCharId;
         if (this.shownModel === id) return;
         const prefab = this.modelPrefabs.get(id);
         if (prefab) {
             this.showCharacter(id, prefab);
         } else {
             this.loadModel(id).then(loaded => {
-                if (isValid(this, true) && this.displayedFeed.model_id === id) {
+                const currentId = this.presentationFeed ? this.presentationFeed.model_id : CGlobalData.instance.nCurDemonKingCharId;
+                if (isValid(this, true) && currentId === id) {
                     this.showCharacter(id, loaded);
                 }
             }).catch(error => console.error('FeedRoom: failed to load character', error));
@@ -319,7 +320,7 @@ export class CFeedRoom extends CBaseRoom {
             return;
         }
         this.animateMutationProgress(1, () => {
-            const changes = data.mutate();
+            const changes = CGlobalData.instance.mutateDemonKing();
             if (!changes) {
                 this.feeding = false;
                 console.error('FeedRoom: missing mutation config');
@@ -357,11 +358,14 @@ export class CFeedRoom extends CBaseRoom {
                     .map(id => this.loadModel(id)));
                 if (version !== this.feedVersion || !isValid(this, true)) return;
                 for (const attribute of FEED_ATTRIBUTES) before[attribute] += result.feed_attribute_changes[attribute];
-                before.mutPoints += item.feedCfg.mut_points;
-                before.nBeastPoint += item.feedCfg.gene_beast;
-                before.nAbyssPoint += item.feedCfg.gene_abyss;
-                before.nLegionPoint += item.feedCfg.gene_legion;
-                before.nFleshPoint += item.feedCfg.gene_flesh;
+                // 从本次服务器快照还原突变前的展示值，不使用本地道具加成。
+                const feed = reply.state.feed;
+                before.mutPoints = feed.mutation_points + result.mutations.reduce((points, mutation) =>
+                    points + MutStageCfgData[mutation.from_level].req_mutation_points, 0);
+                before.nBeastPoint = feed.beast_points;
+                before.nAbyssPoint = feed.abyss_points;
+                before.nLegionPoint = feed.legion_points;
+                before.nFleshPoint = feed.flesh_points;
                 this.presentationFeed = before;
                 this.refreshItems(); this.refreshFeedData(true);
                 this.showFeedChanges(result.feed_attribute_changes);
@@ -612,7 +616,7 @@ export class CFeedRoom extends CBaseRoom {
         this.presentationFeed = null;
         // 离开场景时保留已支付道具的全部结果，下次进入从 dataFeed 恢复。
         const data = CGlobalData.instance.dataFeed;
-        while (!gameStateMgr.online && data.canMutate && data.mutate()) { /* 每阶段只结算一次 */ }
+        while (!gameStateMgr.online && data.canMutate && CGlobalData.instance.mutateDemonKing()) { /* 每阶段只结算一次 */ }
         this.feeding = false;
     }
 

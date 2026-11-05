@@ -87,6 +87,30 @@ export class CGlobalData {
     nMageLevel: number = 1;
 
 
+    private demonKingCharId: eCCharacterID = eCCharacterID.eciSkellyBase;
+
+    get nCurDemonKingCharId(): eCCharacterID {
+        return this.demonKingCharId;
+    }
+
+    set nCurDemonKingCharId(id: eCCharacterID) {
+        const previous = this.demonKingCharId;
+        this.demonKingCharId = id;
+        this.dataFeed.model_id = id;
+        if (previous === id) return;
+        // 已部署的魔王随形态变化，避免房间仍引用旧形态。
+        this.listRooms.forEach(room => {
+            if (room.eGuardId === previous) room.eGuardId = id;
+            if (room.eOSId === previous) room.eOSId = id;
+        });
+    }
+
+    mutateDemonKing() {
+        const changes = this.dataFeed.mutate();
+        if (changes) this.nCurDemonKingCharId = this.dataFeed.model_id;
+        return changes;
+    }
+
     nCurStageId: number = 1; //当前关卡ID
 
     //喂养数据
@@ -126,14 +150,22 @@ export class CGlobalData {
     }
 
     //遍历所有魔物数据
-    foreachMonsters(callback: Function) {
+    foreachMonsters(callback: Function, includeDemonKing: boolean = false) {
+        if (includeDemonKing) {
+            callback(CCharactersData.instance.GetCharData(this.nCurDemonKingCharId,
+                this.getMonsterLevel(this.nCurDemonKingCharId)));
+        }
         this.mapMonsters.forEach((data, eType) => {
+            if (includeDemonKing && eType === this.nCurDemonKingCharId) return;
             callback(data);
         })
     }
 
     //取得魔物等级
     getMonsterLevel(eID: eCCharacterID): number {
+        if (eID === this.nCurDemonKingCharId) {
+            return Math.max(1, this.mapMonsters.get(eID)?.Level || 0);
+        }
         const monData: CCharData = this.mapMonsters.get(eID);
         if (monData) {
             return monData.Level;
@@ -452,6 +484,8 @@ export class CGlobalData {
             nLegionPoint: f.legion_points, nFleshPoint: f.flesh_points,
             MaxHP: f.attributes.HP, MaxMP: f.attributes.MP
         });
+        // 联网快照整体覆盖：房间任职也以服务器为准，不执行本地形态迁移。
+        this.demonKingCharId = f.model_id;
         this.nCurStageId = data.progress.current_stage_id;
     }
 

@@ -68,7 +68,7 @@ export class CMALPanel extends Component {
             monster.parent = this.nodeCharList;
 
             this.mapCharButton.set(data.ID, comCharBtn);
-        })
+        }, true)
     }
 
     OnClickClose() {

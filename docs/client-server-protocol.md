@@ -209,6 +209,8 @@ data：`{ item_id: number, count: 1 }`，与当前每次喂养一个道具一致
 
 result：`{ item_id, consumed_count: 1, feed_attribute_changes: Attributes, mutations: Array<{ from_level, to_level, mutation_type, model_id, attribute_changes: Attributes }> }`，变化字段允许负数/0，mutations 按触发顺序。state.feed 是全部结算后的最终状态；客户端按 result 播放属性变化、连续变身，最终覆盖 state，退出表现不回滚已提交结果。
 
+魔王形态同步补充（2026-11-05）：`state.feed.model_id` 是当前魔王角色 ID 的权威来源，客户端每次加载登录、状态同步或操作返回的完整快照时，将其同步至 `nCurDemonKingCharId`。新玩家由服务器初始化为 `100`（SkellyBase），魔王无需招募即可选择、部署；突变时服务器更新此字段，并负责同步已部署魔王的房间任职 ID。客户端加载快照时保留服务器的房间任职结果，不自行迁移。喂养属性变化使用 result，最终属性、四类指数、剩余突变能量与道具数量使用 state；动画期间的能量由服务器剩余能量加本次各突变阶段的消耗还原，不使用本地道具加成计算结果。
+
 ## 6. 战斗协议
 
 ### 6.1 战斗开始：battle-start
