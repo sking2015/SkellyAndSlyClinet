@@ -1,11 +1,14 @@
 import type { IRoom, IResources } from './BaseDef';
 export type Attributes = Record<'HP'|'MP'|'ATK'|'DEF'|'INT'|'MDF'|'SPD'|'LCA', number>;
 export interface BattleUnit {
+    hp?: number; mp?: number; attributes?: Attributes;
     unit_instance_id: string; config_id: number; side: 'own'|'enemy';
     kind: 'soldier'|'lord'|'enemy_hero'; troop_type: 1|2|3|null;
     source_room_index: number|null; alive: boolean; life_no: number;
 }
 export interface BattleState {
+    invasion_type?: 'Minor'|'Major'; current_room_index?: number;
+    checkpoint?: { room_index: number; phase: 'entering'|'active'|'leaving'; units: Array<{ unit_instance_id: string; hp: number; mp: number }> };
     team_id?: number;
     members?: string;
     enemy_slots?: Array<{ position: number; hero_id: number; count: number; unit_instance_ids: string[] }>;
@@ -22,7 +25,7 @@ export interface PlayerState {
     items: Array<{ item_id: number; count: number }>;
     feed: { model_id: number; mutation_level: number; mutation_type: number; mutation_points: number;
         beast_points: number; abyss_points: number; legion_points: number; flesh_points: number; attributes: Attributes };
-    progress: { current_stage_id: number }; active_battle: BattleState|null;
+    progress: { current_stage_id: number; notoriety?: number; major_pending?: number; major_team_id?: number }; active_battle: BattleState|null;
 }
 export interface ProtocolResponse<R = any> {
     protocol_version: 1; code: string; message: string; request_id: string;

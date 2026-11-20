@@ -1,4 +1,5 @@
 import { gameStateMgr } from './GameStateMgr';
+import { invasionState } from './InvasionState';
 import { BattleSync } from './BattleSync';
 import { isValid, UITransform, Vec3 } from 'cc';
 import { eBattleCamp, eCCharacterID, eRoomType, eDirction } from './BaseDef';
@@ -32,6 +33,7 @@ export class CInvasionManager {
     private finishRetry = 0;
     private generation = 0;
     private exitX = 0;
+    get isIdle(): boolean { return this.state === 'waiting'; }
 
     init(rooms: CBaseRoom[]) {
         this.stop();
@@ -56,10 +58,10 @@ export class CInvasionManager {
 
     update(dt: number) {
         if (!this.room || !isValid(this.room.node) || !this.room.node.activeInHierarchy || this.room.roomLevel <= 0) return;
-        if (gameStateMgr.online && BattleSync.instance.snapshot && !gameStateMgr.activeBattle
+        if (gameStateMgr.online && !gameStateMgr.activeBattle
             && (this.state === 'preparing' || this.state === 'entering' || this.state === 'active')) {
             console.warn('[小入侵] 服务器战斗已关闭，清理客户端残留状态', {
-                state: this.state, battle_id: BattleSync.instance.snapshot.battle_id, room_index: this.room.index });
+                state: this.state, battle_id: BattleSync.instance.snapshot?.battle_id, room_index: this.room.index });
             this.formation?.dispose();
             this.formation = null;
             this.room.endMinorInvasion();
@@ -113,7 +115,7 @@ export class CInvasionManager {
             if (gameStateMgr.online) { if (this.finishRetry <= 0) void this.finishOnline(); return; }
             // 先切换状态，保证奖励最多发放一次。死亡演出继续沿用角色原有流程。
             this.resetTimer();
-            if (!this.escaped) this.grantReward();
+            if (!this.escaped) { this.grantReward(); invasionState.addAction(); }
             this.formation.dispose();
             this.formation = null;
             this.room.endMinorInvasion();
@@ -169,8 +171,10 @@ export class CInvasionManager {
                 const role = char as CBattleRole;
                 role.invasionExitX = this.exitX;
                 slotKeys.set(char, key);
-                if (replacement) role.reinforcementTargetX = lineupTargets.get(key) ?? 0;
-                else role.holdDeployment();
+                if (replacement) {
+                    role.reinforcementTargetX = lineupTargets.get(key) ?? 0;
+                    role.logBattleAttributes('替补出场');
+                } else role.holdDeployment();
             });
             this.formation = formation;
             for (const [index, [heroId, count]] of members.entries()) {

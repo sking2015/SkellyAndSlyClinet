@@ -10,6 +10,7 @@ function load(file, imports, globals = {}) {
     }).outputText;
     vm.runInNewContext(code, { exports, console, ...globals, require(name) {
         if (name in imports) return imports[name];
+        if (name.endsWith('/InvasionState')) return { invasionState: { locked: false, pausedProduction: false, addAction() {} } };
         throw new Error(`Unexpected import ${name}`);
     } });
     return exports;
@@ -90,8 +91,9 @@ async function main() {
     Object.assign(invasion.room, { roomLevel: 1, node: { activeInHierarchy: true },
         endMinorInvasion() { ended = true; } });
     mgr.activeBattle = null;
+    server.snapshot = null;
     invasion.update(0.1);
-    assert.equal(invasion.state, 'waiting', 'closed authoritative battle clears local battle phase');
+    assert.equal(invasion.state, 'waiting', 'closed authoritative battle clears local battle phase even after snapshot was cleared');
     assert.ok(disposed && ended, 'clear enemy formation and release room configuration lock');
     console.log('PASS: online enemy slots preserve deployment counts and bind reserves to their own slot');
 }

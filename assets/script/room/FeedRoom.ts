@@ -2,6 +2,7 @@ import { gameStateMgr } from '../GameStateMgr';
 import { FeedResult } from '../Protocol';
 import { _decorator, Node, Label, Layout, Sprite, Tween, tween, Vec3, EventTouch, Color, ProgressBar, UIOpacity, Prefab, instantiate, isValid, assetManager, AssetManager, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
+import { invasionState } from '../InvasionState';
 import { CGlobalData } from '../GlobalData';
 import { CItem } from '../Item';
 import { UIItem } from '../UIItem';
@@ -337,6 +338,7 @@ export class CFeedRoom extends CBaseRoom {
     }
 
     private async onFeed(event: EventTouch) {
+        if (invasionState.locked) return;
         event.propagationStopped = true;
         const item = this.selectedItem;
         if (!item || item.itemNum < 1) {
@@ -409,12 +411,14 @@ export class CFeedRoom extends CBaseRoom {
             return;
         }
         if (version !== this.feedVersion || !isValid(this, true)) return;
+        if (invasionState.locked) { this.feeding = false; return; }
         const changes = data.feed(item);
         if (!changes) {
             this.feeding = false;
             this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, { tips: '喂养配置缺失，无法喂养' }));
             return;
         }
+        invasionState.addAction();
         this.refreshItems();
         this.refreshFeedData(true);
         this.showFeedChanges(changes);

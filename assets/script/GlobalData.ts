@@ -1,4 +1,5 @@
 import type { PlayerState } from './Protocol';
+import { invasionState } from './InvasionState';
 import { eCCharacterID, eRoomType, IPlayer, IPlayerData, IRoom } from './BaseDef';
 import { CCharData, CCharactersData } from './CharacatersData';
 import { GameConfig } from './GameConfig';
@@ -487,6 +488,7 @@ export class CGlobalData {
         // 联网快照整体覆盖：房间任职也以服务器为准，不执行本地形态迁移。
         this.demonKingCharId = f.model_id;
         this.nCurStageId = data.progress.current_stage_id;
+        invasionState.notoriety = Math.max(0, Math.min(100, data.progress.notoriety || 0));
     }
 
     loadData(data: IPlayerData) {

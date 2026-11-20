@@ -10,6 +10,7 @@ export class CustomEvent extends Event {
 
 
 export enum UniEvent {
+    on_major_floor = "onMajorFloor",
     on_gather_preview = "onGatherPreview",
     on_drop_loot = "onDropLoot",                               // 按掉落表生成道具和资源
     on_collect_loot = "onCollectLoot",                          // 点击掉落或战斗结束，飞向背包收取

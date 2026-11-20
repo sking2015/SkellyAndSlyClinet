@@ -1,0 +1,1063 @@
+--- a/game/admin_state.go
++++ b/game/admin_state.go
+@@ -372,7 +372,15 @@
+ 			return bad("feed.attributes." + a)
+ 		}
+ 	}
+-	if len(s.Progress) != 1 {
++	for key, value := range s.Progress {
++		if key != "current_stage_id" && key != "notoriety" && key != "major_pending" && key != "major_team_id" {
++			return bad("progress")
++		}
++		if value < 0 {
++			return bad("progress")
++		}
++	}
++	if s.Progress["notoriety"] > 100 || s.Progress["major_pending"] > 1 {
+ 		return bad("progress")
+ 	}
+ 	validStage := false
+@@ -382,6 +390,13 @@
+ 		}
+ 	}
+ 	if !validStage {
++		for _, team := range tables["TeamConfig"] {
++			if team.s("TeamType") == "Major" && int(team.n("StageID"))+1 == s.Progress["current_stage_id"] {
++				validStage = true
++			}
++		}
++	}
++	if !validStage {
+ 		return bad("progress.current_stage_id")
+ 	}
+ 	return nil
+--- a/game/battle.go
++++ b/game/battle.go
+@@ -14,6 +14,9 @@
+ 		b.Status = "won"
+ 	}
+ 	result := Object{"battle_id": b.ID, "outcome": outcome, "reason": reason, "losses": d.Losses, "loot_summary": d.Loot}
++	if b.InvasionType != "Major" && outcome == "win" {
++		addNotoriety(d.State)
++	}
+ 	d.LastBattle = b
+ 	d.LastResult, _ = json.Marshal(result)
+ 	d.State.Battle = nil
+@@ -50,6 +53,9 @@
+ 	return out, true
+ }
+ func (e *Engine) startBattle(d *Document, a arguments, now int64) (any, *BusinessError) {
++	if majorActive(d.State) {
++		return nil, fail("UNIT_BUSY")
++	}
+ 	if d.State.Battle != nil {
+ 		return nil, fail("UNIT_BUSY")
+ 	}
+@@ -82,7 +88,7 @@
+ 	d.Losses = map[string]int64{"soldier": 0, "archer": 0, "mage": 0}
+ 	add := func(config int, side, kind string, troop *int, level int, cfg Row) {
+ 		roomIndex := rm.Index
+-		u := Unit{uid(), config, side, kind, troop, &roomIndex, true, 1}
++		u := Unit{ID: uid(), Config: config, Side: side, Kind: kind, Troop: troop, Room: &roomIndex, Alive: true, Life: 1}
+ 		if side == "enemy" {
+ 			u.Room = nil
+ 		}
+@@ -189,6 +195,9 @@
+ 		if outcome == "" || outcome != a.Outcome || (a.Reason == "enemy_escape" && reason != "enemy_escape") {
+ 			return nil, fail("RESULT_MISMATCH")
+ 		}
++		if b.InvasionType == "Major" {
++			return e.closeMajorBattle(d, outcome)
++		}
+ 		return e.closeBattle(d, outcome, reason), nil
+ 	}
+ 	if r.Action != "battle-enemy-hero-killed" && r.Action != "battle-own-unit-killed" && r.Action != "battle-unit-revived" {
+@@ -218,6 +227,9 @@
+ 		return nil, fail("INVALID_BATTLE_EVENT")
+ 	}
+ 	u := findUnit(b, a.Unit)
++	if b.InvasionType == "Major" && u != nil && u.Side == "own" && (u.Room == nil || *u.Room != b.CurrentRoom) {
++		return nil, fail("INVALID_BATTLE_EVENT")
++	}
+ 	if u == nil || a.Life != u.Life {
+ 		return nil, fail("INVALID_BATTLE_EVENT")
+ 	}
+@@ -345,7 +357,7 @@
+ func asRow(v any) Row { b, _ := bson.Marshal(v); var r Row; _ = bson.Unmarshal(b, &r); return r }
+ 
+ func roomLocked(d *Document, index int) bool {
+-	return d.State.Battle != nil && numeric(d.Snapshots["_battle"]["room_index"]) == int64(index)
++	return d.State.Battle != nil && (d.State.Battle.InvasionType == "Major" || numeric(d.Snapshots["_battle"]["room_index"]) == int64(index))
+ }
+ func monsterLocked(s *State, id int) bool {
+ 	if s.Battle == nil {
+--- a/game/engine.go
++++ b/game/engine.go
+@@ -83,6 +83,14 @@
+ 			*d = *backup
+ 			return response(d, r.ID, problem.Code, problem.Details, now), nil
+ 		}
++		switch r.Action {
++		case "feed-submit", "monster-recruit", "troop-train":
++			addNotoriety(d.State)
++		case "room-gather":
++			if lookup.Phase == "finish" && !backup.Gathers[lookup.Session].Finished {
++				addNotoriety(d.State)
++			}
++		}
+ 		e.startEncounterTimer(d, now)
+ 		after, _ := json.Marshal(d.State)
+ 		if string(before) != string(after) || !reflect.DeepEqual(backup.Gathers, d.Gathers) || !reflect.DeepEqual(backup.Encounters, d.Encounters) {
+@@ -112,6 +120,13 @@
+ 		if r.Level < 1 || r.Type < 1 || r.Type > 3 {
+ 			continue
+ 		}
++		if majorActive(d.State) {
++			if r.Updated != now {
++				r.Updated = now
++				changed = true
++			}
++			continue
++		}
+ 		cfg := production(r)
+ 		if cfg == nil {
+ 			continue
+@@ -156,14 +171,14 @@
+ 			changed = true
+ 		}
+ 	}
+-	if b := d.State.Battle; b != nil && now >= b.Expires {
++	if b := d.State.Battle; b != nil && b.InvasionType != "Major" && now >= b.Expires {
+ 		e.closeBattle(d, "lose", "timeout")
+ 		changed = true
+ 	}
+ 	if e.startEncounterTimer(d, now) {
+ 		changed = true
+ 	}
+-	if d.NextEncounter > 0 && d.State.Battle == nil && len(d.Encounters) == 0 && now >= d.NextEncounter {
++	if !majorActive(d.State) && d.NextEncounter > 0 && d.State.Battle == nil && len(d.Encounters) == 0 && now >= d.NextEncounter {
+ 		rooms := []int{}
+ 		for _, r := range d.State.Rooms {
+ 			if r.Level > 0 && r.Type == 10 {
+@@ -189,7 +204,7 @@
+ }
+ 
+ func (e *Engine) startEncounterTimer(d *Document, now int64) bool {
+-	if d.NextEncounter != 0 {
++	if majorActive(d.State) || d.NextEncounter != 0 {
+ 		return false
+ 	}
+ 	for _, r := range d.State.Rooms {
+@@ -275,31 +290,33 @@
+ }
+ 
+ type arguments struct {
+-	Room      *int   `json:"room_index"`
+-	Monster   int    `json:"monster_id"`
+-	Overseer  int    `json:"overseer_id"`
+-	Guard     int    `json:"guard_id"`
+-	Soldier   *int64 `json:"soldier_num"`
+-	Archer    *int64 `json:"archer_num"`
+-	Mage      *int64 `json:"mage_num"`
+-	Troop     int    `json:"troop_type"`
+-	Count     int64  `json:"count"`
+-	Item      int    `json:"item_id"`
+-	Session   string `json:"gather_session_id"`
+-	Phase     string `json:"phase"`
+-	Encounter string `json:"encounter_id"`
+-	Battle    string `json:"battle_id"`
+-	Event     string `json:"event_id"`
+-	Seq       int    `json:"seq"`
+-	Unit      string `json:"unit_instance_id"`
+-	Life      int    `json:"life_no"`
+-	Elapsed   int64  `json:"elapsed_ms"`
+-	Killer    string `json:"killer_unit_instance_id"`
+-	Reviver   string `json:"reviver_unit_instance_id"`
+-	Outcome   string `json:"result"`
+-	Duration  int64  `json:"duration_ms"`
+-	LastSeq   int    `json:"last_event_seq"`
+-	Reason    string `json:"termination_reason"`
++	Team            int              `json:"team_id"`
++	CheckpointUnits []CheckpointUnit `json:"units"`
++	Room            *int             `json:"room_index"`
++	Monster         int              `json:"monster_id"`
++	Overseer        int              `json:"overseer_id"`
++	Guard           int              `json:"guard_id"`
++	Soldier         *int64           `json:"soldier_num"`
++	Archer          *int64           `json:"archer_num"`
++	Mage            *int64           `json:"mage_num"`
++	Troop           int              `json:"troop_type"`
++	Count           int64            `json:"count"`
++	Item            int              `json:"item_id"`
++	Session         string           `json:"gather_session_id"`
++	Phase           string           `json:"phase"`
++	Encounter       string           `json:"encounter_id"`
++	Battle          string           `json:"battle_id"`
++	Event           string           `json:"event_id"`
++	Seq             int              `json:"seq"`
++	Unit            string           `json:"unit_instance_id"`
++	Life            int              `json:"life_no"`
++	Elapsed         int64            `json:"elapsed_ms"`
++	Killer          string           `json:"killer_unit_instance_id"`
++	Reviver         string           `json:"reviver_unit_instance_id"`
++	Outcome         string           `json:"result"`
++	Duration        int64            `json:"duration_ms"`
++	LastSeq         int              `json:"last_event_seq"`
++	Reason          string           `json:"termination_reason"`
+ }
+ 
+ func (e *Engine) action(d *Document, r Request, now int64) (any, *BusinessError) {
+@@ -315,6 +332,7 @@
+ 		"room-deploy-troops": {"room_index", "soldier_num", "archer_num", "mage_num"},
+ 		"troop-train":        {"room_index", "troop_type", "count"}, "troop-level-up": {"troop_type"},
+ 		"monster-level-up": {"monster_id"}, "monster-recruit": {"monster_id"}, "feed-submit": {"item_id", "count"},
++		"battle-major-prepare": {"team_id"}, "battle-major-start": {"team_id"}, "battle-major-checkpoint": {"battle_id", "room_index", "phase", "units", "last_event_seq"},
+ 		"battle-start": {"encounter_id"}, "battle-end": {"battle_id", "result", "duration_ms", "last_event_seq"},
+ 	}
+ 	keys := required[r.Action]
+@@ -331,6 +349,15 @@
+ 	}
+ 	if r.Action == "state-sync" {
+ 		return Object{"encounters": d.Encounters, "battle_result": json.RawMessage(d.LastResult)}, nil
++	}
++	if strings.HasPrefix(r.Action, "battle-major-") {
++		return e.majorAction(d, r.Action, a, now)
++	}
++	if d.State.Battle != nil && d.State.Battle.InvasionType == "Major" && !strings.HasPrefix(r.Action, "battle-") && !(r.Action == "room-gather" && a.Phase == "finish") {
++		return nil, fail("MAJOR_BATTLE_LOCKED")
++	}
++	if r.Action == "room-gather" && a.Phase == "start" && majorActive(d.State) {
++		return nil, fail("UNIT_BUSY")
+ 	}
+ 	if strings.HasPrefix(r.Action, "battle-") {
+ 		return e.battleAction(d, r, a, now)
+--- a/game/http.go
++++ b/game/http.go
+@@ -47,7 +47,7 @@
+ 		"/troop":   {"troop-train", "troop-level-up"},
+ 		"/monster": {"monster-level-up", "monster-recruit"},
+ 		"/feed":    {"feed-submit"},
+-		"/battle":  {"battle-start", "battle-enemy-hero-killed", "battle-own-unit-killed", "battle-unit-revived", "battle-end"},
++		"/battle":  {"battle-major-prepare", "battle-major-start", "battle-major-checkpoint", "battle-start", "battle-enemy-hero-killed", "battle-own-unit-killed", "battle-unit-revived", "battle-end"},
+ 	}
+ 	for path, list := range actions {
+ 		allowed := map[string]bool{}
+--- a/game/major.go
++++ b/game/major.go
+@@ -0,0 +1,222 @@
++package game
++
++import (
++	"encoding/json"
++	"sort"
++)
++
++func majorActive(s *State) bool {
++	return s.Progress["major_pending"] == 1 || s.Battle != nil && s.Battle.InvasionType == "Major"
++}
++func addNotoriety(s *State) {
++	if !majorActive(s) {
++		s.Progress["notoriety"] = min(100, s.Progress["notoriety"]+10)
++	}
++}
++func majorTeam(s *State) (int, Row) {
++	id := 0
++	var result Row
++	for _, team := range tables["TeamConfig"] {
++		if team.s("TeamType") == "Major" && int(team.n("StageID")) == s.Progress["current_stage_id"] {
++			if result != nil {
++				return 0, nil
++			}
++			id, result = int(team.n("ID")), team
++		}
++	}
++	return id, result
++}
++func majorRoute(s *State) []int {
++	out := []int{}
++	for _, r := range s.Rooms {
++		if r.Level > 0 {
++			out = append(out, r.Index)
++		}
++	}
++	sort.Ints(out)
++	return out
++}
++func (e *Engine) majorAction(d *Document, action string, a arguments, now int64) (any, *BusinessError) {
++	s := d.State
++	teamID, team := majorTeam(s)
++	if action == "battle-major-checkpoint" {
++		return e.majorCheckpoint(d, a)
++	}
++	if team == nil || a.Team != teamID {
++		return nil, fail("CONFIG_MISMATCH")
++	}
++	if s.Battle != nil {
++		return nil, fail("UNIT_BUSY")
++	}
++	if action == "battle-major-prepare" {
++		if s.Progress["major_pending"] != 1 && s.Progress["notoriety"] < 100 {
++			return nil, fail("CONDITION_NOT_MET")
++		}
++		s.Progress["notoriety"] = 0
++		s.Progress["major_pending"] = 1
++		s.Progress["major_team_id"] = teamID
++		return Object{"team_id": teamID, "phase": "preparing"}, nil
++	}
++	if action != "battle-major-start" || s.Progress["major_pending"] != 1 || s.Progress["major_team_id"] != teamID {
++		return nil, fail("CONDITION_NOT_MET")
++	}
++	members, ok := parsePairs(team.s("Members"))
++	route := majorRoute(s)
++	if !ok || len(route) == 0 {
++		return nil, fail("CONFIG_MISMATCH")
++	}
++	b := &Battle{ID: uid(), Encounter: uid(), Status: "active", Started: now, Expires: MaxSafe,
++		InvasionType: "Major", CurrentRoom: route[0], TeamID: teamID, Members: team.s("Members"),
++		Units: []Unit{}, Events: []Event{}, EnemySlots: []EnemySlot{}}
++	d.Snapshots = map[string]Object{"_battle": {"room_index": route[0]}}
++	d.Loot = []Loot{}
++	d.Losses = map[string]int64{"soldier": 0, "archer": 0, "mage": 0}
++	add := func(config int, side, kind string, troop *int, source *int, level int, cfg Row) {
++		stats := Attributes{}
++		for _, key := range attrs {
++			stats[key] = cfg.n(key) + cfg.n(key+"up")*int64(level)
++			if side == "own" && kind == "lord" && config == s.Feed.Model {
++				stats[key] = s.Feed.Attributes[key]
++			}
++		}
++		u := Unit{ID: uid(), Config: config, Side: side, Kind: kind, Troop: troop, Room: source, Alive: true, Life: 1,
++			HP: stats["HP"], MP: stats["MP"], Attributes: stats}
++		b.Units = append(b.Units, u)
++		d.Snapshots[u.ID] = Object{"attributes": stats, "allow_enemy_escape": false, "revival_limit": 0, "revivals_used": 0}
++		if side == "enemy" {
++			d.Snapshots[u.ID]["drop"] = row("DropConfig", int(cfg.n("Dropid")))
++		}
++	}
++	for _, pair := range members {
++		cfg := row("Heros", pair[0])
++		if cfg == nil || row("DropConfig", int(cfg.n("Dropid"))) == nil {
++			return nil, fail("CONFIG_MISMATCH")
++		}
++		slot := EnemySlot{Position: len(b.EnemySlots) + 1, HeroID: pair[0], Count: pair[1], UnitIDs: []string{}}
++		for n := 0; n < pair[1]; n++ {
++			add(pair[0]+1000, "enemy", "enemy_hero", nil, nil, int(team.n("Level")), cfg)
++			slot.UnitIDs = append(slot.UnitIDs, b.Units[len(b.Units)-1].ID)
++		}
++		b.EnemySlots = append(b.EnemySlots, slot)
++	}
++	for _, index := range route {
++		rm := room(s, index)
++		if rm.Type != 10 && rm.Type != 12 && rm.Type != 15 {
++			continue
++		}
++		if rm.Guard > 0 {
++			m := monster(s, rm.Guard)
++			cfg := row("Monsters", rm.Guard)
++			if m == nil || m.Level < 1 || cfg == nil {
++				return nil, fail("CONFIG_MISMATCH")
++			}
++			source := index
++			add(m.ID, "own", "lord", nil, &source, m.Level, cfg)
++		}
++		for t := 1; t <= 3; t++ {
++			tr := s.Troops[troopNames[t]]
++			id := troopID(t, tr.Level)
++			cfg := row("Monsters", id)
++			if cfg == nil {
++				return nil, fail("CONFIG_MISMATCH")
++			}
++			for n := int64(0); n < *roomCount(rm, t); n++ {
++				source, troop := index, t
++				add(id, "own", "soldier", &troop, &source, tr.Level, cfg)
++			}
++		}
++	}
++	s.Battle = b
++	return Object{"battle": b}, nil
++}
++
++func (e *Engine) majorCheckpoint(d *Document, a arguments) (any, *BusinessError) {
++	b := d.State.Battle
++	if b == nil || b.ID != a.Battle || b.InvasionType != "Major" {
++		return nil, fail("BATTLE_NOT_FOUND")
++	}
++	if a.Room == nil || a.LastSeq != b.Seq {
++		return nil, fail("INVALID_BATTLE_EVENT")
++	}
++	if a.Phase != "entering" && a.Phase != "active" && a.Phase != "leaving" {
++		return nil, fail("INVALID_ARGUMENT")
++	}
++	route := majorRoute(d.State)
++	current, next := -1, -1
++	for i, index := range route {
++		if index == b.CurrentRoom {
++			current = i
++		}
++		if index == *a.Room {
++			next = i
++		}
++	}
++	if current < 0 || next < current || next > current+1 {
++		return nil, fail("INVALID_BATTLE_EVENT")
++	}
++	if next > current || a.Phase == "leaving" {
++		for _, u := range b.Units {
++			if u.Side == "own" && u.Alive && u.Room != nil && *u.Room == b.CurrentRoom {
++				return nil, fail("RESULT_MISMATCH")
++			}
++		}
++	}
++	seen := map[string]bool{}
++	for _, v := range a.CheckpointUnits {
++		u := findUnit(b, v.ID)
++		if u == nil || !u.Alive || seen[v.ID] || v.HP <= 0 || v.MP < 0 || v.HP > u.Attributes["HP"] || v.MP > u.Attributes["MP"] {
++			return nil, fail("INVALID_BATTLE_EVENT")
++		}
++		if u.Side == "enemy" && !enemyDeployed(b, u.ID) {
++			return nil, fail("INVALID_BATTLE_EVENT")
++		}
++		seen[v.ID] = true
++		u.HP = v.HP
++		u.MP = v.MP
++	}
++	b.CurrentRoom = *a.Room
++	b.Checkpoint = &MajorCheckpoint{Room: *a.Room, Phase: a.Phase, Units: a.CheckpointUnits}
++	return Object{"checkpoint": b.Checkpoint}, nil
++}
++
++func (e *Engine) closeMajorBattle(d *Document, outcome string) (any, *BusinessError) {
++	b := d.State.Battle
++	var loot *Loot
++	if outcome == "win" {
++		drop := row("DropConfig", int(row("TeamConfig", b.TeamID).n("DropID")))
++		if drop == nil {
++			return nil, fail("CONFIG_MISMATCH")
++		}
++		loot = &Loot{ID: uid(), Resources: Amounts{"coin": drop.n("Coin"), "food": drop.n("Food"), "soul": drop.n("Soul")}, Items: []Item{}}
++		if err := grant(d.State, loot.Resources); err != nil {
++			return nil, err
++		}
++		pairs, ok := parsePairs(drop.s("DropContent"))
++		if !ok {
++			return nil, fail("CONFIG_MISMATCH")
++		}
++		for _, pair := range pairs {
++			if err := addItem(d.State, pair[0], int64(pair[1])); err != nil {
++				return nil, err
++			}
++			loot.Items = append(loot.Items, Item{pair[0], int64(pair[1])})
++		}
++		d.State.Progress["current_stage_id"]++
++	} else {
++		for _, key := range []string{"coin", "wood", "metal", "crystal", "food", "soul"} {
++			d.State.Resources[key] -= d.State.Resources[key] / 10
++		}
++	}
++	d.State.Progress["major_pending"] = 0
++	d.State.Progress["notoriety"] = 0
++	delete(d.State.Progress, "major_team_id")
++	for i := range d.State.Rooms {
++		d.State.Rooms[i].Updated = e.Now().UnixMilli()
++	}
++	result := e.closeBattle(d, outcome, "elimination").(Object)
++	if loot != nil {
++		result["loot"] = loot
++	}
++	d.LastResult, _ = json.Marshal(result)
++	return result, nil
++}
+--- a/game/major_test.go
++++ b/game/major_test.go
+@@ -0,0 +1,155 @@
++package game
++
++import (
++	"context"
++	"encoding/json"
++	"testing"
++	"time"
++)
++
++func prepareMajor(t *testing.T) *fixture {
++	t.Helper()
++	f := setup(t)
++	rich(f)
++	f.store.doc.State.Progress["notoriety"] = 100
++	wantCode(t, f.call(t, "battle-major-prepare", Object{"team_id": 10}), "OK")
++	return f
++}
++func startMajor(t *testing.T) *fixture {
++	t.Helper()
++	f := prepareMajor(t)
++	wantCode(t, f.call(t, "battle-major-start", Object{"team_id": 10}), "OK")
++	return f
++}
++func TestMajorPreparationAndLocks(t *testing.T) {
++	f := prepareMajor(t)
++	if f.store.doc.State.Progress["notoriety"] != 0 {
++		t.Fatal("trigger must reset notoriety")
++	}
++	stock := room(f.store.doc.State, 5).Storage
++	f.now = f.now.Add(time.Hour)
++	wantCode(t, f.call(t, "state-sync", Object{}), "OK")
++	if room(f.store.doc.State, 5).Storage != stock {
++		t.Fatal("production continued during preparation")
++	}
++	wantCode(t, f.call(t, "troop-train", Object{"room_index": 2, "troop_type": 1, "count": 1}), "OK")
++	if f.store.doc.State.Progress["notoriety"] != 0 {
++		t.Fatal("preparation actions should not build the next invasion")
++	}
++	wantCode(t, f.call(t, "room-gather", Object{"room_index": 5, "gather_session_id": uid(), "phase": "start"}), "UNIT_BUSY")
++	wantCode(t, f.call(t, "battle-major-start", Object{"team_id": 10}), "OK")
++	for _, action := range []string{"troop-train", "room-lv-up", "monster-recruit", "feed-submit"} {
++		data := Object{"room_index": 2, "troop_type": 1, "count": 1, "monster_id": 1, "item_id": 1001}
++		wantCode(t, f.call(t, action, data), "MAJOR_BATTLE_LOCKED")
++	}
++	f.now = f.now.Add(24 * time.Hour)
++	wantCode(t, f.call(t, "state-sync", Object{}), "OK")
++	if f.store.doc.State.Battle == nil {
++		t.Fatal("resumable major battle must not time out as a minor battle")
++	}
++}
++func TestMajorGatherAlreadyInProgress(t *testing.T) {
++	f := setup(t)
++	rich(f)
++	session := uid()
++	wantCode(t, f.call(t, "room-gather", Object{"room_index": 5, "gather_session_id": session, "phase": "start"}), "OK")
++	f.store.doc.State.Progress["notoriety"] = 100
++	wantCode(t, f.call(t, "battle-major-prepare", Object{"team_id": 10}), "OK")
++	wantCode(t, f.call(t, "battle-major-start", Object{"team_id": 10}), "OK")
++	wantCode(t, f.call(t, "room-gather", Object{"room_index": 5, "gather_session_id": session, "phase": "finish"}), "OK")
++}
++func TestMajorNotorietyBatchAndReplay(t *testing.T) {
++	f := setup(t)
++	rich(f)
++	raw, _ := json.Marshal(Object{"room_index": 2, "troop_type": 1, "count": 3})
++	req := Request{Player: "p", ID: uid(), Version: f.version, Action: "troop-train", Data: string(raw)}
++	reply, err := f.e.Execute(context.Background(), req)
++	if err != nil {
++		t.Fatal(err)
++	}
++	wantCode(t, reply, "OK")
++	reply, err = f.e.Execute(context.Background(), req)
++	if err != nil {
++		t.Fatal(err)
++	}
++	wantCode(t, reply, "OK")
++	if f.store.doc.State.Progress["notoriety"] != 10 {
++		t.Fatal("one batch/request replay must only add ten")
++	}
++}
++func TestMajorVictoryRewardAndFailurePenalty(t *testing.T) {
++	for _, win := range []bool{true, false} {
++		f := startMajor(t)
++		b := f.store.doc.State.Battle
++		for i := range b.Units {
++			if win && b.Units[i].Side == "enemy" || !win && b.Units[i].Side == "own" {
++				b.Units[i].Alive = false
++			}
++		}
++		before := clone(f.store.doc.State.Resources)
++		outcome := "lose"
++		if win {
++			outcome = "win"
++		}
++		data := Object{"battle_id": b.ID, "result": outcome, "duration_ms": 0, "last_event_seq": 0, "termination_reason": "elimination"}
++		raw, _ := json.Marshal(data)
++		req := Request{Player: "p", ID: uid(), Version: f.version, Action: "battle-end", Data: string(raw)}
++		response, err := f.e.Execute(context.Background(), req)
++		if err != nil {
++			t.Fatal(err)
++		}
++		wantCode(t, response, "OK")
++		again, err := f.e.Execute(context.Background(), req)
++		if err != nil {
++			t.Fatal(err)
++		}
++		wantCode(t, again, "OK")
++		s := f.store.doc.State
++		if s.Battle != nil || majorActive(s) {
++			t.Fatal("major state not released")
++		}
++		if win {
++			if s.Progress["current_stage_id"] != 2 || s.Resources["coin"] != before["coin"]+500 {
++				t.Fatal("victory did not grant one reward/advance stage")
++			}
++		} else {
++			for key, amount := range before {
++				if s.Resources[key] != amount-amount/10 {
++					t.Fatalf("incorrect penalty for %s", key)
++				}
++			}
++			if s.Progress["current_stage_id"] != 1 {
++				t.Fatal("failure advanced stage")
++			}
++		}
++	}
++}
++func TestMajorCheckpointRecoveryAndFloorValidation(t *testing.T) {
++	f := prepareMajor(t)
++	s := f.store.doc.State
++	s.Troops["soldier"].Available = 1
++	room(s, 0).Soldier = 1
++	wantCode(t, f.call(t, "battle-major-start", Object{"team_id": 10}), "OK")
++	b := f.store.doc.State.Battle
++	wantCode(t, f.call(t, "battle-major-checkpoint", Object{"battle_id": b.ID, "room_index": 1, "phase": "entering", "last_event_seq": 0, "units": []CheckpointUnit{}}), "RESULT_MISMATCH")
++	b = f.store.doc.State.Battle
++	var enemy *Unit
++	for i := range b.Units {
++		u := &b.Units[i]
++		if u.Side == "enemy" && enemy == nil {
++			enemy = u
++		}
++		if u.Side == "own" {
++			u.Alive = false
++		}
++	}
++	wantCode(t, f.call(t, "battle-major-checkpoint", Object{"battle_id": b.ID, "room_index": 1, "phase": "entering", "last_event_seq": 0, "units": []CheckpointUnit{{ID: enemy.ID, HP: 1, MP: 0}}}), "OK")
++	reply, err := f.e.Login(context.Background(), "p", uid(), "token")
++	if err != nil {
++		t.Fatal(err)
++	}
++	restored := reply.Data.State.Battle
++	if restored.CurrentRoom != 1 || restored.Checkpoint == nil || findUnit(restored, enemy.ID).HP != 1 || findUnit(restored, enemy.ID).MP != 0 {
++		t.Fatal("checkpoint did not survive login")
++	}
++}
+--- a/game/room.go
++++ b/game/room.go
+@@ -14,7 +14,7 @@
+ 	if r == nil {
+ 		return nil, fail("INVALID_ARGUMENT")
+ 	}
+-	if roomLocked(d, r.Index) {
++	if roomLocked(d, r.Index) && !(action == "room-gather" && a.Phase == "finish") {
+ 		return nil, fail("UNIT_BUSY")
+ 	}
+ 	if action == "room-lv-up" {
+--- a/game/types.go
++++ b/game/types.go
+@@ -61,14 +61,17 @@
+ 	Battle    *Battle           `json:"active_battle"`
+ }
+ type Unit struct {
+-	ID     string `json:"unit_instance_id"`
+-	Config int    `json:"config_id"`
+-	Side   string `json:"side"`
+-	Kind   string `json:"kind"`
+-	Troop  *int   `json:"troop_type"`
+-	Room   *int   `json:"source_room_index"`
+-	Alive  bool   `json:"alive"`
+-	Life   int    `json:"life_no"`
++	HP         int64      `json:"hp"`
++	MP         int64      `json:"mp"`
++	Attributes Attributes `json:"attributes,omitempty"`
++	ID         string     `json:"unit_instance_id"`
++	Config     int        `json:"config_id"`
++	Side       string     `json:"side"`
++	Kind       string     `json:"kind"`
++	Troop      *int       `json:"troop_type"`
++	Room       *int       `json:"source_room_index"`
++	Alive      bool       `json:"alive"`
++	Life       int        `json:"life_no"`
+ 	// Server-only immutable numerical and drop snapshots are stored separately.
+ }
+ type Event struct {
+@@ -82,18 +85,31 @@
+ 	LootID      string          `json:"loot_id,omitempty"`
+ 	Fingerprint string          `json:"-"`
+ }
++type CheckpointUnit struct {
++	ID string `json:"unit_instance_id"`
++	HP int64  `json:"hp"`
++	MP int64  `json:"mp"`
++}
++type MajorCheckpoint struct {
++	Room  int              `json:"room_index"`
++	Phase string           `json:"phase"`
++	Units []CheckpointUnit `json:"units"`
++}
+ type Battle struct {
+-	ID         string      `json:"battle_id"`
+-	Encounter  string      `json:"encounter_id"`
+-	Status     string      `json:"status"`
+-	Started    int64       `json:"started_at"`
+-	Expires    int64       `json:"expires_at"`
+-	Seq        int         `json:"last_event_seq"`
+-	Units      []Unit      `json:"units"`
+-	Events     []Event     `json:"events"`
+-	TeamID     int         `json:"team_id"`
+-	Members    string      `json:"members"`
+-	EnemySlots []EnemySlot `json:"enemy_slots"`
++	InvasionType string           `json:"invasion_type,omitempty"`
++	CurrentRoom  int              `json:"current_room_index,omitempty"`
++	Checkpoint   *MajorCheckpoint `json:"checkpoint,omitempty"`
++	ID           string           `json:"battle_id"`
++	Encounter    string           `json:"encounter_id"`
++	Status       string           `json:"status"`
++	Started      int64            `json:"started_at"`
++	Expires      int64            `json:"expires_at"`
++	Seq          int              `json:"last_event_seq"`
++	Units        []Unit           `json:"units"`
++	Events       []Event          `json:"events"`
++	TeamID       int              `json:"team_id"`
++	Members      string           `json:"members"`
++	EnemySlots   []EnemySlot      `json:"enemy_slots"`
+ }
+ 
+ // EnemySlot preserves one Members entry, including repeated hero IDs, in config order.
+--- a/game/configdata/shared.json
++++ b/game/configdata/shared.json
+@@ -886,6 +886,166 @@
+       "ReforgeSoul": 100,
+       "Race": 6
+     },
++    "101": {
++      "ID": 101,
++      "HP": 600,
++      "HPup": 100,
++      "MP": 100,
++      "MPup": 10,
++      "ATK": 20,
++      "ATKup": 10,
++      "DEF": 10,
++      "DEFup": 5,
++      "MDF": 20,
++      "MDFup": 20,
++      "INT": 20,
++      "INTup": 2,
++      "SPD": 20,
++      "SPDup": 1,
++      "LCA": 20,
++      "LCAup": 1,
++      "ResisFire": 10,
++      "ResisIce": 10,
++      "ResisWind": 10,
++      "ResisThunder": 10,
++      "ResisDark": 10,
++      "ResisShine": 10,
++      "Skill1": "1001",
++      "Skill2": "undefined",
++      "Skill3": "undefined",
++      "Ability1": "1001,8",
++      "Ability2": "1002,20",
++      "Ability3": "1003,30",
++      "Ability4": "1004,40",
++      "Ability5": "1005,50",
++      "Ability6": "1006,60",
++      "Ability7": "1007,70",
++      "Ability8": "1008,80",
++      "ReforgeCoin": 100,
++      "ReforgeFood": 100,
++      "ReforgeSoul": 100,
++      "Race": 6
++    },
++    "201": {
++      "ID": 201,
++      "HP": 1000,
++      "HPup": 100,
++      "MP": 100,
++      "MPup": 10,
++      "ATK": 20,
++      "ATKup": 10,
++      "DEF": 10,
++      "DEFup": 5,
++      "MDF": 20,
++      "MDFup": 20,
++      "INT": 20,
++      "INTup": 2,
++      "SPD": 20,
++      "SPDup": 1,
++      "LCA": 20,
++      "LCAup": 1,
++      "ResisFire": 10,
++      "ResisIce": 10,
++      "ResisWind": 10,
++      "ResisThunder": 10,
++      "ResisDark": 10,
++      "ResisShine": 10,
++      "Skill1": "1001",
++      "Skill2": "undefined",
++      "Skill3": "undefined",
++      "Ability1": "1001,8",
++      "Ability2": "1002,20",
++      "Ability3": "1003,30",
++      "Ability4": "1004,40",
++      "Ability5": "1005,50",
++      "Ability6": "1006,60",
++      "Ability7": "1007,70",
++      "Ability8": "1008,80",
++      "ReforgeCoin": 100,
++      "ReforgeFood": 100,
++      "ReforgeSoul": 100,
++      "Race": 6
++    },
++    "301": {
++      "ID": 301,
++      "HP": 800,
++      "HPup": 100,
++      "MP": 100,
++      "MPup": 10,
++      "ATK": 20,
++      "ATKup": 10,
++      "DEF": 10,
++      "DEFup": 5,
++      "MDF": 20,
++      "MDFup": 20,
++      "INT": 20,
++      "INTup": 2,
++      "SPD": 20,
++      "SPDup": 1,
++      "LCA": 20,
++      "LCAup": 1,
++      "ResisFire": 10,
++      "ResisIce": 10,
++      "ResisWind": 10,
++      "ResisThunder": 10,
++      "ResisDark": 10,
++      "ResisShine": 10,
++      "Skill1": "1001",
++      "Skill2": "undefined",
++      "Skill3": "undefined",
++      "Ability1": "1001,8",
++      "Ability2": "1002,20",
++      "Ability3": "1003,30",
++      "Ability4": "1004,40",
++      "Ability5": "1005,50",
++      "Ability6": "1006,60",
++      "Ability7": "1007,70",
++      "Ability8": "1008,80",
++      "ReforgeCoin": 100,
++      "ReforgeFood": 100,
++      "ReforgeSoul": 100,
++      "Race": 6
++    },
++    "401": {
++      "ID": 401,
++      "HP": 1500,
++      "HPup": 100,
++      "MP": 100,
++      "MPup": 10,
++      "ATK": 20,
++      "ATKup": 10,
++      "DEF": 10,
++      "DEFup": 5,
++      "MDF": 20,
++      "MDFup": 20,
++      "INT": 20,
++      "INTup": 2,
++      "SPD": 20,
++      "SPDup": 1,
++      "LCA": 20,
++      "LCAup": 1,
++      "ResisFire": 10,
++      "ResisIce": 10,
++      "ResisWind": 10,
++      "ResisThunder": 10,
++      "ResisDark": 10,
++      "ResisShine": 10,
++      "Skill1": "1001",
++      "Skill2": "undefined",
++      "Skill3": "undefined",
++      "Ability1": "1001,8",
++      "Ability2": "1002,20",
++      "Ability3": "1003,30",
++      "Ability4": "1004,40",
++      "Ability5": "1005,50",
++      "Ability6": "1006,60",
++      "Ability7": "1007,70",
++      "Ability8": "1008,80",
++      "ReforgeCoin": 100,
++      "ReforgeFood": 100,
++      "ReforgeSoul": 100,
++      "Race": 6
++    },
+     "910": {
+       "ID": 910,
+       "Name": "skullSoldier",
+@@ -1281,166 +1441,6 @@
+       "ReforgeFood": 100,
+       "ReforgeSoul": 10,
+       "Race": 6
+-    },
+-    "101": {
+-      "ID": 101,
+-      "HP": 600,
+-      "HPup": 100,
+-      "MP": 100,
+-      "MPup": 10,
+-      "ATK": 20,
+-      "ATKup": 10,
+-      "DEF": 10,
+-      "DEFup": 5,
+-      "MDF": 20,
+-      "MDFup": 20,
+-      "INT": 20,
+-      "INTup": 2,
+-      "SPD": 20,
+-      "SPDup": 1,
+-      "LCA": 20,
+-      "LCAup": 1,
+-      "ResisFire": 10,
+-      "ResisIce": 10,
+-      "ResisWind": 10,
+-      "ResisThunder": 10,
+-      "ResisDark": 10,
+-      "ResisShine": 10,
+-      "Skill1": "1001",
+-      "Skill2": "undefined",
+-      "Skill3": "undefined",
+-      "Ability1": "1001,8",
+-      "Ability2": "1002,20",
+-      "Ability3": "1003,30",
+-      "Ability4": "1004,40",
+-      "Ability5": "1005,50",
+-      "Ability6": "1006,60",
+-      "Ability7": "1007,70",
+-      "Ability8": "1008,80",
+-      "ReforgeCoin": 100,
+-      "ReforgeFood": 100,
+-      "ReforgeSoul": 100,
+-      "Race": 6
+-    },
+-    "201": {
+-      "ID": 201,
+-      "HP": 1000,
+-      "HPup": 100,
+-      "MP": 100,
+-      "MPup": 10,
+-      "ATK": 20,
+-      "ATKup": 10,
+-      "DEF": 10,
+-      "DEFup": 5,
+-      "MDF": 20,
+-      "MDFup": 20,
+-      "INT": 20,
+-      "INTup": 2,
+-      "SPD": 20,
+-      "SPDup": 1,
+-      "LCA": 20,
+-      "LCAup": 1,
+-      "ResisFire": 10,
+-      "ResisIce": 10,
+-      "ResisWind": 10,
+-      "ResisThunder": 10,
+-      "ResisDark": 10,
+-      "ResisShine": 10,
+-      "Skill1": "1001",
+-      "Skill2": "undefined",
+-      "Skill3": "undefined",
+-      "Ability1": "1001,8",
+-      "Ability2": "1002,20",
+-      "Ability3": "1003,30",
+-      "Ability4": "1004,40",
+-      "Ability5": "1005,50",
+-      "Ability6": "1006,60",
+-      "Ability7": "1007,70",
+-      "Ability8": "1008,80",
+-      "ReforgeCoin": 100,
+-      "ReforgeFood": 100,
+-      "ReforgeSoul": 100,
+-      "Race": 6
+-    },
+-    "301": {
+-      "ID": 301,
+-      "HP": 800,
+-      "HPup": 100,
+-      "MP": 100,
+-      "MPup": 10,
+-      "ATK": 20,
+-      "ATKup": 10,
+-      "DEF": 10,
+-      "DEFup": 5,
+-      "MDF": 20,
+-      "MDFup": 20,
+-      "INT": 20,
+-      "INTup": 2,
+-      "SPD": 20,
+-      "SPDup": 1,
+-      "LCA": 20,
+-      "LCAup": 1,
+-      "ResisFire": 10,
+-      "ResisIce": 10,
+-      "ResisWind": 10,
+-      "ResisThunder": 10,
+-      "ResisDark": 10,
+-      "ResisShine": 10,
+-      "Skill1": "1001",
+-      "Skill2": "undefined",
+-      "Skill3": "undefined",
+-      "Ability1": "1001,8",
+-      "Ability2": "1002,20",
+-      "Ability3": "1003,30",
+-      "Ability4": "1004,40",
+-      "Ability5": "1005,50",
+-      "Ability6": "1006,60",
+-      "Ability7": "1007,70",
+-      "Ability8": "1008,80",
+-      "ReforgeCoin": 100,
+-      "ReforgeFood": 100,
+-      "ReforgeSoul": 100,
+-      "Race": 6
+-    },
+-    "401": {
+-      "ID": 401,
+-      "HP": 1500,
+-      "HPup": 100,
+-      "MP": 100,
+-      "MPup": 10,
+-      "ATK": 20,
+-      "ATKup": 10,
+-      "DEF": 10,
+-      "DEFup": 5,
+-      "MDF": 20,
+-      "MDFup": 20,
+-      "INT": 20,
+-      "INTup": 2,
+-      "SPD": 20,
+-      "SPDup": 1,
+-      "LCA": 20,
+-      "LCAup": 1,
+-      "ResisFire": 10,
+-      "ResisIce": 10,
+-      "ResisWind": 10,
+-      "ResisThunder": 10,
+-      "ResisDark": 10,
+-      "ResisShine": 10,
+-      "Skill1": "1001",
+-      "Skill2": "undefined",
+-      "Skill3": "undefined",
+-      "Ability1": "1001,8",
+-      "Ability2": "1002,20",
+-      "Ability3": "1003,30",
+-      "Ability4": "1004,40",
+-      "Ability5": "1005,50",
+-      "Ability6": "1006,60",
+-      "Ability7": "1007,70",
+-      "Ability8": "1008,80",
+-      "ReforgeCoin": 100,
+-      "ReforgeFood": 100,
+-      "ReforgeSoul": 100,
+-      "Race": 6
+     }
+   },
+   "OverseerBasicStats": {
+@@ -2375,7 +2375,7 @@
+       "Coin": 500,
+       "Food": 500,
+       "Soul": 10,
+-      "Visual": "undefined",
++      "Visual": "chest_01",
+       "Remark": "测试掉落"
+     },
+     "15": {
+@@ -2384,7 +2384,7 @@
+       "Coin": 500,
+       "Food": 500,
+       "Soul": 10,
+-      "Visual": "undefined",
++      "Visual": "chest_01",
+       "Remark": "测试掉落"
+     }
+   },

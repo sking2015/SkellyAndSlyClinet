@@ -21,7 +21,7 @@ export class CBattleFormation {
     private disposed = false;
     failed = false;
 
-    constructor(public readonly room: CBaseRoom, public readonly camp: eBattleCamp,
+    constructor(public room: CBaseRoom, public readonly camp: eBattleCamp,
         private initialX: (id: eCCharacterID, slotKey: FormationSlotKey) => number,
         private configure: (char: CCharacter, replacement: boolean, slotKey: FormationSlotKey) => void,
         private onLoss: (id: eCCharacterID, count: number, slotKey: FormationSlotKey) => void = () => {}) {
@@ -31,6 +31,14 @@ export class CBattleFormation {
     getActive(key: FormationSlotKey): CCharacter { return this.slots.get(key)?.active || null; }
     getCount(key: FormationSlotKey): number { return this.slots.get(key)?.count || 0; }
     getActiveCharacters(): CCharacter[] { return Array.from(this.slots.values()).map(slot => slot.active).filter(Boolean); }
+    moveToRoom(room: CBaseRoom) {
+        this.room = room;
+        for (const char of this.getActiveCharacters()) {
+            CCharactersManager.instance.moveCharacterToRoom(char, room);
+            char.node.parent = room.nodeCharLayer;
+            char.node.y = 0;
+        }
+    }
     isSlotLoading(key: FormationSlotKey): boolean { return this.slots.get(key)?.loading || false; }
     isLoading(): boolean { return Array.from(this.slots.values()).some(slot => slot.loading); }
 
@@ -58,7 +66,15 @@ export class CBattleFormation {
     }
     hasForces(): boolean {
         return !this.disposed && Array.from(this.slots.values())
-            .some(slot => slot.count > 0 && (slot.loading || slot.active?.IsAlive()));
+            .some(slot => slot.count > 0 && (slot.loading || slot.active?.IsAlive() || this.failed));
+    }
+
+    async retryFailed() {
+        if (this.disposed || !this.failed || this.isLoading()) return;
+        this.failed = false;
+        for (const [key, slot] of this.slots) {
+            if (slot.count > 0 && !slot.active && !slot.loading) await this.spawn(key, slot, true);
+        }
     }
 
     async setCount(id: eCCharacterID, count: number) {
@@ -137,6 +153,12 @@ export class CBattleFormation {
             this.configure(char, replacement, key);
         } catch (error) {
             if (!this.disposed && slot.version === version) {
+                if (slot.active) {
+                    BattleSync.instance.releaseFailedBinding(slot.active);
+                    slot.active.onBattleDeath = null;
+                    CCharactersManager.instance.DeleteCharater(slot.active);
+                    slot.active = null;
+                }
                 this.failed = true;
                 console.error('战斗编制角色创建失败', id, error);
             }

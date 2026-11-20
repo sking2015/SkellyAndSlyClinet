@@ -1,4 +1,5 @@
 import { director } from 'cc';
+import { invasionState } from './InvasionState';
 import { WebSession } from './WebSession';
 import { GameConfig, SessionResult, GameState } from './GameConfig';
 import { CGlobalData } from './GlobalData';
@@ -26,8 +27,10 @@ class GameStateMgr {
     get stateVersion() { return this.version; }
     get activeBattle(): BattleState { return this.latest?.active_battle || null; }
     isRoomBattleLocked(index: number): boolean {
+        if (invasionState.locked) return true;
         const battle = this.activeBattle;
         if (!battle || battle.status !== 'active') return false;
+        if (battle.invasion_type === 'Major') return true;
         // Protocol v1 currently starts minor invasions only in the exterior (0).
         return index === (battle.room_index == null ? 0 : battle.room_index);
     }
@@ -105,6 +108,10 @@ class GameStateMgr {
         } catch (error) { console.error('[Pending requests retained]', error); return false; }
     }
     operation<R = any>(action: string, data: any, requestId = newRequestId()): Promise<OperationResult<R>> {
+        if (invasionState.locked && action !== 'state-sync' && !action.startsWith('battle-')
+            && !(action === 'room-gather' && data.phase === 'finish')) {
+            return Promise.resolve({ ok: false, code: 'MAJOR_BATTLE_LOCKED' });
+        }
         if (!this.online) return Promise.resolve({ ok: true, code: 'OFFLINE' });
         const run = async (): Promise<OperationResult<R>> => {
             if (!this.playerToken) return { ok: false, code: 'UNAUTHORIZED' };

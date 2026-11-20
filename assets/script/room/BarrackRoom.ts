@@ -1,4 +1,5 @@
 import { gameStateMgr } from '../GameStateMgr';
+import { invasionState } from '../InvasionState';
 import { _decorator, Component, Prefab, Node } from 'cc';
 import { CCheckGroup } from '../common/checkGroup';
 import { CBaseRoom } from './BaseRoom';
@@ -166,6 +167,7 @@ export class CBarrackRoom extends CBaseRoom {
     bProducingTroop: boolean = false;
     private submitting = false;
     async onClickProduceBtn() {
+        if (invasionState.locked) return;
         if (this.submitting || this.bProducingTroop || this.trainingTroopCount <= 0) return;
         if (gameStateMgr.online) {
             this.submitting = true;
@@ -180,6 +182,7 @@ export class CBarrackRoom extends CBaseRoom {
 
     nGenInterval: number = 0;
     update(deltaTime: number) {
+        if (invasionState.locked) return;
         if (this.bProducingTroop) {
             this.nGenInterval -= deltaTime;
             if (this.nGenInterval <= 0) {
@@ -187,6 +190,7 @@ export class CBarrackRoom extends CBaseRoom {
                 this.nGenInterval = 0.2;
                 if (this.trainingTroopCount <= 0) {
                     this.bProducingTroop = false;
+                    if (!gameStateMgr.online) invasionState.addAction();
                 }
             }
         }

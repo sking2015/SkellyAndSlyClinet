@@ -8,6 +8,7 @@ const ts = require(process.argv[2] || 'typescript');
 const root = path.resolve(__dirname, '../assets/script');
 const cache = new Map();
 const room = { index: 1 };
+const feed = { model_id: -1, HP: 500, MP: 40, ATK: 100, DEF: 12, INT: 13, MDF: 14, SPD: 15, LCA: 16 };
 class Character {
     constructor() {
         this.node = { activeInHierarchy: true };
@@ -35,6 +36,7 @@ class Character {
 }
 const cc = {
     Component: class {},
+    NodePool: class {},
     Vec3: class { constructor(x = 0, y = 0, z = 0) { Object.assign(this, { x, y, z }); } },
     _decorator: { ccclass: () => value => value, property: () => () => {} },
     Animation: { EventType: { FINISHED: 'finished' } },
@@ -51,6 +53,7 @@ function load(relative) {
     const localRequire = name => {
         if (name === 'cc') return cc;
         if (name.endsWith('/GameStateMgr')) return { gameStateMgr: { online: false } };
+        if (name.endsWith('/GlobalData')) return { CGlobalData: { instance: { dataFeed: feed } } };
         const target = path.resolve(path.dirname(file), `${name}.ts`);
         if (target === path.join(root, 'character/character.ts')) return { CCharacter: Character };
         if (target === path.join(root, 'character/overseer.ts')) return { COverseer: Character };
@@ -95,6 +98,28 @@ for (const [table, offset] of [[MonstersData, 0], [HerosData, 1000]]) {
         actor.loadData();
         assert.equal(actor.skills.length, ids.length);
     }
+}
+feed.model_id = 100;
+const skelly = role(100);
+assert.equal(skelly.getHP(), 500, 'Skelly spawns with fed HP');
+assert.equal(skelly._MaxHP, 500);
+assert.equal(skelly.ATK, 100, 'Skelly uses fed attack instead of monster template');
+for (const key of ['DEF', 'INT', 'MDF', 'SPD', 'LCA']) assert.equal(skelly[key], feed[key]);
+const basicAttack = CSkillFactory.CreateSkill(skelly, 1001);
+assert.equal(basicAttack.GetEffectData().power, SkillsCfgData[1001].BaseData + 100,
+    'actual physical skill power includes fed attack');
+skelly.popDamage = () => {};
+skelly.onDamage(80);
+assert.equal(skelly.getHP(), 420, 'damage is deducted from fed HP');
+feed.HP = 600; feed.ATK = 120;
+skelly.refreshFeedAttributes();
+assert.equal(skelly.getHP(), 600, 'existing defender picks up feeding before the next invasion');
+assert.equal(skelly.ATK, 120);
+assert.equal(role(1001).ATK, HerosData[1].ATK, 'feeding does not affect enemy heroes');
+feed.model_id = -1;
+if (process.argv.includes('--feed-only')) {
+    console.log('PASS: fed attributes apply to Skelly HP, skill power, and existing defenders');
+    process.exit(0);
 }
 const dragon = role(4), enemy = role(1001);
 dragon.x = 0; enemy.x = 25;

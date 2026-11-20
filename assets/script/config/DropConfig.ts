@@ -134,7 +134,7 @@ export const DropConfigData: Record<string | number, IDropConfig> = {
         "Coin": 500,
         "Food": 500,
         "Soul": 10,
-        "Visual": "undefined",
+        "Visual": "chest_01",
         "Remark": "测试掉落"
     },
     15: {
@@ -143,7 +143,7 @@ export const DropConfigData: Record<string | number, IDropConfig> = {
         "Coin": 500,
         "Food": 500,
         "Soul": 10,
-        "Visual": "undefined",
+        "Visual": "chest_01",
         "Remark": "测试掉落"
     }
 };

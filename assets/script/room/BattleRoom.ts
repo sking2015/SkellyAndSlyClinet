@@ -1,6 +1,8 @@
 import { BattleSync } from '../BattleSync';
+import { invasionState } from '../InvasionState';
+import type { BattleState } from '../Protocol';
 import { gameStateMgr } from '../GameStateMgr';
-import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, SpriteFrame, Label, UITransform, Vec3 } from 'cc';
+import { _decorator, Component, Node, EventTouch, tween, Tween, UIOpacity, Sprite, SpriteFrame, Label, UITransform, Vec3, isValid } from 'cc';
 import { CBaseRoom } from './BaseRoom';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { setNodeVisibleWithFade } from '../common/common';
@@ -70,9 +72,12 @@ export class CBattleRoom extends CBaseRoom {
     private defensePhase: 'patrol' | 'alert' | 'forming' | 'ready' | 'battle' = 'patrol';
     private alertRemaining = 0;
     private configurationVersion = 0;
+    private checkingConfiguration = false;
+    private majorPreparing = false;
+    private formationRetry = 0;
 
     get isConfigurationLocked(): boolean {
-        return this.defensePhase !== 'patrol'
+        return invasionState.locked || (!this.majorPreparing && this.defensePhase !== 'patrol')
             || !!(gameStateMgr.online && gameStateMgr.isRoomBattleLocked(this.index));
     }
     private slotIds = { charGuard: eCCharacterID.eciNone, charSoldier: eCCharacterID.eciNone,
@@ -88,7 +93,10 @@ export class CBattleRoom extends CBaseRoom {
                 if (slot) this[slot] = char;
                 const role = char as CBattleRole;
                 if (this.defensePhase === 'battle') {
-                    if (replacement) role.reinforcementTargetX = position(char.eCharId);
+                    if (replacement) {
+                        role.reinforcementTargetX = position(char.eCharId);
+                        role.logBattleAttributes('替补出场');
+                    }
                 } else if (this.defensePhase === 'patrol') {
                     this.startPatrol(role);
                 } else {
@@ -146,9 +154,49 @@ export class CBattleRoom extends CBaseRoom {
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_configuration_locked, true, { roomIndex: this.index }));
         this.alertRemaining = 1.2;
         for (const role of this.getDefenders()) {
+            role.refreshFeedAttributes();
             role.holdDeployment();
             role.showExclamation(this.sfExclamation);
         }
+    }
+
+    beginMajorPreparation() {
+        this.majorPreparing = true;
+        this.defensePhase = 'forming';
+        this.refreshExpand();
+        for (const role of this.getDefenders()) role.refreshFeedAttributes();
+        this.formDefenders();
+    }
+
+    hasDefendingForces(): boolean { return !!this.formation?.hasForces(); }
+
+    async recoverMajorDefenders(battle: BattleState) {
+        this.majorPreparing = false;
+        this.defensePhase = 'forming';
+        const living = battle.units.filter(u => u.side === 'own' && u.source_room_index === this.index && u.alive);
+        this.eGuardId = (living.find(u => u.kind === 'lord')?.config_id || eCCharacterID.eciNone) as eCCharacterID;
+        this.nSoldierNum = living.filter(u => u.troop_type === 1).length;
+        this.nArcherNum = living.filter(u => u.troop_type === 2).length;
+        this.nMageNum = living.filter(u => u.troop_type === 3).length;
+        await this.refreshGuardRole(); await this.refreshSoldierRole();
+        await this.refreshArcherRole(); await this.refreshMageRole();
+        this.bindBattleInstances();
+        this.formDefenders();
+    }
+
+    restoreMajorDefenders() {
+        // Dead lords stay assigned in global state, but cannot respawn during this battle.
+        this.majorPreparing = false;
+        this.endMinorInvasion();
+        for (const role of this.getDefenders()) role.setMP(role._MaxMP);
+    }
+
+    lockMajorBattle() {
+        this.majorPreparing = false;
+        ++this.configurationVersion;
+        this.CloseExpand();
+        setNodeVisibleWithFade(this.nodeSwitchExpand, false);
+        this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_configuration_locked, true, { roomIndex: this.index }));
     }
 
     private formDefenders() {
@@ -181,6 +229,11 @@ export class CBattleRoom extends CBaseRoom {
     }
 
     update(dt: number) {
+        this.formationRetry = Math.max(0, this.formationRetry - dt);
+        if (this.formation?.failed && this.formationRetry <= 0) {
+            this.formationRetry = 3;
+            void this.formation.retryFailed();
+        }
         if (this.defensePhase === 'alert') {
             this.alertRemaining -= dt;
             if (this.alertRemaining <= 0 && this.getDefenders().every(role => !role.isShowingExclamation())) {
@@ -249,7 +302,7 @@ export class CBattleRoom extends CBaseRoom {
     refreshExpand() {
         // Reading the same snapshot again must still repair a missing scene entity.
         // During battle only the formation may change its living roster.
-        if (this.defensePhase === 'patrol') {
+        if (this.defensePhase === 'patrol' || this.majorPreparing) {
             const data = CGlobalData.instance;
             this.eGuardId = data.getRoomGuardIdByIndex(this.index);
             this.nSoldierNum = data.getRoomSoldierNumByIndex(this.index);
@@ -341,8 +394,32 @@ export class CBattleRoom extends CBaseRoom {
         console.log("点击了房间的确认按钮");
     }
 
+    private logConfiguration(action: string, details: Record<string, unknown> = {}) {
+        const battle = gameStateMgr.activeBattle;
+        const snapshot = BattleSync.instance.snapshot;
+        const serverNow = gameStateMgr.serverNow;
+        // Serialize immediately: DevTools otherwise shows objects as they change later.
+        console.log('[房间配置诊断] ' + JSON.stringify({
+            action, timestamp: new Date().toISOString(), room_index: this.index, room_type: this.roomType,
+            online: gameStateMgr.online, state_version: gameStateMgr.stateVersion,
+            defense_phase: this.defensePhase, configuration_locked: this.isConfigurationLocked,
+            server_locked: !!(gameStateMgr.online && gameStateMgr.isRoomBattleLocked(this.index)),
+            checking_configuration: this.checkingConfiguration,
+            panel_open: this.bOpneExpandPanel, panel_active: this.nodeExpandPanel?.active,
+            node_valid: isValid(this.node, true), node_active: this.node?.activeInHierarchy,
+            server_now: serverNow,
+            active_battle: battle ? { battle_id: battle.battle_id, status: battle.status,
+                room_index: battle.room_index ?? 0, started_at: battle.started_at, expires_at: battle.expires_at,
+                remaining_ms: battle.expires_at - serverNow, last_event_seq: battle.last_event_seq } : null,
+            local_battle: snapshot ? { battle_id: snapshot.battle_id, status: snapshot.status } : null,
+            ...details,
+        }));
+    }
+
     onOpenExpand() {
+        this.logConfiguration('尝试展开');
         if (this.isConfigurationLocked) {
+            this.logConfiguration('战斗锁阻止展开');
             console.warn('[房间展开] 战斗锁阻止展开', { room_index: this.index,
                 defense_phase: this.defensePhase, battle_id: gameStateMgr.activeBattle?.battle_id,
                 battle_status: gameStateMgr.activeBattle?.status, expires_at: gameStateMgr.activeBattle?.expires_at });
@@ -352,6 +429,7 @@ export class CBattleRoom extends CBaseRoom {
             return;
         }
         super.onOpenExpand();
+        this.logConfiguration('面板已展开');
         if (this.roomType === eRoomType.ertCastleOutSide) return;
         console.log("点击展开按钮，展开房间的扩展面板");
 
@@ -378,8 +456,44 @@ export class CBattleRoom extends CBaseRoom {
         Tween.stopAllByTarget(this.nodeCombatDataPanel);
     }
 
-    onClickSetting() {
-        if (!this.isConfigurationLocked) super.onClickSetting();
+    async onClickSetting() {
+        this.logConfiguration('点击设置按钮');
+        if (this.checkingConfiguration) {
+            this.logConfiguration('同步进行中，忽略重复点击');
+            return;
+        }
+        if (gameStateMgr.online && gameStateMgr.isRoomBattleLocked(this.index)) {
+            this.checkingConfiguration = true;
+            try {
+                this.logConfiguration('开始同步战斗状态');
+                // state-sync lets the server settle expired battles before checking the lock again.
+                const reply = await gameStateMgr.syncState();
+                this.logConfiguration('战斗状态同步返回', { ok: reply.ok, code: reply.code });
+                if (!isValid(this.node, true)) return;
+                if (!reply.ok) {
+                    this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, {
+                        tips: '战斗状态同步失败，请稍后重试',
+                    }));
+                    return;
+                }
+                if (!gameStateMgr.isRoomBattleLocked(this.index) && this.defensePhase !== 'patrol') {
+                    this.logConfiguration('服务器已解锁，清理本地战斗状态');
+                    this.endMinorInvasion();
+                }
+            } catch (error) {
+                this.logConfiguration('战斗状态同步异常', { error: String(error) });
+                console.warn('[房间配置] 同步战斗状态失败', error);
+                if (isValid(this.node, true)) this.node.dispatchEvent(new CustomEvent(UniEvent.on_pop_tips, true, {
+                    tips: '战斗状态同步失败，请稍后重试',
+                }));
+                return;
+            } finally {
+                this.checkingConfiguration = false;
+            }
+        }
+        // onOpenExpand supplies the lock diagnostic and user-facing message if still locked.
+        this.logConfiguration(this.bOpneExpandPanel ? '执行收起面板' : '执行打开面板');
+        super.onClickSetting();
     }
 
     onClickRoomUpgrade() {

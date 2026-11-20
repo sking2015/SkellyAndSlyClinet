@@ -2,7 +2,7 @@ import { BattleSync } from './BattleSync';
 import { CItem } from './Item';
 import { game, Game } from 'cc';
 import { gameStateMgr } from './GameStateMgr';
-import { _decorator, Component, Node, ScrollView, Prefab, Label, Sprite, UITransform, Vec3, instantiate, isValid, PhysicsSystem2D, EPhysics2DDrawFlags } from 'cc';
+import { _decorator, Component, Node, ScrollView, Prefab, Label, Sprite, UITransform, Layout, Vec2, Vec3, instantiate, isValid, PhysicsSystem2D, EPhysics2DDrawFlags } from 'cc';
 import { CustomEvent, UniEvent } from './common/CustomEvent';
 import OSSelectPanel from './OSSelectPanel';
 import CRoomUpgradePanel from './RoomUpgradePanel';
@@ -195,6 +195,7 @@ export class main extends Component {
 
 
     startListnerEvent() {
+        this.node.on(UniEvent.on_major_floor, this.onMajorFloor, this);
         this.node.on(UniEvent.on_gather_preview, this.onGatherPreview, this);
         this.node.on(UniEvent.on_drop_loot, this.onDropLoot, this);
         this.node.on(UniEvent.on_collect_loot, this.onCollectLoot, this);
@@ -219,6 +220,7 @@ export class main extends Component {
     }
 
     stopListnerEvent() {
+        this.node.off(UniEvent.on_major_floor, this.onMajorFloor, this);
         this.node.off(UniEvent.on_gather_preview, this.onGatherPreview, this);
         this.node.off(UniEvent.on_drop_loot, this.onDropLoot, this);
         this.node.off(UniEvent.on_collect_loot, this.onCollectLoot, this);
@@ -370,6 +372,26 @@ export class main extends Component {
         if (this.comRoomUpgradePanel.nCurRoomIndex === index && this.comRoomUpgradePanel.node.active) {
             this.comRoomUpgradePanel.onClose();
         }
+    }
+
+    private onMajorFloor(event: CustomEvent) {
+        // Follow the invasion while room input is locked.
+        this.roomSV.stopAutoScroll();
+        const room = this.roomList.rooms[event.detail.roomIndex];
+        this.scheduleOnce(() => {
+            if (!room || !isValid(room.node, true)) return;
+            const content = this.roomSV.content;
+            for (const child of content.children) child.getComponent(Layout)?.updateLayout();
+            content.getComponent(Layout)?.updateLayout();
+            const transform = content.getComponent(UITransform);
+            const position = transform.convertToNodeSpaceAR(room.nodeCharLayer.worldPosition);
+            const offset = transform.height * (1 - transform.anchorY) - position.y - this.roomSV.view.height * 0.65;
+            this.roomSV.scrollToOffset(new Vec2(0, Math.max(0, Math.min(offset, this.roomSV.getMaxScrollOffset().y))), 0.5);
+        }, 0.35);
+        this.comMALPanel.Show(false);
+        this.comMDPanel.Close();
+        this.comTroopUpgradePanel.Show(false);
+        this.onCloseRoomFunPanel();
     }
 
     //打开房间功能面板

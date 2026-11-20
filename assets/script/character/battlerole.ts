@@ -15,6 +15,7 @@ import { CStatuBar } from '../StatuBar';
 import { CSkillFactory } from '../skills/gskillFactroy';
 import { IHeros, HerosData } from '../config/Heros';
 import { IMonsters, MonstersData } from '../config/Monsters';
+import { CGlobalData } from '../GlobalData';
 
 
 
@@ -118,11 +119,32 @@ export class CBattleRole extends COverseer {
     isDeploymentReady(): boolean { return this.deploymentMode === 'hold'; }
 
     startDeploymentBattle() {
+        this.logBattleAttributes('战斗开始');
         this.hideExclamation();
         this.deploymentMode = null;
         this.setInBattle(true);
         this.aiBoostTime = 0;
         this.SwitchToStand();
+    }
+
+    logBattleAttributes(reason: string) {
+        // 固定打印当时的实际战斗属性，便于直接复制日志核对。
+        console.log('[出战角色属性] ' + JSON.stringify({
+            reason, battle_id: gameStateMgr.activeBattle?.battle_id ?? null,
+            room_index: this.room?.index, character_id: this.eCharId,
+            character_name: this.config?.Name, node_uuid: this.node?.uuid,
+            camp: this.nCamp === eBattleCamp.ebcDemon ? '己方' : '敌方',
+            HP: this._HP, MaxHP: this._MaxHP, MP: this._MP, MaxMP: this._MaxMP,
+            ATK: this.ATK, DEF: this.DEF, INT: this.INT, MDF: this.MDF,
+            SPD: this.SPD, LCA: this.LCA,
+        }));
+    }
+
+    applyInvasionLevel(level: number) {
+        const cfg = this.config as any;
+        for (const key of ['ATK', 'DEF', 'INT', 'MDF', 'SPD', 'LCA']) this[key] = cfg[key] + (cfg[key + 'up'] || 0) * level;
+        this.setMaxHP(cfg.HP + (cfg.HPup || 0) * level); this.setHP(this._MaxHP);
+        this.setMaxMP(cfg.MP + (cfg.MPup || 0) * level); this.setMP(this._MaxMP);
     }
 
     showExclamation(frame: SpriteFrame) {
@@ -440,6 +462,7 @@ export class CBattleRole extends COverseer {
         this.INT = cfg.INT;
         this.SPD = cfg.SPD;
         this.LCA = cfg.LCA;
+        this.refreshFeedAttributes();
         this.ResisFire = cfg.ResisFire;
         this.ResisIce = cfg.ResisIce;
         this.ResisWind = cfg.ResisWind;
@@ -451,6 +474,28 @@ export class CBattleRole extends COverseer {
         this.charTar = null;
         this.arrTargets = [];
         this.maxSkillRange = 0;
+    }
+
+    // 喂养属性是魔王的最终属性，与服务器战斗快照一致，不叠加模板基础值。
+    // 仅在创建或新一轮入侵开始前调用，避免战斗中同步数据造成回血。
+    refreshFeedAttributes() {
+        const feed = CGlobalData.instance.dataFeed;
+        if (!feed || this.eCharId !== feed.model_id) return;
+        this.setMaxHP(feed.HP);
+        this.setHP(feed.HP);
+        this.setMaxMP(feed.MP);
+        this.setMP(feed.MP);
+        this.ATK = feed.ATK;
+        this.DEF = feed.DEF;
+        this.INT = feed.INT;
+        this.MDF = feed.MDF;
+        this.SPD = feed.SPD;
+        this.LCA = feed.LCA;
+        console.log('[Skelly战斗属性] ' + JSON.stringify({
+            character_id: this.eCharId, room_index: this.room?.index, source: 'dataFeed',
+            HP: this._HP, MaxHP: this._MaxHP, MP: this._MP, ATK: this.ATK,
+            DEF: this.DEF, INT: this.INT, MDF: this.MDF, SPD: this.SPD, LCA: this.LCA,
+        }));
     }
 
     playFlash(cb: Function) {

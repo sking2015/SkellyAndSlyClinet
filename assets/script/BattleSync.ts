@@ -21,6 +21,42 @@ export class BattleSync {
     }
     get snapshot() { return this.battle; }
     get active() { return !!this.battle && this.battle.status === 'active'; }
+    lastSettlement: { loot?: LootSettlement; outcome?: string } = null;
+    async startMajor(teamId: number): Promise<boolean> {
+        const reply = await gameStateMgr.operation<{ battle: BattleState }>('battle-major-start', { team_id: teamId });
+        if (!reply.ok || !reply.result?.battle) return false;
+        this.adoptMajor(reply.result.battle);
+        return true;
+    }
+    adoptMajor(battle: BattleState) {
+        this.battle = battle;
+        this.seq = battle.last_event_seq;
+        this.assigned.clear(); this.bindings = new WeakMap(); this.queue = [];
+        this.lastSettlement = null;
+        this.liveCharacters.clear();
+        this.persist();
+    }
+    async checkpointMajor(roomIndex: number, phase: 'entering'|'active'|'leaving'): Promise<boolean> {
+        if (!gameStateMgr.online) return true;
+        if (!await this.flush()) return false;
+        const units: Array<{ unit_instance_id: string; hp: number; mp: number }> = [];
+        for (const [id, char] of this.liveCharacters) {
+            if (!char.IsAlive()) continue;
+            const role = char as any;
+            units.push({ unit_instance_id: id, hp: Math.max(1, Math.ceil(role._HP)), mp: Math.max(0, Math.floor(role._MP)) });
+        }
+        return (await gameStateMgr.operation('battle-major-checkpoint', {
+            battle_id: this.battle.battle_id, room_index: roomIndex, phase, units, last_event_seq: this.seq,
+        })).ok;
+    }
+    private liveCharacters = new Map<string, CCharacter>();
+    releaseFailedBinding(char: CCharacter) {
+        const unit = this.bindings.get(char);
+        if (!unit) return;
+        this.assigned.delete(unit.unit_instance_id);
+        this.liveCharacters.delete(unit.unit_instance_id);
+        this.bindings.delete(char);
+    }
     private persist() {
         localStorage.setItem(KEY, JSON.stringify({ player_id: gameStateMgr.playerId,
             battle_id: this.battle?.battle_id, seq: this.seq, queue: this.queue }));
@@ -61,6 +97,7 @@ export class BattleSync {
             team_id: this.battle.team_id, enemy_slots: this.battle.enemy_slots,
             enemy_unit_count: this.battle.units.filter(u => u.side === 'enemy').length });
         this.seq = this.battle.last_event_seq;
+        this.liveCharacters.clear();
         this.assigned.clear(); this.bindings = new WeakMap(); this.queue = [];
         this.persist(); return true;
     }
@@ -77,12 +114,23 @@ export class BattleSync {
         if (!unit) throw new Error(`No server battle instance for ${side}:${char.eCharId}`);
         this.assigned.add(unit.unit_instance_id);
         this.bindings.set(char, { ...unit });
+        if (this.battle.invasion_type === 'Major') {
+            this.liveCharacters.set(unit.unit_instance_id, char);
+            const role = char as any;
+            if (unit.attributes) {
+                role.setMaxHP(unit.attributes.HP); role.setMaxMP(unit.attributes.MP);
+                for (const key of ['ATK', 'DEF', 'INT', 'MDF', 'SPD', 'LCA']) role[key] = unit.attributes[key];
+            }
+            if (unit.hp != null) role.setHP(unit.hp);
+            if (unit.mp != null) role.setMP(unit.mp);
+        }
     }
     died(char: CCharacter) {
         if (!gameStateMgr.online) return;
         const unit = this.bindings.get(char);
         if (!unit || !unit.alive) return;
         unit.alive = false;
+        this.liveCharacters.delete(unit.unit_instance_id);
         this.enqueue(unit.side === 'enemy' ? 'battle-enemy-hero-killed' : 'battle-own-unit-killed', {
             unit_instance_id: unit.unit_instance_id, life_no: unit.life_no,
         }, char);
@@ -138,6 +186,7 @@ export class BattleSync {
                 return false;
             }
             if (reply.result?.loot) {
+                if (event.action === 'battle-end') this.lastSettlement = reply.result;
                 const char = this.sources.get(event.data.event_id);
                 this.lootListeners.forEach(fn => {
                     try { fn(reply.result.loot, char); } catch (error) { console.error('[Loot presentation]', error); }
@@ -148,14 +197,14 @@ export class BattleSync {
         }
         return true;
     }
-    async end(win: boolean): Promise<boolean> {
+    async end(win: boolean, reason = win ? 'elimination' : 'enemy_escape'): Promise<boolean> {
         if (!gameStateMgr.online) return true;
         if (!this.active) return !gameStateMgr.activeBattle;
         if (!this.queue.some(e => e.action === 'battle-end')) {
             this.queue.push({ action: 'battle-end', request_id: newRequestId(), data: {
                 battle_id: this.battle.battle_id, result: win ? 'win' : 'lose',
                 duration_ms: Math.max(0, gameStateMgr.serverNow - this.battle.started_at),
-                last_event_seq: this.seq, termination_reason: win ? 'elimination' : 'enemy_escape',
+                last_event_seq: this.seq, termination_reason: reason,
             } });
             this.persist();
         }

@@ -1,5 +1,6 @@
 import { _decorator, Node, Label, ProgressBar, Color, Sprite, SpriteFrame, math, Prefab, instantiate, Animation, AnimationClip } from 'cc';
 import { CBaseRoom } from './BaseRoom';
+import { invasionState } from '../InvasionState';
 import { CCharacter } from '../character/character';
 import { eRoomType, eMineBuffType, eCCharacterID, IPlayerData } from '../BaseDef';
 import { COSCfgData, COSSkill, COverseerManager } from '../OverseerMan';
@@ -285,6 +286,7 @@ export class CResRoom extends CBaseRoom {
     private gatherSession = '';
     get isGathering() { return this.bGatering || this.gatherPending; }
     async startGatherRes() {
+        if (invasionState.pausedProduction) return;
         if (this.bGatering || this.gatherPending) return;
         this.gatherPending = true;
         this.gatherSession = newRequestId();
@@ -322,6 +324,7 @@ export class CResRoom extends CBaseRoom {
                 room_index: this.index, gather_session_id: this.gatherSession, phase: 'finish',
             }).then(reply => {
                 if (reply.ok) {
+                    if (!gameStateMgr.online) invasionState.addAction();
                     this.nCurrentStock = CGlobalData.instance.getRoomStockByIndex(this.index);
                     this.refreshCurrentStock();
                     this.node.dispatchEvent(new CustomEvent(UniEvent.on_resource_change, true));
@@ -380,7 +383,7 @@ export class CResRoom extends CBaseRoom {
     }
 
     onOutputRes() {
-        if (!this.isResFull()) {
+        if (!invasionState.pausedProduction && !this.isResFull()) {
             this.nCurrentStock += this.nOutputPerTime;
             if (this.nCurrentStock > this.nCapacity) {
                 this.nCurrentStock = this.nCapacity;
@@ -406,6 +409,7 @@ export class CResRoom extends CBaseRoom {
 
     nOutputInterval: number = 0; // 生产一个单位资源需要的时间
     nGatherInterval: number = 0; // 收集一个单位资源需要的时间
+    private workersPausedForInvasion = false;
 
     updateGather(deltaTime: number) {
         //这里可以加一些收集资源的特效，比如飞出一些资源图标之类的
@@ -420,8 +424,13 @@ export class CResRoom extends CBaseRoom {
         if (this.roomLevel <= 0) {
             return;
         }
+        const pauseWorkers = invasionState.pausedProduction && !this.bGatering;
+        if (pauseWorkers !== this.workersPausedForInvasion) {
+            this.workersPausedForInvasion = pauseWorkers;
+            this.enableWorkersWork(!pauseWorkers && !this.isResFull());
+        }
 
-        if (!this.isResFull()) {
+        if (!invasionState.pausedProduction && !this.isResFull()) {
             this.nOutputInterval += deltaTime;
             if (this.nOutputInterval >= INTERVAL_OUTPUT_PER_TIME) {
                 this.nOutputInterval = 0;

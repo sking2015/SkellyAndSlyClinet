@@ -1,3 +1,4 @@
+import { invasionState } from './InvasionState';
 import { gameStateMgr } from './GameStateMgr';
 import { _decorator, Component, instantiate, Label, Node, Prefab, Sprite } from 'cc';
 import { CUIProperty } from './UIProperty';
@@ -186,6 +187,7 @@ export class CMonsterDetailPanel extends Component {
 
     private submitting = false;
     async doReforge() {
+        if (invasionState.locked) return;
         if (this.submitting) return;
         if (gameStateMgr.online) {
             this.submitting = true;
@@ -198,6 +200,7 @@ export class CMonsterDetailPanel extends Component {
         } else {
             this.nLevel = 1;
             CGlobalData.instance.setMonsterLevel(this.eCharId, this.nLevel);
+            invasionState.addAction();
         }
 
         this.lblLevel.string = "LV:" + this.data.Level.toString();

@@ -132,6 +132,14 @@ export class CCharactersManager {
         char.Release();
     }
 
+    moveCharacterToRoom(char: CCharacter, room: CBaseRoom) {
+        this.mapCharInRoom.get(char.getRoom()?.index)?.del(char.index);
+        let container = this.mapCharInRoom.get(room.index);
+        if (!container) this.mapCharInRoom.set(room.index, container = new CCharacterContainer());
+        char.setRoom(room);
+        container.add(char);
+    }
+
     getRoomCharacters(roomIndex: number): CCharacter[] {
         return (this.mapCharInRoom.get(roomIndex)?.getAllChars() || [])
             .filter(char => char.node && isValid(char.node) && char.node.activeInHierarchy && !char.bDelete);

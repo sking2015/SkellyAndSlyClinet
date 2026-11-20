@@ -7,6 +7,8 @@ import { CBaseRoom } from './room/BaseRoom';
 import { eCCharacterID } from './BaseDef';
 import { CRoomData, CGlobalData } from './GlobalData';
 import { CInvasionManager } from './InvasionManager';
+import { CMajorInvasionManager } from './MajorInvasionManager';
+import { invasionState } from './InvasionState';
 import { CCharactersManager } from './CharacaterMannager';
 import { CBattleRole } from './character/battlerole';
 import { CBattleRoom } from './room/BattleRoom';
@@ -107,6 +109,7 @@ export class Roomlist extends Component {
     start() {
         this.initAllRoom();
         CInvasionManager.instance.init(this.rooms);
+        CMajorInvasionManager.instance.init(this.rooms);
 
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_rooms_init_finish, true));
 
@@ -176,10 +179,12 @@ export class Roomlist extends Component {
                 this.appliedRoomVersions.set(room.index, gameStateMgr.stateVersion);
             }
         }
-        CInvasionManager.instance.update(deltaTime);
+        CMajorInvasionManager.instance.update(deltaTime);
+        if (!CMajorInvasionManager.instance.active && invasionState.phase === 'idle') CInvasionManager.instance.update(deltaTime);
     }
 
     onDestroy() {
+        CMajorInvasionManager.instance.stop();
         CInvasionManager.instance.stop();
         for (const room of this.rooms) {
             CCharactersManager.instance.clearRoomCharacters(room.index);
