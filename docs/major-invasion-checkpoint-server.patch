@@ -1,0 +1,32 @@
+diff --git a/game/types.go b/game/types.go
+--- a/game/types.go
++++ b/game/types.go
+@@ -88,5 +88,7 @@
+ type CheckpointUnit struct {
+-	ID string `json:"unit_instance_id"`
+-	HP int64  `json:"hp"`
+-	MP int64  `json:"mp"`
++	ID             string   `json:"unit_instance_id"`
++	HP             int64    `json:"hp"`
++	MP             int64    `json:"mp"`
++	X              *float64 `json:"x,omitempty" bson:"x,omitempty"`
++	SkillCooldowns []int64  `json:"skill_cooldowns_ms,omitempty" bson:"skill_cooldowns_ms,omitempty"`
+ }
+diff --git a/game/major.go b/game/major.go
+--- a/game/major.go
++++ b/game/major.go
+@@ -169,6 +169,14 @@
+ 		}
+ 		if u.Side == "enemy" && !enemyDeployed(b, u.ID) {
+ 			return nil, fail("INVALID_BATTLE_EVENT")
+ 		}
++		if len(v.SkillCooldowns) > 3 {
++			return nil, fail("INVALID_BATTLE_EVENT")
++		}
++		for _, remaining := range v.SkillCooldowns {
++			if remaining < 0 {
++				return nil, fail("INVALID_BATTLE_EVENT")
++			}
++		}
+ 		seen[v.ID] = true
+ 		u.HP = v.HP

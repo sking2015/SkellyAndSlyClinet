@@ -1,5 +1,12 @@
 import type { IRoom, IResources } from './BaseDef';
 export type Attributes = Record<'HP'|'MP'|'ATK'|'DEF'|'INT'|'MDF'|'SPD'|'LCA', number>;
+export interface BattleCheckpointUnit {
+    unit_instance_id: string;
+    hp: number;
+    mp: number;
+    x?: number;
+    skill_cooldowns_ms?: number[];
+}
 export interface BattleUnit {
     hp?: number; mp?: number; attributes?: Attributes;
     unit_instance_id: string; config_id: number; side: 'own'|'enemy';
@@ -8,7 +15,7 @@ export interface BattleUnit {
 }
 export interface BattleState {
     invasion_type?: 'Minor'|'Major'; current_room_index?: number;
-    checkpoint?: { room_index: number; phase: 'entering'|'active'|'leaving'; units: Array<{ unit_instance_id: string; hp: number; mp: number }> };
+    checkpoint?: { room_index: number; phase: 'entering'|'active'|'leaving'; units: BattleCheckpointUnit[] };
     team_id?: number;
     members?: string;
     enemy_slots?: Array<{ position: number; hero_id: number; count: number; unit_instance_ids: string[] }>;

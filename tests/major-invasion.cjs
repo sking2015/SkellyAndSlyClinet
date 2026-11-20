@@ -20,6 +20,7 @@ class Room {
     hasDefendingForces() { return this.defenders; }
     lockMajorBattle() { this.locked = true; }
     bindBattleInstances() {}
+    async recoverMajorDefenders() {}
     CloseExpand() {}
     startMinorBattle() { this.fighting = true; }
     restoreMajorDefenders() { this.restored = true; }
@@ -29,7 +30,7 @@ class Formation {
     async setSlotCount(key, id, count) {
         if (!count) return;
         const char = { hp: 91, mp: 7, ready: false, applyInvasionLevel() {}, holdDeployment() {},
-            setPosition() {}, marchToDeployment(x) { this.target = x; this.ready = false; },
+            setPosition(x) { this.x = x; }, marchToDeployment(x) { this.target = x; this.ready = false; },
             startDeploymentBattle() { this.fighting = true; }, isDeploymentReady() { return this.ready; } };
         this.slots.set(key, char); this.configure(char, false, key);
     }
@@ -99,6 +100,34 @@ async function main() {
     await m.startBattle();
     assert.equal(m.phase, 'idle', 'recover an authoritative start whose original response was lost');
     assert.equal(state.locked, true, 'unknown start outcome must not unlock room operations');
+    sync.recover = async () => {};
+    let recoveryState;
+    sync.flush = async () => {
+        recoveryState = server.activeBattle;
+        server.activeBattle = { ...recoveryState, checkpoint: undefined };
+        return true;
+    };
+    server.syncState = async () => {
+        assert.ok(recoveryState, 'sync the latest checkpoint after pending events are flushed');
+        server.activeBattle = recoveryState;
+        recoveryState = undefined;
+        return { ok: true };
+    };
+    sync.adoptMajor = battle => { sync.snapshot = battle; };
+    sync.restoreMajorCheckpoint = () => m.enemies[0].setPosition(37);
+    for (const phase of ['active', 'leaving', 'entering']) {
+        const floor = new Room(1, phase !== 'leaving');
+        m.init([new Room(0), floor]);
+        server.activeBattle = { invasion_type: 'Major',
+            checkpoint: { room_index: 1, phase, units: [{ x: 37 }] },
+            enemy_slots: [{ position: 1, hero_id: 1, unit_instance_ids: ['enemy'] }],
+            units: [{ unit_instance_id: 'enemy', alive: true }] };
+        m.update(.1); await flush();
+        assert.equal(m.floor, 1);
+        assert.equal(m.phase, phase);
+        assert.equal(m.enemies[0].x, 37);
+        if (phase === 'active') assert.equal(floor.fighting, true);
+    }
     console.log('PASS: major preparation, full battle lock, empty-floor march, persistent enemy HP/MP, reserve loading, single settlement, failure penalty, missing stage');
 }
 main().catch(e => { console.error(e); process.exitCode = 1; });

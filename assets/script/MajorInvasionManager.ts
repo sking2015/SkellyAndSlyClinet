@@ -126,6 +126,9 @@ export class CMajorInvasionManager {
                 await BattleSync.instance.recover();
                 if (!await BattleSync.instance.flush()) throw new Error('等待战斗事件恢复');
                 if (generation !== this.generation) return;
+                const synced = await gameStateMgr.syncState();
+                if (generation !== this.generation) return;
+                if (!synced.ok) throw new Error('Failed to sync the major invasion checkpoint');
                 const battle = gameStateMgr.activeBattle;
                 if (!battle) throw new Error('战斗已结束，请同步最新状态');
                 BattleSync.instance.adoptMajor(battle);
@@ -165,6 +168,16 @@ export class CMajorInvasionManager {
                 for (const defenderRoom of this.battleRooms) defenderRoom.lockMajorBattle();
                 this.phase = 'entering';
                 this.focusFloor();
+                const checkpoint = snapshot?.checkpoint;
+                const hasPositions = checkpoint?.units.some(unit => typeof unit.x === 'number');
+                if (hasPositions && checkpoint.phase === 'active' && room instanceof CBattleRoom && room.hasDefendingForces()) {
+                    room.startMinorBattle();
+                    for (const enemy of this.enemies) enemy.startDeploymentBattle();
+                    this.phase = 'active';
+                } else if (hasPositions && checkpoint.phase === 'leaving') {
+                    this.leaveFloor();
+                }
+                BattleSync.instance.restoreMajorCheckpoint();
             }
         } catch (error) {
             console.error('[大入侵] 备战失败，可重试', error);

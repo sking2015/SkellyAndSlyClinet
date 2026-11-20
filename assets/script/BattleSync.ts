@@ -1,6 +1,7 @@
 import { gameStateMgr } from './GameStateMgr';
-import { BattleState, BattleUnit, LootSettlement, newRequestId } from './Protocol';
+import { BattleCheckpointUnit, BattleState, BattleUnit, LootSettlement, newRequestId } from './Protocol';
 import type { CCharacter } from './character/character';
+import type { CBattleRole } from './character/battlerole';
 
 interface QueuedEvent { action: string; request_id: string; data: any }
 const KEY = 'battle_events_v1';
@@ -34,22 +35,42 @@ export class BattleSync {
         this.assigned.clear(); this.bindings = new WeakMap(); this.queue = [];
         this.lastSettlement = null;
         this.liveCharacters.clear();
+        this.checkpointUnits = new Map(battle.checkpoint?.units.map(unit => [unit.unit_instance_id, unit]));
         this.persist();
     }
     async checkpointMajor(roomIndex: number, phase: 'entering'|'active'|'leaving'): Promise<boolean> {
         if (!gameStateMgr.online) return true;
         if (!await this.flush()) return false;
-        const units: Array<{ unit_instance_id: string; hp: number; mp: number }> = [];
-        for (const [id, char] of this.liveCharacters) {
-            if (!char.IsAlive()) continue;
-            const role = char as any;
-            units.push({ unit_instance_id: id, hp: Math.max(1, Math.ceil(role._HP)), mp: Math.max(0, Math.floor(role._MP)) });
+        const units: BattleCheckpointUnit[] = [];
+        const now = Date.now();
+        for (const [id, role] of this.liveCharacters) {
+            if (!role.IsAlive()) continue;
+            units.push({
+                unit_instance_id: id,
+                hp: Math.max(1, Math.ceil(role._HP)),
+                mp: Math.max(0, Math.floor(role._MP)),
+                x: role.getPosition(),
+                skill_cooldowns_ms: role.skills.map(skill => skill.getRemainingCooldown(now)),
+            });
         }
         return (await gameStateMgr.operation('battle-major-checkpoint', {
             battle_id: this.battle.battle_id, room_index: roomIndex, phase, units, last_event_seq: this.seq,
         })).ok;
     }
-    private liveCharacters = new Map<string, CCharacter>();
+    private liveCharacters = new Map<string, CBattleRole>();
+    private checkpointUnits = new Map<string, BattleCheckpointUnit>();
+
+    restoreMajorCheckpoint() {
+        const now = Date.now();
+        for (const [id, role] of this.liveCharacters) {
+            const saved = this.checkpointUnits.get(id);
+            if (!saved) continue;
+            if (typeof saved.x === 'number' && Number.isFinite(saved.x)) role.setPosition(saved.x);
+            saved.skill_cooldowns_ms?.forEach((remaining, index) => {
+                if (Number.isFinite(remaining)) role.skills[index]?.restoreCooldown(remaining, now);
+            });
+        }
+    }
     releaseFailedBinding(char: CCharacter) {
         const unit = this.bindings.get(char);
         if (!unit) return;
@@ -115,8 +136,8 @@ export class BattleSync {
         this.assigned.add(unit.unit_instance_id);
         this.bindings.set(char, { ...unit });
         if (this.battle.invasion_type === 'Major') {
-            this.liveCharacters.set(unit.unit_instance_id, char);
-            const role = char as any;
+            const role = char as CBattleRole;
+            this.liveCharacters.set(unit.unit_instance_id, role);
             if (unit.attributes) {
                 role.setMaxHP(unit.attributes.HP); role.setMaxMP(unit.attributes.MP);
                 for (const key of ['ATK', 'DEF', 'INT', 'MDF', 'SPD', 'LCA']) role[key] = unit.attributes[key];
@@ -142,6 +163,9 @@ export class BattleSync {
         this.enqueue('battle-unit-revived', { unit_instance_id: unit.unit_instance_id,
             life_no: unit.life_no, reviver_unit_instance_id: caster.unit_instance_id }, char);
         unit.alive = true; ++unit.life_no;
+        if (this.battle.invasion_type === 'Major') {
+            this.liveCharacters.set(unit.unit_instance_id, char as CBattleRole);
+        }
     }
     private enqueue(action: string, fields: any, char?: CCharacter) {
         const eventId = newRequestId();

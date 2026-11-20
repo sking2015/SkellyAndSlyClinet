@@ -64,6 +64,14 @@ export class CSkillBase {
         return Date.now() - this.nLastCastTime >= this.nCD;
     }
 
+    getRemainingCooldown(now: number): number {
+        return Math.max(0, Math.ceil(this.nCD - (now - this.nLastCastTime)));
+    }
+
+    restoreCooldown(remainingMs: number, now: number) {
+        this.nLastCastTime = now - this.nCD + Math.max(0, Math.min(this.nCD, remainingMs));
+    }
+
     setCaster(role: CBattleRole) {
         this.caster = role;
     }
