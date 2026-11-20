@@ -134,7 +134,8 @@ export class CMajorInvasionManager {
                 BattleSync.instance.adoptMajor(battle);
                 this.floor = Math.max(0, this.route.findIndex(r => r.index === (battle.checkpoint?.room_index ?? battle.current_room_index ?? 0)));
                 for (const room of this.battleRooms) {
-                    await room.recoverMajorDefenders(battle);
+                    await room.recoverMajorDefenders(battle,
+                        room === this.route[this.floor] && battle.checkpoint?.phase !== 'leaving');
                     if (generation !== this.generation) return;
                 }
             } else for (const room of this.battleRooms) room.beginMajorPreparation();
@@ -162,22 +163,23 @@ export class CMajorInvasionManager {
                 if (generation !== this.generation) return;
             }
             if (this.formation.failed) throw new Error('Major 敌军创建失败');
-            this.positionEnemies();
+            const resumingExit = snapshot?.checkpoint?.phase === 'leaving';
+            const resumingCombat = recovering && !resumingExit && room instanceof CBattleRoom && room.hasDefendingForces();
+            this.positionEnemies(resumingCombat);
             if (recovering) {
                 invasionState.phase = 'battle';
                 for (const defenderRoom of this.battleRooms) defenderRoom.lockMajorBattle();
                 this.phase = 'entering';
                 this.focusFloor();
-                const checkpoint = snapshot?.checkpoint;
-                const hasPositions = checkpoint?.units.some(unit => typeof unit.x === 'number');
-                if (hasPositions && checkpoint.phase === 'active' && room instanceof CBattleRoom && room.hasDefendingForces()) {
-                    room.startMinorBattle();
-                    for (const enemy of this.enemies) enemy.startDeploymentBattle();
-                    this.phase = 'active';
-                } else if (hasPositions && checkpoint.phase === 'leaving') {
+                if (resumingExit) {
                     this.leaveFloor();
                 }
                 BattleSync.instance.restoreMajorCheckpoint();
+                if (resumingCombat) {
+                    room.startMinorBattle(true);
+                    for (const enemy of this.enemies) enemy.startDeploymentBattle(true);
+                    this.phase = 'active';
+                }
             }
         } catch (error) {
             console.error('[大入侵] 备战失败，可重试', error);
@@ -222,14 +224,19 @@ export class CMajorInvasionManager {
         return room.nodeCharLayer.getComponent(UITransform).convertToNodeSpaceAR(bounds.convertToWorldSpaceAR(
             new Vec3(right ? bounds.width * (1 - bounds.anchorX) : -bounds.width * bounds.anchorX, 0, 0))).x;
     }
-    private positionEnemies() {
+    private positionEnemies(readyImmediately = false) {
         const positions = this.formation.getLineupPositions();
         this.targets.clear();
         this.enemies.forEach((role, index) => {
-            role.setPosition(this.edge(this.route[this.floor], false) - 100 - index * 90);
             const target = positions.get(role);
             this.targets.set(this.keys.get(role), target);
-            role.marchToDeployment(target, eDirction.edRight);
+            if (readyImmediately) {
+                role.setPosition(target);
+                role.setDirection2Right();
+            } else {
+                role.setPosition(this.edge(this.route[this.floor], false) - 100 - index * 90);
+                role.marchToDeployment(target, eDirction.edRight);
+            }
         });
     }
     private focusFloor() {

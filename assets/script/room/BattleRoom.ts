@@ -69,7 +69,7 @@ export class CBattleRoom extends CBaseRoom {
     charMage: CCharacter = null;
 
     private formation: CBattleFormation = null;
-    private defensePhase: 'patrol' | 'alert' | 'forming' | 'ready' | 'battle' = 'patrol';
+    private defensePhase: 'patrol' | 'alert' | 'recovering' | 'forming' | 'ready' | 'battle' = 'patrol';
     private alertRemaining = 0;
     private configurationVersion = 0;
     private checkingConfiguration = false;
@@ -92,6 +92,10 @@ export class CBattleRoom extends CBaseRoom {
                 const slot = Object.keys(this.slotIds).find(key => this.slotIds[key] === char.eCharId);
                 if (slot) this[slot] = char;
                 const role = char as CBattleRole;
+                if (this.defensePhase === 'recovering') {
+                    role.holdDeployment();
+                    return;
+                }
                 if (this.defensePhase === 'battle') {
                     if (replacement) {
                         role.reinforcementTargetX = position(char.eCharId);
@@ -101,7 +105,7 @@ export class CBattleRoom extends CBaseRoom {
                     this.startPatrol(role);
                 } else {
                     role.holdDeployment();
-                    role.showExclamation(this.sfExclamation);
+                    if (invasionState.phase === 'idle') role.showExclamation(this.sfExclamation);
                     if (this.defensePhase !== 'alert') this.formDefenders();
                 }
                 if (!replacement) char.playEffect();
@@ -170,9 +174,10 @@ export class CBattleRoom extends CBaseRoom {
 
     hasDefendingForces(): boolean { return !!this.formation?.hasForces(); }
 
-    async recoverMajorDefenders(battle: BattleState) {
+    async recoverMajorDefenders(battle: BattleState, readyImmediately = false) {
         this.majorPreparing = false;
-        this.defensePhase = 'forming';
+        this.defensePhase = 'recovering';
+        for (const role of this.getDefenders()) role.holdDeployment();
         const living = battle.units.filter(u => u.side === 'own' && u.source_room_index === this.index && u.alive);
         this.eGuardId = (living.find(u => u.kind === 'lord')?.config_id || eCCharacterID.eciNone) as eCCharacterID;
         this.nSoldierNum = living.filter(u => u.troop_type === 1).length;
@@ -181,7 +186,7 @@ export class CBattleRoom extends CBaseRoom {
         await this.refreshGuardRole(); await this.refreshSoldierRole();
         await this.refreshArcherRole(); await this.refreshMageRole();
         this.bindBattleInstances();
-        this.formDefenders();
+        this.formDefenders(readyImmediately);
     }
 
     restoreMajorDefenders() {
@@ -199,11 +204,17 @@ export class CBattleRoom extends CBaseRoom {
         this.node.dispatchEvent(new CustomEvent(UniEvent.on_room_configuration_locked, true, { roomIndex: this.index }));
     }
 
-    private formDefenders() {
-        this.defensePhase = 'forming';
+    private formDefenders(readyImmediately = false) {
+        this.defensePhase = readyImmediately ? 'ready' : 'forming';
         const defenders = this.getDefenders();
         const positions = this.formation?.getLineupPositions(defenders);
-        for (const role of defenders) role.marchToDeployment(positions.get(role), eDirction.edLeft);
+        for (const role of defenders) {
+            if (readyImmediately) {
+                role.setPosition(positions.get(role));
+                role.setDirection2Left();
+                role.holdDeployment();
+            } else role.marchToDeployment(positions.get(role), eDirction.edLeft);
+        }
     }
 
     areDefendersReady(): boolean { return this.defensePhase === 'ready' && !this.formation?.isLoading(); }
@@ -212,9 +223,9 @@ export class CBattleRoom extends CBaseRoom {
         for (const char of this.getDefenders()) BattleSync.instance.bind(char, 'own', this.index);
     }
 
-    startMinorBattle() {
+    startMinorBattle(resuming = false) {
         this.defensePhase = 'battle';
-        for (const role of this.getDefenders()) role.startDeploymentBattle();
+        for (const role of this.getDefenders()) role.startDeploymentBattle(resuming);
     }
 
     endMinorInvasion() {

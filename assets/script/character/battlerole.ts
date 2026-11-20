@@ -6,7 +6,7 @@ import { CCharactersManager } from '../CharacaterMannager';
 import { CSkillBase } from '../skills/skillbase';
 import type { ISkillEffectData } from '../skills/skillbase';
 import { fadeInOut, waitFadeInout } from '../common/common';
-import { CCharacter } from './character';
+import { AI_INTERVAL, CCharacter } from './character';
 import { CustomEvent, UniEvent } from '../common/CustomEvent';
 import { CResManager } from '../ResManager';
 import { CMissile } from '../skills/missile';
@@ -106,6 +106,7 @@ export class CBattleRole extends COverseer {
 
     holdDeployment() {
         this.resetDeployment();
+        this.hideExclamation();
         this.deploymentMode = 'hold';
     }
 
@@ -118,12 +119,12 @@ export class CBattleRole extends COverseer {
 
     isDeploymentReady(): boolean { return this.deploymentMode === 'hold'; }
 
-    startDeploymentBattle() {
+    startDeploymentBattle(resuming = false) {
         this.logBattleAttributes('战斗开始');
         this.hideExclamation();
         this.deploymentMode = null;
         this.setInBattle(true);
-        this.aiBoostTime = 0;
+        this.aiBoostTime = resuming ? AI_INTERVAL : 0;
         this.SwitchToStand();
     }
 

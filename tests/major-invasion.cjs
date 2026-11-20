@@ -20,9 +20,9 @@ class Room {
     hasDefendingForces() { return this.defenders; }
     lockMajorBattle() { this.locked = true; }
     bindBattleInstances() {}
-    async recoverMajorDefenders() {}
+    async recoverMajorDefenders(_battle, readyImmediately) { this.recoveredReady = readyImmediately; }
     CloseExpand() {}
-    startMinorBattle() { this.fighting = true; }
+    startMinorBattle(resuming) { this.fighting = true; this.resuming = resuming; }
     restoreMajorDefenders() { this.restored = true; }
 }
 class Formation {
@@ -30,8 +30,8 @@ class Formation {
     async setSlotCount(key, id, count) {
         if (!count) return;
         const char = { hp: 91, mp: 7, ready: false, applyInvasionLevel() {}, holdDeployment() {},
-            setPosition(x) { this.x = x; }, marchToDeployment(x) { this.target = x; this.ready = false; },
-            startDeploymentBattle() { this.fighting = true; }, isDeploymentReady() { return this.ready; } };
+            setPosition(x) { this.x = x; }, setDirection2Right() {}, marchToDeployment(x) { this.target = x; this.ready = false; },
+            startDeploymentBattle(resuming) { this.fighting = true; this.resuming = resuming; }, isDeploymentReady() { return this.ready; } };
         this.slots.set(key, char); this.configure(char, false, key);
     }
     getActiveCharacters() { return [...this.slots.values()]; }
@@ -114,19 +114,30 @@ async function main() {
         return { ok: true };
     };
     sync.adoptMajor = battle => { sync.snapshot = battle; };
-    sync.restoreMajorCheckpoint = () => m.enemies[0].setPosition(37);
-    for (const phase of ['active', 'leaving', 'entering']) {
-        const floor = new Room(1, phase !== 'leaving');
+    sync.restoreMajorCheckpoint = () => {
+        const saved = sync.snapshot.checkpoint?.units[0];
+        if (saved) m.enemies[0].setPosition(saved.x);
+    };
+    for (const [phase, hasDefenders, expected] of [
+        ['active', true, 'active'], ['entering', true, 'active'], [undefined, true, 'active'],
+        ['leaving', false, 'leaving'], ['entering', false, 'entering'],
+    ]) {
+        const floor = new Room(1, hasDefenders);
         m.init([new Room(0), floor]);
-        server.activeBattle = { invasion_type: 'Major',
-            checkpoint: { room_index: 1, phase, units: [{ x: 37 }] },
+        server.activeBattle = { invasion_type: 'Major', current_room_index: 1,
+            checkpoint: phase && { room_index: 1, phase, units: [{ x: 37 }] },
             enemy_slots: [{ position: 1, hero_id: 1, unit_instance_ids: ['enemy'] }],
             units: [{ unit_instance_id: 'enemy', alive: true }] };
         m.update(.1); await flush();
         assert.equal(m.floor, 1);
-        assert.equal(m.phase, phase);
-        assert.equal(m.enemies[0].x, 37);
-        if (phase === 'active') assert.equal(floor.fighting, true);
+        assert.equal(m.phase, expected);
+        assert.equal(m.enemies[0].x, phase ? 37 : 0);
+        if (expected === 'active') {
+            assert.equal(floor.recoveredReady, true);
+            assert.equal(floor.resuming, true);
+            assert.equal(m.enemies[0].resuming, true);
+            assert.equal(m.enemies[0].target, undefined, 'resumed combat skips marching to the lineup');
+        }
     }
     console.log('PASS: major preparation, full battle lock, empty-floor march, persistent enemy HP/MP, reserve loading, single settlement, failure penalty, missing stage');
 }
